@@ -1,22 +1,29 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, router } from '@inertiajs/react'; // <-- 1. Import 'router' from Inertia
+import { Head, router } from '@inertiajs/react';
+import { toast } from 'react-hot-toast'; // <-- 1. Import toast
 
 export default function ApplicationShow({ auth, application }) {
 
-    // 2. Use Inertia's router to send the update request
+    // 2. Update the function to use onSuccess for notifications
     const handleUpdateStatus = (newStatus) => {
         if (confirm(`Are you sure you want to ${newStatus.toLowerCase()} this application?`)) {
             router.patch(route('applications.status.update', { application: application.id }), {
                 status: newStatus,
             }, {
-                preserveScroll: true, // This stops the page from scrolling to the top after update
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success(`Application status updated to ${newStatus}.`);
+                },
+                onError: () => {
+                    toast.error('Failed to update status.');
+                }
             });
         }
     };
 
     return (
         <AuthenticatedLayout
-            user={auth} // <-- 3. FIX: Pass 'auth' directly
+            user={auth}
             header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Application #{application.id}</h2>}
         >
             <Head title={`Application #${application.id}`} />
@@ -25,6 +32,7 @@ export default function ApplicationShow({ auth, application }) {
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6 text-gray-900">
+                            {/* ... The rest of the page layout is the same ... */}
                             <h3 className="text-lg font-medium text-gray-900">Applicant Information</h3>
                             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <p><strong>Name:</strong> {application.first_name} {application.last_name}</p>
@@ -45,7 +53,6 @@ export default function ApplicationShow({ auth, application }) {
                         </div>
                     </div>
 
-                    {/* This section with buttons will only show if the status is 'Pending' */}
                     {application.status === 'Pending' && (
                         <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                             <div className="p-6 text-gray-900">
