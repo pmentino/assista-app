@@ -3,23 +3,21 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\AidRequest;
+use App\Models\Application;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth; // <-- 1. IMPORT AUTH
 use Inertia\Inertia;
 
 class AidRequestController extends Controller
 {
-    /**
-     * Display a listing of the aid requests.
-     */
     public function index()
     {
-        // Fetch all requests and include the 'beneficiary' information for each one.
-        // This is more efficient than fetching them separately.
-        $aidRequests = AidRequest::with('beneficiary')->latest()->get();
+        $applications = Application::with('user')->latest()->get();
 
+        // 2. PASS THE AUTH USER TO THE PAGE
         return Inertia::render('Admin/AidRequests/Index', [
-            'aidRequests' => $aidRequests,
+            'auth' => Auth::user(),
+            'aidRequests' => $applications,
         ]);
     }
 }

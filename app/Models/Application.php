@@ -15,6 +15,7 @@ class Application extends Model
      *
      * @var array<int, string>
      */
+    // THIS IS THE FIX: We've added all the fields from your form
     protected $fillable = [
         'program',
         'date_of_incident',
@@ -28,15 +29,14 @@ class Application extends Model
         'house_no',
         'barangay',
         'city',
-        'address',
-        'assistance_type', // <-- THIS WAS THE MISSING FIELD
         'contact_number',
         'email',
-        'status',
+        'address',
+        'assistance_type',
     ];
 
     /**
-     * Get the user that owns the application.
+     * Get the user that the application belongs to.
      */
     public function user(): BelongsTo
     {

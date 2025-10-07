@@ -2,7 +2,8 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ApplicationController;
-use App\Http\Controllers\Admin\AidRequestController; // <-- 1. IMPORT THE NEW CONTROLLER
+use App\Http\Controllers\Admin\AidRequestController;
+use App\Http\Controllers\Admin\ReportController; // <-- 1. IMPORT THE NEW CONTROLLER
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -16,28 +17,37 @@ Route::get('/', function () {
     ]);
 });
 
-// Applicant's Dashboard Route
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard', [
-        'auth' => Auth::user()
-    ]);
+    return Inertia::render('Dashboard', ['auth' => Auth::user()]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-
-// ALL SECURE ROUTES GO IN THIS GROUP
 Route::middleware('auth')->group(function () {
-    // Profile Routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Applicant's Application Form Routes
+    // --- APPLICATION ROUTES ---
     Route::get('/applications/create', [ApplicationController::class, 'create'])->name('applications.create');
     Route::post('/applications', [ApplicationController::class, 'store'])->name('applications.store');
+    Route::patch('/applications/{application}/status', [ApplicationController::class, 'updateStatus'])->name('applications.status.update');
 
     // --- ADMIN ROUTES ---
-    // 2. ADD THE NEW ADMIN ROUTE HERE
+    Route::get('/admin/dashboard', function () {
+        return Inertia::render('Admin/Dashboard', ['auth' => Auth::user()]);
+    })->name('admin.dashboard');
+
     Route::get('/admin/aid-requests', [AidRequestController::class, 'index'])->name('admin.aid-requests.index');
+
+    Route::get('/admin/applications/{application}', function (ApplicationModel $application) {
+        return Inertia::render('Admin/ApplicationShow', [
+            'auth' => Auth::user(),
+            'application' => $application->load('user')
+        ]);
+    })->name('admin.applications.show');
+
+    // 2. ADD THE NEW REPORT ROUTES HERE
+    Route::get('/admin/reports', [ReportController::class, 'index'])->name('admin.reports.index');
+    Route::get('/admin/reports/export', [ReportController::class, 'export'])->name('admin.reports.export');
 });
 
 require __DIR__.'/auth.php';

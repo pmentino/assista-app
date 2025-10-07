@@ -11,49 +11,54 @@ class ApplicationController extends Controller
 {
     public function create()
     {
-        // THIS IS THE FIX: We must pass the user data to the page
         return Inertia::render('Application/Create', [
             'auth' => Auth::user()
         ]);
     }
 
     public function store(Request $request)
-{
-    $validated = $request->validate([
-        'program' => 'required|string|max:255',
-        'date_of_incident' => 'nullable|date',
-        'first_name' => 'required|string|max:255',
-        'middle_name' => 'nullable|string|max:255',
-        'last_name' => 'required|string|max:255',
-        'suffix_name' => 'nullable|string|max:255',
-        'sex' => 'required|string|max:255',
-        'civil_status' => 'required|string|max:255',
-        'birth_date' => 'required|date',
-        'house_no' => 'nullable|string|max:255',
-        'barangay' => 'required|string|max:255',
-        'city' => 'required|string|max:255',
-        'contact_number' => 'required|string|max:20',
-        'email' => 'required|email|max:255',
-        'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048', // Validation for files
-    ]);
+    {
+        $validated = $request->validate([
+            'program' => 'required|string|max:255',
+            'date_of_incident' => 'nullable|date',
+            'first_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'suffix_name' => 'nullable|string|max:255',
+            'sex' => 'required|string|max:255',
+            'civil_status' => 'required|string|max:255',
+            'birth_date' => 'required|date',
+            'house_no' => 'nullable|string|max:255',
+            'barangay' => 'required|string|max:255',
+            'city' => 'required|string|max:255',
+            'contact_number' => 'required|string|max:20',
+            'email' => 'required|email|max:255',
+            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        ]);
 
-    $user = Auth::user();
-    /** @var \App\Models\User $user */
+        $fullAddress = trim(($validated['house_no'] ?? '') . ' ' . $validated['barangay'] . ', ' . $validated['city']);
 
-    $application = $user->applications()->create($validated);
+        $dataToSave = array_merge($validated, [
+            'address' => $fullAddress,
+            'assistance_type' => $validated['program']
+        ]);
 
-    // Handle file uploads if they exist
-    if ($request->hasFile('attachments')) {
-        foreach ($request->file('attachments') as $file) {
-            // You might want to store more info about the file in the database
-            // For now, we'll just store it in the 'public' disk
-            $path = $file->store('attachments', 'public');
-            // Here you would typically save the $path to a related database table
+        $user = Auth::user();
+        /** @var \App\Models\User $user */
+
+        $application = $user->applications()->create($dataToSave);
+
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                // THIS IS THE FIX: Check if the file is valid before storing it
+                if ($file) {
+                    $path = $file->store('attachments', 'public');
+                }
+            }
         }
-    }
 
-    return to_route('dashboard')->with('message', 'Application submitted successfully!');
-}
+        return to_route('dashboard')->with('message', 'Application submitted successfully!');
+    }
 
     // ... your other methods ...
 }

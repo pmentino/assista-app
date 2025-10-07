@@ -1,24 +1,22 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
-import { useState } from 'react';
-import axios from 'axios';
+import { Head, router } from '@inertiajs/react'; // <-- 1. Import 'router' from Inertia
 
-export default function ApplicationShow({ auth, application: initialApplication }) {
-    const [application, setApplication] = useState(initialApplication);
+export default function ApplicationShow({ auth, application }) {
 
+    // 2. Use Inertia's router to send the update request
     const handleUpdateStatus = (newStatus) => {
-        axios.patch(`/api/applications/${application.id}/status`, { status: newStatus })
-            .then(response => {
-                setApplication(response.data);
-            })
-            .catch(error => {
-                console.error("There was an error updating the status!", error);
+        if (confirm(`Are you sure you want to ${newStatus.toLowerCase()} this application?`)) {
+            router.patch(route('applications.status.update', { application: application.id }), {
+                status: newStatus,
+            }, {
+                preserveScroll: true, // This stops the page from scrolling to the top after update
             });
+        }
     };
 
     return (
         <AuthenticatedLayout
-            user={auth.user}
+            user={auth} // <-- 3. FIX: Pass 'auth' directly
             header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Application #{application.id}</h2>}
         >
             <Head title={`Application #${application.id}`} />
@@ -35,7 +33,7 @@ export default function ApplicationShow({ auth, application: initialApplication 
                                 <p><strong>Contact #:</strong> {application.contact_number}</p>
                                 <p><strong>Assistance Type:</strong> {application.assistance_type}</p>
                                 <p><strong>Status:</strong>
-                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                    <span className={`ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                         application.status === 'Approved' ? 'bg-green-100 text-green-800' :
                                         application.status === 'Rejected' ? 'bg-red-100 text-red-800' :
                                         'bg-yellow-100 text-yellow-800'
@@ -47,6 +45,7 @@ export default function ApplicationShow({ auth, application: initialApplication 
                         </div>
                     </div>
 
+                    {/* This section with buttons will only show if the status is 'Pending' */}
                     {application.status === 'Pending' && (
                         <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                             <div className="p-6 text-gray-900">

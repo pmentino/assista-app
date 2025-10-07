@@ -5,6 +5,7 @@ import { Link } from '@inertiajs/react';
 
 export default function AuthenticatedLayout({ user, header, children }) {
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
+    const isAdmin = user && user.role === 'admin';
 
     return (
         <div className="min-h-screen bg-gray-100">
@@ -17,49 +18,33 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                     <img src="/images/logo.png" alt="Assista Logo" className="block h-9 w-auto" />
                                 </Link>
                             </div>
-
                             <div className="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
                                 <Link
                                     href={route('dashboard')}
-                                    className={
-                                        'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none transition duration-150 ease-in-out ' +
-                                        (route().current('dashboard')
-                                            ? 'border-yellow-400 text-white'
-                                            : 'border-transparent text-white')
-                                    }
+                                    className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none transition duration-150 ease-in-out ' + (route().current('dashboard') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}
                                 >
                                     My Dashboard
                                 </Link>
-
-                                {/* --- TEMPORARILY HIDDEN TO FIX THE ERROR FOR YOUR PRESENTATION --- */}
-                                {/*
-                                <Link
-                                    href={route('admin.dashboard')}
-                                    className={
-                                        'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none transition duration-150 ease-in-out ' +
-                                        (route().current('admin.dashboard')
-                                            ? 'border-yellow-400 text-white'
-                                            : 'border-transparent text-white')
-                                    }
-                                >
-                                    Admin Dashboard
-                                </Link>
-
-                                <Link
-                                    href={route('admin.applications.index')}
-                                    className={
-                                        'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none transition duration-150 ease-in-out ' +
-                                        (route().current('admin.applications.index')
-                                            ? 'border-yellow-400 text-white'
-                                            : 'border-transparent text-white')
-                                    }
-                                >
-                                    All Applications
-                                </Link>
-                                */}
+                                {isAdmin && (
+                                    <>
+                                        <Link
+                                            href={route('admin.dashboard')}
+                                            className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none transition duration-150 ease-in-out ' + (route().current('admin.dashboard') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}
+                                        >
+                                            Admin Dashboard
+                                        </Link>
+                                        <Link
+                                            href={route('admin.aid-requests.index')}
+                                            className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none transition duration-150 ease-in-out ' + (route().current('admin.aid-requests.index') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}
+                                        >
+                                            All Applications
+                                        </Link>
+                                    </>
+                                )}
                             </div>
                         </div>
 
+                        {/* --- THIS IS THE CORRECTED SECTION --- */}
                         <div className="hidden sm:flex sm:items-center sm:ml-6">
                             <div className="ml-3 relative">
                                 <Dropdown>
@@ -86,14 +71,12 @@ export default function AuthenticatedLayout({ user, header, children }) {
                             </div>
                         </div>
 
+                        {/* Hamburger Menu */}
                         <div className="-mr-2 flex items-center sm:hidden">
-                            <button
-                                onClick={() => setShowingNavigationDropdown((previousState) => !previousState)}
-                                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out"
-                            >
+                            <button onClick={() => setShowingNavigationDropdown((previousState) => !previousState)} className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
                                 <svg className="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                                    <path className={!showingNavigationDropdown ? 'inline-flex' : 'hidden'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/>
-                                    <path className={showingNavigationDropdown ? 'inline-flex' : 'hidden'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                                    <path className={!showingNavigationDropdown ? 'inline-flex' : 'hidden'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                                    <path className={showingNavigationDropdown ? 'inline-flex' : 'hidden'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
