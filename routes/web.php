@@ -46,8 +46,12 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         ]);
     })->name('applications.show');
 
-    // This is the required PATCH route that was missing
-    Route::patch('/applications/{application}/status', [ApplicationController::class, 'updateStatus'])->name('applications.status.update');
+    // These are the new GET routes that will work
+    Route::get('/applications/{application}/approve', [ApplicationController::class, 'approve'])->name('applications.approve');
+    Route::get('/applications/{application}/reject', [ApplicationController::class, 'reject'])->name('applications.reject');
+
+    // The old PATCH route is no longer needed
+    // Route::patch('/applications/{application}/status', [ApplicationController::class, 'updateStatus'])->name('applications.status.update');
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');

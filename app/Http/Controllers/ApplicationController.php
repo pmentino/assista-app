@@ -2,48 +2,59 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Application;
+use App\Models\Application as ApplicationModel;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class ApplicationController extends Controller
 {
     public function create()
     {
-        return Inertia::render('Application/Create', ['auth' => Auth::user()]);
+        return Inertia::render('ApplicationForm');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
+    {
+        $validatedData = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'birth_date' => 'required|date',
+            'address' => 'required|string|max:255',
+            'contact_number' => 'required|string|max:20',
+            'email' => 'required|email|max:255',
+            'program' => 'required|string|max:255',
+            'date_of_incident' => 'nullable|date',
+        ]);
+
+        $application = new ApplicationModel($validatedData);
+        $application->user_id = Auth::id();
+        $application->save();
+
+        return redirect()->route('dashboard')->with('message', 'Application submitted successfully!');
+    }
+
+    public function updateStatus(Request $request, ApplicationModel $application)
     {
         $validated = $request->validate([
-            'program' => 'required|string|max:255', 'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255', 'sex' => 'required|string|max:255',
-            'civil_status' => 'required|string|max:255', 'birth_date' => 'required|date',
-            'barangay' => 'required|string|max:255', 'city' => 'required|string|max:255',
-            'contact_number' => 'required|string|max:20', 'email' => 'required|email|max:255',
-            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'date_of_incident' => 'nullable|date', 'middle_name' => 'nullable|string|max:255',
-            'suffix_name' => 'nullable|string|max:255', 'house_no' => 'nullable|string|max:255',
+            'status' => 'required|in:Approved,Rejected',
         ]);
-        $fullAddress = trim(($validated['house_no'] ?? '') . ' ' . $validated['barangay'] . ', ' . $validated['city']);
-        $dataToSave = array_merge($validated, ['address' => $fullAddress, 'assistance_type' => $validated['program']]);
-        $user = Auth::user();
-        /** @var \App\Models\User $user */
-        $application = $user->applications()->create($dataToSave);
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                if ($file) { $file->store('attachments', 'public'); }
-            }
-        }
-        return to_route('dashboard')->with('message', 'Application submitted successfully!');
+
+        $application->update(['status' => $validated['status']]);
+
+        return redirect()->back()->with('message', 'Application status updated.');
     }
 
-    public function updateStatus(Request $request, Application $application): RedirectResponse
+    // These are the two new functions that our GET routes will use
+    public function approve(ApplicationModel $application)
     {
-        $validated = $request->validate(['status' => 'required|string|in:Approved,Rejected']);
-        $application->update(['status' => $validated['status']]);
-        return redirect()->back()->with('message', 'Status updated successfully!');
+        $application->update(['status' => 'Approved']);
+        return redirect()->back()->with('message', 'Application has been approved.');
+    }
+
+    public function reject(ApplicationModel $application)
+    {
+        $application->update(['status' => 'Rejected']);
+        return redirect()->back()->with('message', 'Application has been rejected.');
     }
 }
