@@ -10,17 +10,11 @@ use Inertia\Inertia;
 
 class ApplicationController extends Controller
 {
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         return Inertia::render('Application/Create', ['auth' => Auth::user()]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -35,7 +29,9 @@ class ApplicationController extends Controller
         ]);
         $fullAddress = trim(($validated['house_no'] ?? '') . ' ' . $validated['barangay'] . ', ' . $validated['city']);
         $dataToSave = array_merge($validated, ['address' => $fullAddress, 'assistance_type' => $validated['program']]);
-        $application = Auth::user()->applications()->create($dataToSave);
+        $user = Auth::user();
+        /** @var \App\Models\User $user */
+        $application = $user->applications()->create($dataToSave);
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
                 if ($file) { $file->store('attachments', 'public'); }
@@ -44,9 +40,6 @@ class ApplicationController extends Controller
         return to_route('dashboard')->with('message', 'Application submitted successfully!');
     }
 
-    /**
-     * Handle status updates for an application.
-     */
     public function updateStatus(Request $request, Application $application): RedirectResponse
     {
         $validated = $request->validate(['status' => 'required|string|in:Approved,Rejected']);
