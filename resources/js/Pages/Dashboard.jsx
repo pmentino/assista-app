@@ -1,33 +1,30 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, usePage } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
-import { toast } from 'react-hot-toast';
+import { Head, Link } from '@inertiajs/react';
+import { useState } from 'react';
 
 export default function Dashboard({ auth, applications = [] }) {
     const [activeTab, setActiveTab] = useState('ongoing');
-    const { props } = usePage();
 
-    useEffect(() => {
-        if (props.flash && props.flash.message) {
-            toast.success(props.flash.message);
-        }
-    }, [props.flash]);
-
-    // This filters the 'applications' list based on the active tab.
+    // This filters the applications based on the active tab
     const filteredApplications = applications.filter(app => {
-        if (activeTab === 'ongoing') { return app.status === 'Pending'; }
-        if (activeTab === 'approved') { return app.status === 'Approved'; }
-        if (activeTab === 'history') { return app.status === 'Approved' || app.status === 'Rejected';}
+        if (activeTab === 'ongoing') {
+            return app.status === 'Pending';
+        }
+        if (activeTab === 'approved') {
+            return app.status === 'Approved';
+        }
+        if (activeTab === 'history') {
+            return app.status === 'Approved' || app.status === 'Rejected';
+        }
         return true;
     });
 
     return (
         <AuthenticatedLayout
-            user={auth.user} // This is now correct because 'auth' is shared globally
+            user={auth} // Pass the 'auth' object directly as the user
             header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Applicants Dashboard</h2>}
         >
             <Head title="Applicant Dashboard" />
-
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -35,7 +32,8 @@ export default function Dashboard({ auth, applications = [] }) {
                             <div className="flex justify-between items-center mb-6">
                                 <div>
                                     <h1 className="text-4xl font-bold mb-2">WELCOME</h1>
-                                    <p className="text-gray-700 text-lg">Email: {auth.user.email}</p> {/* This is now correct */}
+                                    {/* Access the email directly from the auth object */}
+                                    <p className="text-gray-700 text-lg">Email: {auth.email}</p>
                                     <p className="text-gray-700 text-lg">Number: 0923456789</p>
                                 </div>
                                 <div>

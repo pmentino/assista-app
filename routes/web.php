@@ -4,7 +4,6 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\Admin\AidRequestController;
 use App\Http\Controllers\Admin\ReportController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -17,7 +16,6 @@ Route::get('/', function () {
     ]);
 });
 
-// THIS IS THE CORRECTED APPLICANT DASHBOARD ROUTE
 Route::get('/dashboard', function () {
     $applications = Auth::user() ? Auth::user()->applications()->latest()->get() : [];
     return Inertia::render('Dashboard', [
@@ -38,11 +36,19 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
     Route::get('/dashboard', function () {
         return Inertia::render('Admin/Dashboard', ['auth' => Auth::user()]);
     })->name('dashboard');
+
     Route::get('/applications', [AidRequestController::class, 'index'])->name('applications.index');
+
     Route::get('/applications/{application}', function (ApplicationModel $application) {
-        return Inertia::render('Admin/ApplicationShow', ['auth' => Auth::user(),'application' => $application->load('user')]);
+        return Inertia::render('Admin/ApplicationShow', [
+            'auth' => Auth::user(),
+            'application' => $application->load('user')
+        ]);
     })->name('applications.show');
+
+    // This is the required PATCH route that was missing
     Route::patch('/applications/{application}/status', [ApplicationController::class, 'updateStatus'])->name('applications.status.update');
+
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 });
