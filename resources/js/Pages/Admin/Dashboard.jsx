@@ -17,14 +17,14 @@ export default function Dashboard({ auth }) {
                             <p className="mt-4">From here you can manage the system's applications and beneficiaries.</p>
 
                             <div className="mt-6 flex space-x-4">
+                                {/* THIS IS THE CORRECTED ROUTE NAME */}
                                 <Link
-                                    href={route('admin.aid-requests.index')}
+                                    href={route('admin.applications.index')}
                                     className="inline-block bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 px-4 rounded"
                                 >
-                                    Manage All Aid Requests
+                                    Manage All Applications
                                 </Link>
 
-                                {/* --- ADD THIS NEW LINK --- */}
                                 <Link
                                     href={route('admin.reports.index')}
                                     className="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"

@@ -11,19 +11,12 @@ use Inertia\Inertia;
 use App\Models\Application as ApplicationModel;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-    ]);
+    return Inertia::render('Welcome', ['canLogin' => Route::has('login'), 'canRegister' => Route::has('register')]);
 });
 
-// THIS IS THE CORRECTED APPLICANT DASHBOARD ROUTE
 Route::get('/dashboard', function () {
     $applications = Auth::user() ? Auth::user()->applications()->latest()->get() : [];
-    return Inertia::render('Dashboard', [
-        'auth' => Auth::user(),
-        'applications' => $applications
-    ]);
+    return Inertia::render('Dashboard', ['auth' => Auth::user(), 'applications' => $applications]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -32,19 +25,24 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/applications/create', [ApplicationController::class, 'create'])->name('applications.create');
     Route::post('/applications', [ApplicationController::class, 'store'])->name('applications.store');
-    Route::patch('/applications/{application}/status', [ApplicationController::class, 'updateStatus'])->name('applications.status.update');
 });
 
-Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', function () {
         return Inertia::render('Admin/Dashboard', ['auth' => Auth::user()]);
-    })->name('admin.dashboard');
-    Route::get('/aid-requests', [AidRequestController::class, 'index'])->name('admin.aid-requests.index');
+    })->name('dashboard');
+
+    Route::get('/applications', [AidRequestController::class, 'index'])->name('applications.index');
+
     Route::get('/applications/{application}', function (ApplicationModel $application) {
-        return Inertia::render('Admin/ApplicationShow', ['auth' => Auth::user(),'application' => $application->load('user')]);
-    })->name('admin.applications.show');
-    Route::get('/reports', [ReportController::class, 'index'])->name('admin.reports.index');
-    Route::get('/reports/export', [ReportController::class, 'export'])->name('admin.reports.export');
+        return Inertia::render('Admin/ApplicationShow', ['auth' => Auth::user(), 'application' => $application->load('user')]);
+    })->name('applications.show');
+
+    // THIS IS THE ROUTE THAT MUST EXIST
+    Route::patch('/applications/{application}/status', [ApplicationController::class, 'updateStatus'])->name('applications.status.update');
+
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 });
 
 require __DIR__.'/auth.php';

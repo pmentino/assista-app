@@ -43,8 +43,8 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                             Admin Dashboard
                                         </Link>
                                         <Link
-                                            href={route('admin.aid-requests.index')}
-                                            className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none transition duration-150 ease-in-out ' + (route().current('admin.aid-requests.index') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}
+                                            href={route('admin.applications.index')}
+                                            className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none transition duration-150 ease-in-out ' + (route().current('admin.applications.index') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}
                                         >
                                             All Applications
                                         </Link>
@@ -52,9 +52,6 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                 )}
                             </div>
                         </div>
-
-                        {/* --- THIS IS THE CORRECTED SECTION --- */}
-                        {/* It's hidden by default, but becomes a flex container on 'sm' screens and larger */}
                         <div className="hidden sm:flex sm:items-center sm:ml-6">
                             <div className="ml-3 relative">
                                 <Dropdown>
@@ -80,15 +77,13 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                 </Dropdown>
                             </div>
                         </div>
-
-                        {/* Hamburger Menu (for small screens) */}
+                        {/* Hamburger Menu */}
                         <div className="-mr-2 flex items-center sm:hidden">
-                           {/* ... Hamburger menu code ... */}
+                            {/* ... Hamburger Menu code ... */}
                         </div>
                     </div>
                 </div>
-
-                {/* Responsive Navigation Menu (for small screens) */}
+                {/* Responsive Menu */}
                 <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden'}>
                    {/* ... Responsive menu code ... */}
                 </div>

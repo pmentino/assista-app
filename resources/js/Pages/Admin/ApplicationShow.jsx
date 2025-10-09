@@ -1,22 +1,27 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, router } from '@inertiajs/react';
-import { toast } from 'react-hot-toast'; // <-- 1. Import toast
+import { Head, Link, router } from '@inertiajs/react';
+import { toast } from 'react-hot-toast';
 
 export default function ApplicationShow({ auth, application }) {
 
-    // 2. Update the function to use onSuccess for notifications
     const handleUpdateStatus = (newStatus) => {
         if (confirm(`Are you sure you want to ${newStatus.toLowerCase()} this application?`)) {
-            router.patch(route('applications.status.update', { application: application.id }), {
+
+            // --- THIS IS THE GUARANTEED FIX ---
+            // We are using the exact URL instead of the route() helper.
+            const url = `/admin/applications/${application.id}/status`;
+
+            router.patch(url, {
                 status: newStatus,
             }, {
                 preserveScroll: true,
                 onSuccess: () => {
                     toast.success(`Application status updated to ${newStatus}.`);
                 },
-                onError: () => {
+                onError: (errors) => {
                     toast.error('Failed to update status.');
-                }
+                    console.error(errors);
+                },
             });
         }
     };
@@ -31,24 +36,42 @@ export default function ApplicationShow({ auth, application }) {
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            {/* ... The rest of the page layout is the same ... */}
-                            <h3 className="text-lg font-medium text-gray-900">Applicant Information</h3>
-                            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <p><strong>Name:</strong> {application.first_name} {application.last_name}</p>
-                                <p><strong>Birth Date:</strong> {application.birth_date}</p>
-                                <p><strong>Address:</strong> {application.address}</p>
-                                <p><strong>Contact #:</strong> {application.contact_number}</p>
-                                <p><strong>Assistance Type:</strong> {application.assistance_type}</p>
-                                <p><strong>Status:</strong>
-                                    <span className={`ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                        application.status === 'Approved' ? 'bg-green-100 text-green-800' :
-                                        application.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                                        'bg-yellow-100 text-yellow-800'
-                                    }`}>
-                                        {application.status}
-                                    </span>
-                                </p>
+                        <div className="p-6 text-gray-900 space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-2xl font-bold">Application #{application.id}</h3>
+                                <span className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${
+                                    application.status === 'Approved' ? 'bg-green-100 text-green-800' :
+                                    application.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                                    'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                    {application.status}
+                                </span>
+                            </div>
+
+                            <hr/>
+
+                            <div>
+                                <h4 className="font-bold text-lg mb-2">Applicant Information</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                                    <p><strong>Name:</strong> {application.first_name} {application.last_name}</p>
+                                    <p><strong>Birth Date:</strong> {application.birth_date}</p>
+                                    <p><strong>Address:</strong> {application.address}</p>
+                                    <p><strong>Contact #:</strong> {application.contact_number}</p>
+                                    <p><strong>Email:</strong> {application.email}</p>
+                                    <p><strong>Account Name:</strong> {application.user.name}</p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h4 className="font-bold text-lg mt-4">Assistance Details</h4>
+                                <p><strong>Program:</strong> {application.program}</p>
+                                <p><strong>Date of Incident:</strong> {application.date_of_incident || 'N/A'}</p>
+                            </div>
+
+                            <div className="mt-6">
+                                <Link href={route('admin.applications.index')} className="text-blue-600 hover:underline">
+                                    &larr; Back to all applications
+                                </Link>
                             </div>
                         </div>
                     </div>
