@@ -11,19 +11,12 @@ use Inertia\Inertia;
 use App\Models\Application as ApplicationModel;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-    ]);
+    return Inertia::render('Welcome', ['canLogin' => Route::has('login'), 'canRegister' => Route::has('register')]);
 });
 
-// THIS IS THE CORRECTED APPLICANT DASHBOARD ROUTE
 Route::get('/dashboard', function () {
     $applications = Auth::user() ? Auth::user()->applications()->latest()->get() : [];
-    return Inertia::render('Dashboard', [
-        'auth' => Auth::user(),
-        'applications' => $applications
-    ]);
+    return Inertia::render('Dashboard', ['auth' => Auth::user(), 'applications' => $applications]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -38,11 +31,16 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
     Route::get('/dashboard', function () {
         return Inertia::render('Admin/Dashboard', ['auth' => Auth::user()]);
     })->name('dashboard');
+
     Route::get('/applications', [AidRequestController::class, 'index'])->name('applications.index');
+
     Route::get('/applications/{application}', function (ApplicationModel $application) {
-        return Inertia::render('Admin/ApplicationShow', ['auth' => Auth::user(),'application' => $application->load('user')]);
+        return Inertia::render('Admin/ApplicationShow', ['auth' => Auth::user(), 'application' => $application->load('user')]);
     })->name('applications.show');
+
+    // THIS ROUTE IS NOW CORRECTLY PLACED AND NAMED
     Route::patch('/applications/{application}/status', [ApplicationController::class, 'updateStatus'])->name('applications.status.update');
+
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 });

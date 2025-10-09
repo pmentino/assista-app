@@ -7,7 +7,6 @@ export default function ApplicationShow({ auth, application }) {
     const handleUpdateStatus = (newStatus) => {
         if (confirm(`Are you sure you want to ${newStatus.toLowerCase()} this application?`)) {
 
-            // This is the guaranteed fix: We use the exact, correct URL
             const url = `/admin/applications/${application.id}/status`;
 
             router.patch(url, {
