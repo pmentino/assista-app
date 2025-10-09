@@ -7,8 +7,7 @@ export default function ApplicationShow({ auth, application }) {
     const handleUpdateStatus = (newStatus) => {
         if (confirm(`Are you sure you want to ${newStatus.toLowerCase()} this application?`)) {
 
-            // --- THIS IS THE GUARANTEED FIX ---
-            // We are using the exact URL instead of the route() helper.
+            // This is the guaranteed fix: We use the exact, correct URL
             const url = `/admin/applications/${application.id}/status`;
 
             router.patch(url, {
@@ -29,7 +28,7 @@ export default function ApplicationShow({ auth, application }) {
     return (
         <AuthenticatedLayout
             user={auth}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Application #{application.id}</h2>}
+            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Application Details</h2>}
         >
             <Head title={`Application #${application.id}`} />
 
