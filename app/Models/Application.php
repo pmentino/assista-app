@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Application extends Model
 {
@@ -12,11 +11,12 @@ class Application extends Model
 
     /**
      * The attributes that are mass assignable.
+     * We've added all the new fields here.
      *
      * @var array<int, string>
      */
-    // THIS IS THE FIX: We've added all the fields from your form
     protected $fillable = [
+        'user_id',
         'program',
         'date_of_incident',
         'first_name',
@@ -31,14 +31,13 @@ class Application extends Model
         'city',
         'contact_number',
         'email',
-        'address',
-        'assistance_type',
+        'status', // Added status to be safe
     ];
 
     /**
-     * Get the user that the application belongs to.
+     * Get the user that owns the application.
      */
-    public function user(): BelongsTo
+    public function user()
     {
         return $this->belongsTo(User::class);
     }

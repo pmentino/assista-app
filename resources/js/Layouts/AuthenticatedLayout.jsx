@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import Dropdown from '@/Components/Dropdown';
-import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { Link, usePage } from '@inertiajs/react';
 import { Toaster, toast } from 'react-hot-toast';
 
 export default function AuthenticatedLayout({ user, header, children }) {
-    const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
     const { props } = usePage();
+
+    // This line is now safe. If 'user' is undefined, 'isAdmin' will be false.
     const isAdmin = user && user.role === 'admin';
 
     useEffect(() => {
@@ -21,7 +21,7 @@ export default function AuthenticatedLayout({ user, header, children }) {
             <nav className="bg-blue-800 border-b border-blue-900">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
-                       <div className="flex">
+                        <div className="flex">
                             <div className="shrink-0 flex items-center">
                                 <Link href="/"><img src="/images/logo.png" alt="Assista Logo" className="block h-9 w-auto" /></Link>
                             </div>
@@ -41,7 +41,8 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                     <Dropdown.Trigger>
                                         <span className="inline-flex rounded-md">
                                             <button type="button" className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-200 bg-blue-800 hover:text-white focus:outline-none">
-                                                {user.name}
+                                                {/* THIS IS THE FIX: Check if user exists before showing name */}
+                                                { user ? user.name : 'Account' }
                                                 <svg className="ml-2 -mr-0.5 h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
                                             </button>
                                         </span>
