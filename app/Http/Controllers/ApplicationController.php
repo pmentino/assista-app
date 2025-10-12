@@ -11,7 +11,6 @@ class ApplicationController extends Controller
 {
     public function create()
     {
-        // This is now simpler. The 'auth' data is shared automatically with all pages.
         return Inertia::render('Application/Create');
     }
 
@@ -32,10 +31,25 @@ class ApplicationController extends Controller
             'city' => 'required|string|max:255',
             'contact_number' => 'required|string|max:20',
             'email' => 'required|email|max:255',
+            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048', // Validation for files
         ]);
 
         $application = new ApplicationModel($validatedData);
         $application->user_id = Auth::id();
+
+        // --- START OF NEW FILE HANDLING LOGIC ---
+        if ($request->hasFile('attachments')) {
+            $attachmentPaths = [];
+            foreach ($request->file('attachments') as $file) {
+                // Store the file in 'public/attachments' and get the path
+                $path = $file->store('attachments', 'public');
+                $attachmentPaths[] = $path;
+            }
+            // Save the array of paths to the database
+            $application->attachments = $attachmentPaths;
+        }
+        // --- END OF NEW FILE HANDLING LOGIC ---
+
         $application->save();
 
         return redirect()->route('dashboard')->with('message', 'Application submitted successfully!');

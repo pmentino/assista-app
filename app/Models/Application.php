@@ -11,9 +11,6 @@ class Application extends Model
 
     /**
      * The attributes that are mass assignable.
-     * We've added all the new fields here.
-     *
-     * @var array<int, string>
      */
     protected $fillable = [
         'user_id',
@@ -31,7 +28,18 @@ class Application extends Model
         'city',
         'contact_number',
         'email',
-        'status', // Added status to be safe
+        'status',
+        'attachments', // <-- I've added this to allow saving
+    ];
+
+    /**
+     * The attributes that should be cast.
+     * THIS IS THE FIX: It tells Laravel to automatically handle the array.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'attachments' => 'array',
     ];
 
     /**
