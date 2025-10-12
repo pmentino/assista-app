@@ -33,9 +33,25 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
+
+    // --- THIS IS THE UPDATED SECTION ---
     Route::get('/dashboard', function () {
-        return Inertia::render('Admin/Dashboard', ['auth' => Auth::user()]);
+        // 1. Calculate the statistics
+        $stats = [
+            'total' => ApplicationModel::count(),
+            'pending' => ApplicationModel::where('status', 'Pending')->count(),
+            'approved' => ApplicationModel::where('status', 'Approved')->count(),
+            'rejected' => ApplicationModel::where('status', 'Rejected')->count(),
+        ];
+
+        // 2. Return the view, keeping your original 'auth' prop
+        //    and ADDING the new 'stats' prop.
+        return Inertia::render('Admin/Dashboard', [
+            'auth' => Auth::user(),
+            'stats' => $stats
+        ]);
     })->name('dashboard');
+    // --- END OF UPDATE ---
 
     Route::get('/applications', [AidRequestController::class, 'index'])->name('applications.index');
 
@@ -46,12 +62,8 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         ]);
     })->name('applications.show');
 
-    // These are the new GET routes that will work
     Route::get('/applications/{application}/approve', [ApplicationController::class, 'approve'])->name('applications.approve');
     Route::get('/applications/{application}/reject', [ApplicationController::class, 'reject'])->name('applications.reject');
-
-    // The old PATCH route is no longer needed
-    // Route::patch('/applications/{application}/status', [ApplicationController::class, 'updateStatus'])->name('applications.status.update');
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
