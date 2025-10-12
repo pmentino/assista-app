@@ -16,7 +16,6 @@ class ApplicationController extends Controller
 
     public function store(Request $request)
     {
-        // THIS IS THE LINE WE ARE FIXING
         $validatedData = $request->validate([
             'program' => 'required|string|max:255',
             'date_of_incident' => 'nullable|date',
@@ -32,7 +31,7 @@ class ApplicationController extends Controller
             'city' => 'required|string|max:255',
             'contact_number' => 'required|string|max:20',
             'email' => 'required|email|max:255',
-            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240', // Changed from 2048 (2MB) to 10240 (10MB)
+            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
         ]);
 
         $application = new ApplicationModel($validatedData);
@@ -54,7 +53,7 @@ class ApplicationController extends Controller
 
     public function approve(ApplicationModel $application)
     {
-        $application->update(['status' => 'Approved']);
+        $application->update(['status' => 'Approved', 'remarks' => null]); // Also clears remarks on approval
         return redirect()->back()->with('message', 'Application has been approved.');
     }
 
@@ -62,5 +61,19 @@ class ApplicationController extends Controller
     {
         $application->update(['status' => 'Rejected']);
         return redirect()->back()->with('message', 'Application has been rejected.');
+    }
+
+    // --- THIS IS THE NEW FUNCTION TO SAVE REMARKS ---
+    public function addRemark(Request $request, ApplicationModel $application)
+    {
+        $request->validate([
+            'remarks' => 'nullable|string',
+        ]);
+
+        $application->update([
+            'remarks' => $request->remarks,
+        ]);
+
+        return redirect()->back()->with('message', 'Remark saved successfully.');
     }
 }

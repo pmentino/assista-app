@@ -29,7 +29,8 @@ class Application extends Model
         'contact_number',
         'email',
         'status',
-        'attachments', // <-- I've added this to allow saving
+        'attachments',
+        'remarks', // <-- I've added this to allow saving
     ];
 
     /**

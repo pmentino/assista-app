@@ -34,24 +34,18 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
 
-    // --- THIS IS THE UPDATED SECTION ---
     Route::get('/dashboard', function () {
-        // 1. Calculate the statistics
         $stats = [
             'total' => ApplicationModel::count(),
             'pending' => ApplicationModel::where('status', 'Pending')->count(),
             'approved' => ApplicationModel::where('status', 'Approved')->count(),
             'rejected' => ApplicationModel::where('status', 'Rejected')->count(),
         ];
-
-        // 2. Return the view, keeping your original 'auth' prop
-        //    and ADDING the new 'stats' prop.
         return Inertia::render('Admin/Dashboard', [
             'auth' => Auth::user(),
             'stats' => $stats
         ]);
     })->name('dashboard');
-    // --- END OF UPDATE ---
 
     Route::get('/applications', [AidRequestController::class, 'index'])->name('applications.index');
 
@@ -67,6 +61,9 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
+
+    // --- THIS IS THE NEW ROUTE FOR SAVING REMARKS ---
+    Route::post('/applications/{application}/remarks', [ApplicationController::class, 'addRemark'])->name('applications.remarks.store');
 });
 
 require __DIR__.'/auth.php';
