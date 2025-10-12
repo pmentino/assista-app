@@ -1,19 +1,17 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
-import { useState, useEffect } from 'react'; // <-- Import useEffect here
+import { useState, useEffect } from 'react';
 
 export default function ApplicationShow({ auth, application: initialApplication }) {
     const [application, setApplication] = useState(initialApplication);
 
-    // This useEffect hook listens for changes to the incoming application data
-    // and updates the component's state, which refreshes the screen.
     useEffect(() => {
         setApplication(initialApplication);
     }, [initialApplication]);
 
     return (
         <AuthenticatedLayout
-            user={auth}
+            user={auth.user}
             header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Application Details</h2>}
         >
             <Head title={`Application #${application.id}`} />
@@ -40,7 +38,9 @@ export default function ApplicationShow({ auth, application: initialApplication 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
                                     <p><strong>Name:</strong> {application.user.name}</p>
                                     <p><strong>Birth Date:</strong> {application.birth_date}</p>
-                                    <p><strong>Address:</strong> {application.address}</p>
+                                    <p><strong>Sex:</strong> {application.sex}</p>
+                                    <p><strong>Civil Status:</strong> {application.civil_status}</p>
+                                    <p><strong>Address:</strong> {`${application.house_no || ''} ${application.barangay}, ${application.city}`}</p>
                                     <p><strong>Contact #:</strong> {application.contact_number}</p>
                                     <p><strong>Email:</strong> {application.email}</p>
                                 </div>
@@ -51,6 +51,24 @@ export default function ApplicationShow({ auth, application: initialApplication 
                                 <p><strong>Program:</strong> {application.program}</p>
                                 <p><strong>Date of Incident:</strong> {application.date_of_incident || 'N/A'}</p>
                             </div>
+
+                            {/* --- NEW ATTACHMENTS SECTION --- */}
+                            {application.attachments && application.attachments.length > 0 && (
+                                <div>
+                                    <h4 className="font-bold text-lg mt-4">Attachment Files</h4>
+                                    <ul className="list-disc list-inside mt-2 space-y-1">
+                                        {application.attachments.map((file, index) => (
+                                            <li key={index}>
+                                                <a href={`/storage/${file}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                                    Attachment {index + 1}
+                                                </a>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                            {/* --- END OF NEW SECTION --- */}
+
 
                             <div className="mt-6">
                                 <Link href={route('admin.applications.index')} className="text-blue-600 hover:underline">
@@ -65,24 +83,35 @@ export default function ApplicationShow({ auth, application: initialApplication 
                             <div className="p-6 text-gray-900">
                                 <h3 className="text-lg font-medium text-gray-900">Admin Actions</h3>
                                 <div className="mt-4 flex items-center space-x-4">
-                                    <Link
-                                        href={route('admin.applications.approve', application.id)}
-                                        as="button"
-                                        method="get"
-                                        preserveState={false} // Ensures component gets fresh data
-                                        className="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 active:bg-green-700"
-                                    >
-                                        Approve
-                                    </Link>
-                                    <Link
-                                        href={route('admin.applications.reject', application.id)}
-                                        as="button"
-                                        method="get"
-                                        preserveState={false} // Ensures component gets fresh data
-                                        className="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 active:bg-red-700"
-                                    >
-                                        Reject
-                                    </Link>
+
+                                    {/* --- APPROVE BUTTON WITH TOOLTIP --- */}
+                                    <div className="relative group">
+                                        <Link
+                                            href={route('admin.applications.approve', application.id)}
+                                            as="button" method="get" preserveState={false}
+                                            className="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 active:bg-green-700"
+                                        >
+                                            Approve
+                                        </Link>
+                                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-gray-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                            Approve this application
+                                        </span>
+                                    </div>
+
+                                    {/* --- REJECT BUTTON WITH TOOLTIP --- */}
+                                    <div className="relative group">
+                                        <Link
+                                            href={route('admin.applications.reject', application.id)}
+                                            as="button" method="get" preserveState={false}
+                                            className="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 active:bg-red-700"
+                                        >
+                                            Reject
+                                        </Link>
+                                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-gray-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                            Reject this application
+                                        </span>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>

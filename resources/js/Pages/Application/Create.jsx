@@ -8,8 +8,6 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 export default function Create() {
     const { auth } = usePage().props;
 
-    // This is the key change. We safely check if auth and auth.user exist.
-    // The '?.' is called "optional chaining". It prevents crashes.
     const userName = auth?.user?.name || '';
     const userEmail = auth?.user?.email || '';
 
@@ -56,7 +54,7 @@ export default function Create() {
 
     return (
         <AuthenticatedLayout
-            user={auth?.user} // Also using optional chaining here to be safe
+            user={auth?.user}
             header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Applicants Form</h2>}
         >
             <Head title="File Application" />
@@ -66,7 +64,7 @@ export default function Create() {
                         <form onSubmit={submit} className="p-6 md:p-8 space-y-8">
                             <h2 className="text-2xl font-bold text-gray-800">FILE APPLICATION</h2>
 
-                            {/* Program Details and the rest of the form is unchanged */}
+                            {/* Program Details Section */}
                             <section className="space-y-4">
                                 <h3 className="text-lg font-medium text-gray-900">PROGRAM</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -88,6 +86,7 @@ export default function Create() {
                                 </div>
                             </section>
 
+                            {/* Personal Details Section */}
                             <section className="space-y-4">
                                 <h3 className="text-lg font-medium text-gray-900">PERSONAL DETAILS</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -156,6 +155,7 @@ export default function Create() {
                                 </div>
                             </section>
 
+                            {/* Contact Information Section */}
                             <section className="space-y-4">
                                 <h3 className="text-lg font-medium text-gray-900">CONTACT INFORMATION</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -172,16 +172,31 @@ export default function Create() {
                                 </div>
                             </section>
 
+                            {/* --- ATTACHMENT FILES SECTION (WITH TOOLTIPS) --- */}
                             <section className="space-y-4">
                                 <h3 className="text-lg font-medium text-gray-900">ATTACHMENT FILES</h3>
                                 {data.attachments.map((file, index) => (
                                     <div key={index} className="flex items-center space-x-2">
                                         <input type="file" onChange={(e) => handleFileChange(e, index)} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
-                                        {data.attachments.length > 0 && <button type="button" onClick={() => removeFileField(index)} className="bg-red-500 text-white p-2 rounded-md">-</button>}
+
+                                        {data.attachments.length > 0 &&
+                                            <div className="relative group">
+                                                <button type="button" onClick={() => removeFileField(index)} className="bg-red-500 text-white p-2 rounded-md">-</button>
+                                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-gray-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                                    Remove File
+                                                </span>
+                                            </div>
+                                        }
                                     </div>
                                 ))}
-                                <button type="button" onClick={addFileField} className="bg-blue-500 text-white py-1 px-3 rounded-md">+</button>
+                                <div className="relative group inline-block">
+                                    <button type="button" onClick={addFileField} className="bg-blue-500 text-white py-1 px-3 rounded-md">+</button>
+                                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-gray-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                        Add Another File
+                                    </span>
+                                </div>
                             </section>
+                            {/* --- END OF CHANGES --- */}
 
                             <div className="flex items-center justify-center mt-8">
                                 <PrimaryButton className="w-full justify-center !py-3 !text-base" disabled={processing}>
