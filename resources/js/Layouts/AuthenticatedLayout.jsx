@@ -5,8 +5,6 @@ import { Toaster, toast } from 'react-hot-toast';
 
 export default function AuthenticatedLayout({ user, header, children }) {
     const { props } = usePage();
-
-    // This line is now safe. If 'user' is undefined, 'isAdmin' will be false.
     const isAdmin = user && user.role === 'admin';
 
     useEffect(() => {
@@ -31,6 +29,9 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                     <>
                                         <Link href={route('admin.dashboard')} className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (route().current('admin.dashboard') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}>Admin Dashboard</Link>
                                         <Link href={route('admin.applications.index')} className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (route().current('admin.applications.index') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}>All Applications</Link>
+
+                                        {/* THIS IS THE NEW LINK FOR THE REPORTS PAGE */}
+                                        <Link href={route('admin.reports.index')} className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (route().current('admin.reports.index') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}>Reports</Link>
                                     </>
                                 )}
                             </div>
@@ -41,7 +42,6 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                     <Dropdown.Trigger>
                                         <span className="inline-flex rounded-md">
                                             <button type="button" className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-200 bg-blue-800 hover:text-white focus:outline-none">
-                                                {/* THIS IS THE FIX: Check if user exists before showing name */}
                                                 { user ? user.name : 'Account' }
                                                 <svg className="ml-2 -mr-0.5 h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
                                             </button>

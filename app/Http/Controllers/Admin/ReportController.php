@@ -4,32 +4,34 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Application;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; // <-- 1. IMPORT AUTH
 use Inertia\Inertia;
+use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ApplicationsExport;
 
 class ReportController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $stats = [
-            'pending' => Application::where('status', 'Pending')->count(),
-            'approved' => Application::where('status', 'Approved')->count(),
-            'rejected' => Application::where('status', 'Rejected')->count(),
-            'total' => Application::count(),
-        ];
+        $filters = $request->only('status', 'program');
 
-        // 2. PASS THE AUTH USER TO THE PAGE
+        $applications = Application::with('user')
+            ->when($request->input('status'), fn($query, $status) => $query->where('status', $status))
+            ->when($request->input('program'), fn($query, $program) => $query->where('program', $program))
+            ->latest()
+            ->get();
+
         return Inertia::render('Admin/Reports/Index', [
-            'auth' => Auth::user(),
-            'stats' => $stats
+            'applications' => $applications,
+            'filters' => $filters,
         ]);
     }
 
-    public function export()
+    // This function now reads the filters from the request
+    public function export(Request $request)
     {
-        return Excel::download(new ApplicationsExport, 'applications.csv');
+        $filters = $request->only('status', 'program');
+
+        return Excel::download(new ApplicationsExport($filters), 'applications.xlsx');
     }
 }
