@@ -20,13 +20,13 @@ export default function Welcome(props) {
         <>
             <Head title="Welcome to Assista" />
             <div className="min-h-screen bg-white text-gray-800">
-                <header id="home" className="bg-blue-800 shadow-sm sticky top-0 z-50">
-                    {/* ... Header and Mobile Menu code is unchanged ... */}
+                {/* Header is no longer the 'home' anchor point */}
+                <header className="bg-blue-800 shadow-sm sticky top-0 z-50">
                     <div className="container mx-auto flex items-center justify-between p-4">
-                        <div className="flex items-center">
+                        <a href="#home" className="flex items-center">
                             <img src="/images/logo.png" alt="Assista Logo" className="h-10 w-auto mr-3" />
                             <span className="text-2xl font-bold text-white">ASSISTA</span>
-                        </div>
+                        </a>
                         <nav className="hidden md:flex items-center space-x-8">
                             <a href="#home" className="text-gray-200 hover:text-white font-medium">HOME</a>
                             <a href="#services" className="text-gray-200 hover:text-white font-medium">SERVICES</a>
@@ -68,12 +68,12 @@ export default function Welcome(props) {
                 )}
 
 
-                {/* Main Hero Section */}
-                <main className="container mx-auto mt-16 px-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center min-h-[80vh]">
-                        <div className="text-center md:text-left">
+                {/* --- THIS IS THE FIX: id="home" is now on the <main> tag --- */}
+                <main id="home" className="container mx-auto mt-16 px-4">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-12 min-h-[90vh]">
+                        <div className="md:w-1/2 text-center md:text-left pt-16 md:pt-0">
                             <img src="/images/dswd-logo.png" alt="DSWD Logo" className="h-24 md:h-32 w-auto mb-6 mx-auto md:mx-0" />
-                            <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900 leading-tight">
+                            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight">
                                 Assistance to Individuals in Crisis Situation (AICS)
                             </h1>
                             <p className="mt-4 text-lg text-gray-600">
@@ -94,40 +94,33 @@ export default function Welcome(props) {
                                 </a>
                             </div>
                         </div>
-                        <div className="hidden md:block">
-                            <img src="/images/assista-bg.png" alt="Illustration of people receiving aid" className="w-full h-auto max-w-lg mx-auto" />
+                        <div className="md:w-1/2 flex items-center justify-center">
+                            <img src="/images/assista-bg.png" alt="Illustration of people receiving aid" className="w-full h-auto max-w-lg" />
                         </div>
                     </div>
                 </main>
 
-                {/* --- SERVICES SECTION (WITH HOVER EFFECTS) --- */}
+
+                {/* --- Services Section --- */}
                 <section id="services" className="py-20 bg-gray-50">
                     <div className="container mx-auto px-4">
                         <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Our Services</h2>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-
-                            {/* Card 1 */}
-                            <div className="p-8 bg-white rounded-lg shadow-lg transform transition duration-300 hover:scale-105 hover:shadow-2xl">
+                            <div className="p-8 bg-white rounded-lg shadow-lg transform transition duration-300 hover:scale-105 hover:shadow-xl">
                                 <h3 className="text-xl font-semibold mb-2">Medical Assistance</h3>
                                 <p className="text-gray-600">Support for hospitalization expenses, cost of medicines, and other medical treatments.</p>
                             </div>
-
-                            {/* Card 2 */}
-                            <div className="p-8 bg-white rounded-lg shadow-lg transform transition duration-300 hover:scale-105 hover:shadow-2xl">
+                            <div className="p-8 bg-white rounded-lg shadow-lg transform transition duration-300 hover:scale-105 hover:shadow-xl">
                                 <h3 className="text-xl font-semibold mb-2">Burial Assistance</h3>
                                 <p className="text-gray-600">Financial aid to help cover funeral and burial expenses for deceased family members.</p>
                             </div>
-
-                            {/* Card 3 */}
-                            <div className="p-8 bg-white rounded-lg shadow-lg transform transition duration-300 hover:scale-105 hover:shadow-2xl">
+                            <div className="p-8 bg-white rounded-lg shadow-lg transform transition duration-300 hover:scale-105 hover:shadow-xl">
                                 <h3 className="text-xl font-semibold mb-2">Food Assistance</h3>
                                 <p className="text-gray-600">Provision of food packs or financial support for families unable to secure their basic food needs.</p>
                             </div>
-
                         </div>
                     </div>
                 </section>
-                {/* --- END OF CHANGES --- */}
 
                 {/* --- About Section --- */}
                 <section id="about" className="py-20">
