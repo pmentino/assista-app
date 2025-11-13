@@ -18,7 +18,6 @@ return new class extends Migration
         $table->string('first_name');
         $table->string('last_name');
         $table->date('birth_date');
-        // The 'address' line should NOT be here.
         $table->string('contact_number');
         $table->string('email');
         $table->string('program');

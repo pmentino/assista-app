@@ -30,7 +30,7 @@ class Application extends Model
         'email',
         'status',
         'attachments',
-        'remarks', // <-- I've added this to allow saving
+        'remarks', 
     ];
 
     /**

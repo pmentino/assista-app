@@ -31,7 +31,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         return array_merge(parent::share($request), [
-            // THIS 'auth' SECTION WAS MISSING FROM YOUR FILE
+
             'auth' => [
                 'user' => $request->user(),
             ],
@@ -40,7 +40,7 @@ class HandleInertiaRequests extends Middleware
                     'location' => $request->url(),
                 ]);
             },
-            // This 'flash' section was also missing, which is needed for notifications
+            
             'flash' => [
                 'message' => fn () => $request->session()->get('message'),
             ],

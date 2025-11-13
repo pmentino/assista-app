@@ -50,7 +50,7 @@ class User extends Authenticatable
     /**
      * Get the applications for the user.
      */
-    // THIS IS THE NEW FUNCTION
+    
     public function applications(): HasMany
     {
         return $this->hasMany(Application::class);

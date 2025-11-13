@@ -12,7 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('applications', function (Blueprint $table) {
-            // This adds a new 'text' column that can hold long comments.
             $table->text('remarks')->nullable()->after('status');
         });
     }

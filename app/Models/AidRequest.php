@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\Beneficiary; // <-- ADD THIS IMPORT STATEMENT
+use App\Models\Beneficiary; 
 
 class AidRequest extends Model
 {

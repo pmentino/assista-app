@@ -6,6 +6,11 @@ use App\Models\Application as ApplicationModel;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http; // <-- ADDED: This is Laravel's tool for sending data
+
+// We no longer need Mailtrap, so these are removed:
+// use Illuminate\Support\Facades\Mail;
+// use App\Mail\ApplicationStatusUpdated;
 
 class ApplicationController extends Controller
 {
@@ -53,17 +58,46 @@ class ApplicationController extends Controller
 
     public function approve(ApplicationModel $application)
     {
-        $application->update(['status' => 'Approved', 'remarks' => null]); // Also clears remarks on approval
+        $application->update(['status' => 'Approved', 'remarks' => null]);
+        $application->load('user'); // Make sure user data is loaded
+
+        // --- REPLACED MAILTRAP WITH MAKE.COM WEBHOOK ---
+        $webhookUrl = env('MAKE_WEBHOOK_URL'); // Get URL directly from .env
+        if ($application->user && $application->user->email && $webhookUrl) {
+            Http::post($webhookUrl, [
+                'email' => $application->user->email,
+                'name' => $application->user->name,
+                'status' => 'Approved',
+                'program' => $application->program,
+                'remarks' => $application->remarks, // This will be null, which is correct
+            ]);
+        }
+        // --- END OF CHANGE ---
+
         return redirect()->back()->with('message', 'Application has been approved.');
     }
 
     public function reject(ApplicationModel $application)
     {
         $application->update(['status' => 'Rejected']);
+        $application->load('user'); // Make sure user data is loaded
+
+        // --- REPLACED MAILTRAP WITH MAKE.COM WEBHOOK ---
+        $webhookUrl = env('MAKE_WEBHOOK_URL'); // Get URL directly from .env
+        if ($application->user && $application->user->email && $webhookUrl) {
+            Http::post($webhookUrl, [
+                'email' => $application->user->email,
+                'name' => $application->user->name,
+                'status' => 'Rejected',
+                'program' => $application->program,
+                'remarks' => $application->remarks, // This will include the rejection remark
+            ]);
+        }
+        // --- END OF CHANGE ---
+
         return redirect()->back()->with('message', 'Application has been rejected.');
     }
 
-    // --- THIS IS THE NEW FUNCTION TO SAVE REMARKS ---
     public function addRemark(Request $request, ApplicationModel $application)
     {
         $request->validate([

@@ -62,7 +62,7 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 
-    // --- THIS IS THE NEW ROUTE FOR SAVING REMARKS ---
+    // NEW ROUTE FOR SAVING REMARKS
     Route::post('/applications/{application}/remarks', [ApplicationController::class, 'addRemark'])->name('applications.remarks.store');
 });
 

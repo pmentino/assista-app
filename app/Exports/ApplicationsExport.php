@@ -17,11 +17,11 @@ class ApplicationsExport implements FromQuery, WithHeadings, WithMapping
     }
 
     public function query()
-    {
-        // Start building the query
+    {   
+
         $query = Application::with('user');
 
-        // Apply filters just like we did in the controller
+
         if (!empty($this->filters['status'])) {
             $query->where('status', $this->filters['status']);
         }
