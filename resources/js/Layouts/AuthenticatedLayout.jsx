@@ -29,6 +29,9 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                     <>
                                         <Link href={route('admin.dashboard')} className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (route().current('admin.dashboard') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}>Admin Dashboard</Link>
                                         <Link href={route('admin.applications.index')} className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (route().current('admin.applications.index') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}>All Applications</Link>
+                                        <Link href={route('admin.news.index')} className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (route().current('admin.news.*') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}>
+    News / Updates
+</Link>
 
                                         {/* THE NEW LINK FOR THE REPORTS PAGE */}
                                         <Link href={route('admin.reports.index')} className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (route().current('admin.reports.index') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}>Reports</Link>

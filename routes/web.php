@@ -4,15 +4,21 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\Admin\AidRequestController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\NewsController; // <-- Added Import
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Models\Application as ApplicationModel;
+use App\Models\News; // <-- Don't forget to import the model at the top of the file!
 
 Route::get('/', function () {
+    // Fetch the latest 3 news articles
+    $news = News::latest()->take(3)->get();
+
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
+        'news' => $news, // Pass the news to the frontend
     ]);
 });
 
@@ -62,8 +68,10 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 
-    // NEW ROUTE FOR SAVING REMARKS
     Route::post('/applications/{application}/remarks', [ApplicationController::class, 'addRemark'])->name('applications.remarks.store');
+
+    // --- NEW NEWS ROUTES ---
+    Route::resource('news', NewsController::class);
 });
 
 require __DIR__.'/auth.php';

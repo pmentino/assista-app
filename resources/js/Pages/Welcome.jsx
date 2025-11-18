@@ -13,22 +13,27 @@ const CloseIcon = () => (
     </svg>
 );
 
-export default function Welcome(props) {
+// We accept the 'news' prop here
+export default function Welcome({ news }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     return (
         <>
             <Head title="Welcome to Assista" />
             <div className="min-h-screen bg-white text-gray-800">
-                {/* Header is no longer the 'home' anchor point */}
-                <header className="bg-blue-800 shadow-sm sticky top-0 z-50">
+                <header id="home" className="bg-blue-800 shadow-sm sticky top-0 z-50">
                     <div className="container mx-auto flex items-center justify-between p-4">
-                        <a href="#home" className="flex items-center">
+                        <a href="#home" className="flex items-center cursor-pointer">
                             <img src="/images/logo.png" alt="Assista Logo" className="h-10 w-auto mr-3" />
                             <span className="text-2xl font-bold text-white">ASSISTA</span>
                         </a>
+
                         <nav className="hidden md:flex items-center space-x-8">
                             <a href="#home" className="text-gray-200 hover:text-white font-medium">HOME</a>
+                            {/* Added a link to the News section */}
+                            {news && news.length > 0 && (
+                                <a href="#news" className="text-gray-200 hover:text-white font-medium">NEWS</a>
+                            )}
                             <a href="#services" className="text-gray-200 hover:text-white font-medium">SERVICES</a>
                             <a href="#about" className="text-gray-200 hover:text-white font-medium">ABOUT</a>
                             <Link
@@ -38,6 +43,7 @@ export default function Welcome(props) {
                                 REGISTER
                             </Link>
                         </nav>
+
                         <div className="md:hidden">
                             <button onClick={() => setMobileMenuOpen(true)} className="text-white">
                                 <MenuIcon />
@@ -45,6 +51,7 @@ export default function Welcome(props) {
                         </div>
                     </div>
                 </header>
+
                 {mobileMenuOpen && (
                     <div className="md:hidden fixed inset-0 z-50">
                         <div className="fixed inset-0 bg-black bg-opacity-25" onClick={() => setMobileMenuOpen(false)} />
@@ -57,6 +64,10 @@ export default function Welcome(props) {
                             </div>
                             <div className="flex flex-col space-y-4">
                                 <a href="#home" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-semibold text-gray-900 hover:bg-gray-50 rounded-md px-3">HOME</a>
+                                {/* Added News link to mobile menu */}
+                                {news && news.length > 0 && (
+                                    <a href="#news" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-semibold text-gray-900 hover:bg-gray-50 rounded-md px-3">NEWS</a>
+                                )}
                                 <a href="#services" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-semibold text-gray-900 hover:bg-gray-50 rounded-md px-3">SERVICES</a>
                                 <a href="#about" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-semibold text-gray-900 hover:bg-gray-50 rounded-md px-3">ABOUT</a>
                                 <hr className="my-4" />
@@ -68,9 +79,9 @@ export default function Welcome(props) {
                 )}
 
 
-                {/* --- THIS IS THE FIX: id="home" is now on the <main> tag --- */}
-                <main id="home" className="container mx-auto mt-16 px-4">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-12 min-h-[90vh]">
+                {/* Main Hero Section */}
+                <main className="container mx-auto mt-16 px-4">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-12 min-h-[80vh]">
                         <div className="md:w-1/2 text-center md:text-left pt-16 md:pt-0">
                             <img src="/images/dswd-logo.png" alt="DSWD Logo" className="h-24 md:h-32 w-auto mb-6 mx-auto md:mx-0" />
                             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight">
@@ -100,8 +111,35 @@ export default function Welcome(props) {
                     </div>
                 </main>
 
+                {/* --- THIS IS THE NEW NEWS SECTION --- */}
+                {news && news.length > 0 && (
+                    <section id="news" className="py-20 bg-white">
+                        <div className="container mx-auto px-4">
+                            <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Latest Updates</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                {news.map((article) => (
+                                    <div key={article.id} className="bg-gray-50 rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                                        {article.image_path && (
+                                            <img
+                                                src={`/storage/${article.image_path}`}
+                                                alt={article.title}
+                                                className="w-full h-48 object-cover"
+                                            />
+                                        )}
+                                        <div className="p-6">
+                                            <p className="text-sm text-gray-500 mb-2">{new Date(article.created_at).toLocaleDateString()}</p>
+                                            <h3 className="text-xl font-bold text-gray-900 mb-2">{article.title}</h3>
+                                            <p className="text-gray-600 line-clamp-3">{article.content}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                )}
+                {/* --- END OF NEWS SECTION --- */}
 
-                {/* --- Services Section --- */}
+                {/* Services Section */}
                 <section id="services" className="py-20 bg-gray-50">
                     <div className="container mx-auto px-4">
                         <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Our Services</h2>
@@ -122,7 +160,7 @@ export default function Welcome(props) {
                     </div>
                 </section>
 
-                {/* --- About Section --- */}
+                {/* About Section */}
                 <section id="about" className="py-20">
                     <div className="container mx-auto px-4">
                         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
