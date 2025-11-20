@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Models\Application as ApplicationModel;
-use App\Models\News; // <-- Don't forget to import the model at the top of the file!
+use App\Models\News;
+use App\Http\Controllers\Staff\StaffController; // <-- Don't forget to import the model at the top of the file!
 
 Route::get('/', function () {
     // Fetch the latest 3 news articles
@@ -36,6 +37,18 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/applications/create', [ApplicationController::class, 'create'])->name('applications.create');
     Route::post('/applications', [ApplicationController::class, 'store'])->name('applications.store');
+});
+
+Route::middleware(['auth', 'verified', 'is_staff'])->prefix('staff')->name('staff.')->group(function () {
+
+    Route::get('/dashboard', [StaffController::class, 'dashboard'])->name('dashboard');
+
+    // Staff can view applications but maybe with limited actions
+    Route::get('/applications', [StaffController::class, 'applicationsIndex'])->name('applications.index');
+    Route::get('/applications/{application}', [StaffController::class, 'applicationsShow'])->name('applications.show');
+
+    // Staff can add remarks but maybe NOT approve/reject (depending on your requirements)
+    Route::post('/applications/{application}/remarks', [ApplicationController::class, 'addRemark'])->name('applications.remarks.store');
 });
 
 Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {

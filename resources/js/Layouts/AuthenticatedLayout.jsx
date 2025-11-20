@@ -5,7 +5,10 @@ import { Toaster, toast } from 'react-hot-toast';
 
 export default function AuthenticatedLayout({ user, header, children }) {
     const { props } = usePage();
+
+    // Check roles safely
     const isAdmin = user && user.role === 'admin';
+    const isStaff = user && user.role === 'staff'; // <-- NEW CHECK
 
     useEffect(() => {
         if (props.flash && props.flash.message) {
@@ -24,19 +27,28 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                 <Link href="/"><img src="/images/logo.png" alt="Assista Logo" className="block h-9 w-auto" /></Link>
                             </div>
                             <div className="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
+                                {/* Applicant Link */}
                                 <Link href={route('dashboard')} className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (route().current('dashboard') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}>My Dashboard</Link>
+
+                                {/* Admin Links */}
                                 {isAdmin && (
                                     <>
                                         <Link href={route('admin.dashboard')} className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (route().current('admin.dashboard') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}>Admin Dashboard</Link>
                                         <Link href={route('admin.applications.index')} className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (route().current('admin.applications.index') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}>All Applications</Link>
-                                        <Link href={route('admin.news.index')} className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (route().current('admin.news.*') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}>
-    News / Updates
-</Link>
-
-                                        {/* THE NEW LINK FOR THE REPORTS PAGE */}
                                         <Link href={route('admin.reports.index')} className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (route().current('admin.reports.index') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}>Reports</Link>
+                                        <Link href={route('admin.news.index')} className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (route().current('admin.news.*') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}>News</Link>
                                     </>
                                 )}
+
+                                {/* --- NEW STAFF LINKS --- */}
+                                {isStaff && (
+                                    <>
+                                        <Link href={route('staff.dashboard')} className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (route().current('staff.dashboard') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}>Staff Dashboard</Link>
+                                        <Link href={route('staff.applications.index')} className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (route().current('staff.applications.index') ? 'border-yellow-400 text-white' : 'border-transparent text-white')}>Applications</Link>
+                                    </>
+                                )}
+                                {/* ----------------------- */}
+
                             </div>
                         </div>
                         <div className="hidden sm:flex sm:items-center sm:ml-6">
