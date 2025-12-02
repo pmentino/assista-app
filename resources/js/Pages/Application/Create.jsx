@@ -26,10 +26,20 @@ export default function Create() {
         city: 'Roxas City',
         contact_number: '',
         email: userEmail,
+        valid_id: null,
+        indigency_cert: null,
+        // We keep this just in case you re-enable multiple attachments later,
+        // but for now, we focus on the specific ones.
         attachments: [],
     });
 
-    const handleFileChange = (e, index) => {
+    // Handle specific file inputs
+    const handleFileChange = (field, file) => {
+        setData(field, file);
+    };
+
+    // Handle generic attachments (if you still use the list)
+    const handleAttachmentChange = (e, index) => {
         const newFiles = [...data.attachments];
         newFiles[index] = e.target.files[0];
         setData('attachments', newFiles);
@@ -47,6 +57,9 @@ export default function Create() {
 
     const submit = (e) => {
         e.preventDefault();
+
+        // When uploading files, Inertia automatically converts to FormData
+        // if it detects files in the data object, but 'forceFormData' ensures it.
         post(route('applications.store'), {
             forceFormData: true,
         });
@@ -61,7 +74,7 @@ export default function Create() {
             <div className="py-12 bg-gray-100">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <form onSubmit={submit} className="p-6 md:p-8 space-y-8">
+                        <form onSubmit={submit} className="p-6 md:p-8 space-y-8" encType="multipart/form-data">
                             <h2 className="text-2xl font-bold text-gray-800">FILE APPLICATION</h2>
 
                             {/* Program Details Section */}
@@ -172,12 +185,47 @@ export default function Create() {
                                 </div>
                             </section>
 
-                            {/* --- ATTACHMENT FILES SECTION (WITH TOOLTIPS) --- */}
+                            {/* --- REQUIRED DOCUMENTS SECTION --- */}
                             <section className="space-y-4">
-                                <h3 className="text-lg font-medium text-gray-900">ATTACHMENT FILES</h3>
+                                <h3 className="text-lg font-medium text-gray-900">REQUIRED DOCUMENTS</h3>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* Valid ID Upload */}
+                                    <div>
+                                        <InputLabel htmlFor="valid_id" value="Valid ID *" />
+                                        <input
+                                            id="valid_id"
+                                            type="file"
+                                            className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                            onChange={(e) => handleFileChange('valid_id', e.target.files[0])}
+                                            accept=".jpg,.jpeg,.png,.pdf"
+                                        />
+                                        <InputError message={errors.valid_id} className="mt-2" />
+                                        <p className="text-xs text-gray-500 mt-1">Upload a clear photo or scan of your government-issued ID.</p>
+                                    </div>
+
+                                    {/* Certificate of Indigency Upload */}
+                                    <div>
+                                        <InputLabel htmlFor="indigency_cert" value="Certificate of Indigency *" />
+                                        <input
+                                            id="indigency_cert"
+                                            type="file"
+                                            className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                            onChange={(e) => handleFileChange('indigency_cert', e.target.files[0])}
+                                            accept=".jpg,.jpeg,.png,.pdf"
+                                        />
+                                        <InputError message={errors.indigency_cert} className="mt-2" />
+                                        <p className="text-xs text-gray-500 mt-1">Upload your Certificate of Indigency from your Barangay.</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* --- OPTIONAL ATTACHMENTS SECTION --- */}
+                            <section className="space-y-4">
+                                <h3 className="text-lg font-medium text-gray-900">ADDITIONAL ATTACHMENTS (Optional)</h3>
                                 {data.attachments.map((file, index) => (
                                     <div key={index} className="flex items-center space-x-2">
-                                        <input type="file" onChange={(e) => handleFileChange(e, index)} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                                        <input type="file" onChange={(e) => handleAttachmentChange(e, index)} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
 
                                         {data.attachments.length > 0 &&
                                             <div className="relative group">
@@ -196,7 +244,6 @@ export default function Create() {
                                     </span>
                                 </div>
                             </section>
-                            {/* --- END OF CHANGES --- */}
 
                             <div className="flex items-center justify-center mt-8">
                                 <PrimaryButton className="w-full justify-center !py-3 !text-base" disabled={processing}>

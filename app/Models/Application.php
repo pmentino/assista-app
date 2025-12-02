@@ -27,10 +27,11 @@ class Application extends Model
         'barangay',
         'city',
         'contact_number',
+        'facebook_link',
         'email',
         'status',
         'attachments',
-        'remarks', 
+        'remarks',
     ];
 
     /**
