@@ -4,29 +4,42 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\Admin\AidRequestController;
 use App\Http\Controllers\Admin\ReportController;
-use App\Http\Controllers\Admin\NewsController; // Make sure this is imported
+use App\Http\Controllers\Admin\NewsController;
+use Illuminate\Foundation\Application; // <--- FIXES "Class Application not found"
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Models\Application as ApplicationModel;
-use App\Models\News; // Make sure this is imported
+use App\Models\News;
 
 Route::get('/', function () {
-    // Fetch the latest 3 news articles
-    $news = News::latest()->take(3)->get();
+    // Fetch latest news safely
+    $news = [];
+    try {
+        if (\Illuminate\Support\Facades\Schema::hasTable('news')) {
+             $news = News::latest()->take(3)->get();
+        }
+    } catch (\Exception $e) {
+        // Ignore errors if table is missing
+    }
 
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
+        'laravelVersion' => Application::VERSION,
+        'phpVersion' => PHP_VERSION,
         'news' => $news,
+        'auth' => ['user' => Auth::user()], // <--- FIXES "Undefined User" error
     ]);
 });
 
 Route::get('/dashboard', function () {
-    $applications = Auth::user() ? Auth::user()->applications()->latest()->get() : [];
-    // We rely on middleware for auth, so we don't pass it manually here anymore
+    $user = Auth::user();
+    $applications = $user ? $user->applications()->latest()->get() : [];
+
     return Inertia::render('Dashboard', [
-        'applications' => $applications
+        'applications' => $applications,
+        'auth' => [ 'user' => $user ],
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -38,14 +51,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/applications/create', [ApplicationController::class, 'create'])->name('applications.create');
     Route::post('/applications', [ApplicationController::class, 'store'])->name('applications.store');
 
-    // --- NEW ROUTES FOR RESUBMISSION ---
     Route::get('/applications/{application}/edit', [ApplicationController::class, 'edit'])->name('applications.edit');
     Route::post('/applications/{application}/update', [ApplicationController::class, 'update'])->name('applications.update');
-    // Note: using a distinct POST route for update to handle files reliably
 });
 
 Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
-
     Route::get('/dashboard', function () {
         $stats = [
             'total' => ApplicationModel::count(),
@@ -54,7 +64,8 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
             'rejected' => ApplicationModel::where('status', 'Rejected')->count(),
         ];
         return Inertia::render('Admin/Dashboard', [
-            'stats' => $stats
+            'stats' => $stats,
+            'auth' => [ 'user' => Auth::user() ]
         ]);
     })->name('dashboard');
 
@@ -62,19 +73,19 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
 
     Route::get('/applications/{application}', function (ApplicationModel $application) {
         return Inertia::render('Admin/ApplicationShow', [
-            'application' => $application->load('user')
+            'application' => $application->load('user'),
+            'auth' => [ 'user' => Auth::user() ]
         ]);
     })->name('applications.show');
 
     Route::get('/applications/{application}/approve', [ApplicationController::class, 'approve'])->name('applications.approve');
     Route::get('/applications/{application}/reject', [ApplicationController::class, 'reject'])->name('applications.reject');
+    Route::post('/applications/{application}/remarks', [ApplicationController::class, 'addRemark'])->name('applications.remarks.store');
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 
-    Route::post('/applications/{application}/remarks', [ApplicationController::class, 'addRemark'])->name('applications.remarks.store');
-
-    // News Routes
+    // Real News Routes
     Route::resource('news', NewsController::class);
 });
 

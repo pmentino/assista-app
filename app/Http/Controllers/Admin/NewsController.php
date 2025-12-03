@@ -5,23 +5,26 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\News;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth; // Added this
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class NewsController extends Controller
 {
     public function index()
     {
-        // Get all news, newest first
         $news = News::latest()->get();
         return Inertia::render('Admin/News/Index', [
-            'news' => $news
+            'news' => $news,
+            'auth' => ['user' => Auth::user()] // <--- FIXED: Passes user info to avoid crash
         ]);
     }
 
     public function create()
     {
-        return Inertia::render('Admin/News/Create');
+        return Inertia::render('Admin/News/Create', [
+            'auth' => ['user' => Auth::user()] // <--- FIXED: Passes user info here too
+        ]);
     }
 
     public function store(Request $request)
@@ -29,19 +32,21 @@ class NewsController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image' => 'nullable|image|max:2048',
         ]);
 
-        $news = new News($validated);
-
+        $imagePath = null;
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('news_images', 'public');
-            $news->image_path = $path;
+            $imagePath = $request->file('image')->store('news_images', 'public');
         }
 
-        $news->save();
+        News::create([
+            'title' => $validated['title'],
+            'content' => $validated['content'],
+            'image_path' => $imagePath,
+        ]);
 
-        return redirect()->route('admin.news.index')->with('message', 'News created successfully.');
+        return redirect()->route('admin.news.index')->with('message', 'News posted successfully!');
     }
 
     public function destroy(News $news)
@@ -49,6 +54,7 @@ class NewsController extends Controller
         if ($news->image_path) {
             Storage::disk('public')->delete($news->image_path);
         }
+
         $news->delete();
 
         return redirect()->back()->with('message', 'News deleted successfully.');

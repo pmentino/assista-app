@@ -200,10 +200,13 @@ class ApplicationController extends Controller
             'remarks' => 'nullable|string',
         ]);
 
+        // UPDATE: Determine status based on action
+        // Since this is the "Reject with Remarks" modal, we force status to Rejected
         $application->update([
             'remarks' => $request->remarks,
+            'status' => 'Rejected', // <--- THIS LINE IS CRITICAL
         ]);
 
-        return redirect()->back()->with('message', 'Remark saved successfully.');
+        return redirect()->back()->with('message', 'Application rejected successfully.');
     }
 }

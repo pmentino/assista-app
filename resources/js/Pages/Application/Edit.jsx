@@ -10,9 +10,9 @@ export default function Edit({ application }) {
 
     // Initialize form with existing application data
     const { data, setData, post, processing, errors } = useForm({
-        _method: 'put', // Spoof PUT method for Laravel update, though we use POST to send
+        // REMOVED: _method: 'put' (This was causing the 405 Error)
         program: application.program,
-        date_of_incident: application.date_of_incident,
+        date_of_incident: application.date_of_incident || '',
         first_name: application.first_name,
         middle_name: application.middle_name || '',
         last_name: application.last_name,
@@ -55,8 +55,7 @@ export default function Edit({ application }) {
     const submit = (e) => {
         e.preventDefault();
         // We post to the update route.
-        // Note: Inertia/Laravel file uploads often work best with POST and _method: put or just POST.
-        // Our route is defined as POST /applications/{id}/update to handle files cleanly.
+        // We do NOT use _method: 'put' anymore because the route is Route::post
         post(route('applications.update', application.id), {
             forceFormData: true,
         });
@@ -195,8 +194,8 @@ export default function Edit({ application }) {
                                 </div>
                             </section>
 
-                             {/* --- REQUIRED DOCUMENTS SECTION (With "Update" Logic) --- */}
-                             <section className="space-y-4">
+                            {/* --- REQUIRED DOCUMENTS SECTION (With "Update" Logic) --- */}
+                            <section className="space-y-4">
                                 <h3 className="text-lg font-medium text-gray-900">REQUIRED DOCUMENTS</h3>
                                 <p className="text-sm text-gray-600">Upload new files only if you want to replace the existing ones.</p>
 
@@ -235,7 +234,7 @@ export default function Edit({ application }) {
                                 {data.attachments.map((file, index) => (
                                     <div key={index} className="flex items-center space-x-2">
                                         <input type="file" onChange={(e) => handleAttachmentChange(e, index)} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
-                                        {/* ... remove button logic ... */}
+                                        <button type="button" onClick={() => removeFileField(index)} className="text-red-500 font-bold px-2">X</button>
                                     </div>
                                 ))}
                                 <div className="relative group inline-block">

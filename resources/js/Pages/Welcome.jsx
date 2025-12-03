@@ -13,14 +13,16 @@ const CloseIcon = () => (
     </svg>
 );
 
-// We accept the 'news' prop here
-export default function Welcome({ news }) {
+// Added 'auth' prop and defaulted 'news' to empty array
+export default function Welcome({ auth, news = [] }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     return (
         <>
             <Head title="Welcome to Assista" />
             <div className="min-h-screen bg-white text-gray-800">
+
+                {/* --- HEADER --- */}
                 <header id="home" className="bg-blue-800 shadow-sm sticky top-0 z-50">
                     <div className="container mx-auto flex items-center justify-between p-4">
                         <a href="#home" className="flex items-center cursor-pointer">
@@ -28,22 +30,40 @@ export default function Welcome({ news }) {
                             <span className="text-2xl font-bold text-white">ASSISTA</span>
                         </a>
 
+                        {/* DESKTOP NAV */}
                         <nav className="hidden md:flex items-center space-x-8">
                             <a href="#home" className="text-gray-200 hover:text-white font-medium">HOME</a>
-                            {/* Added a link to the News section */}
+
+                            {/* News Link (Only if news exists) */}
                             {news && news.length > 0 && (
                                 <a href="#news" className="text-gray-200 hover:text-white font-medium">NEWS</a>
                             )}
+
                             <a href="#services" className="text-gray-200 hover:text-white font-medium">SERVICES</a>
                             <a href="#about" className="text-gray-200 hover:text-white font-medium">ABOUT</a>
-                            <Link
-                                href={route('register')}
-                                className="bg-yellow-500 text-white font-bold py-2 px-6 rounded-md hover:bg-yellow-600 transition duration-300"
-                            >
-                                REGISTER
-                            </Link>
+
+                            {/* Auth Logic: Show Dashboard if logged in, else Register/Login */}
+                            {auth.user ? (
+                                <Link
+                                    href={route('dashboard')}
+                                    className="bg-yellow-500 text-white font-bold py-2 px-6 rounded-md hover:bg-yellow-600 transition duration-300"
+                                >
+                                    DASHBOARD
+                                </Link>
+                            ) : (
+                                <>
+                                    <Link href={route('login')} className="text-gray-200 hover:text-white font-medium">LOG IN</Link>
+                                    <Link
+                                        href={route('register')}
+                                        className="bg-yellow-500 text-white font-bold py-2 px-6 rounded-md hover:bg-yellow-600 transition duration-300"
+                                    >
+                                        REGISTER
+                                    </Link>
+                                </>
+                            )}
                         </nav>
 
+                        {/* Mobile Menu Button */}
                         <div className="md:hidden">
                             <button onClick={() => setMobileMenuOpen(true)} className="text-white">
                                 <MenuIcon />
@@ -52,10 +72,11 @@ export default function Welcome({ news }) {
                     </div>
                 </header>
 
+                {/* --- MOBILE MENU OVERLAY --- */}
                 {mobileMenuOpen && (
                     <div className="md:hidden fixed inset-0 z-50">
                         <div className="fixed inset-0 bg-black bg-opacity-25" onClick={() => setMobileMenuOpen(false)} />
-                        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-xs bg-white p-6">
+                        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-xs bg-white p-6 overflow-y-auto">
                             <div className="flex items-center justify-between mb-6">
                                 <span className="text-xl font-bold text-blue-800">MENU</span>
                                 <button onClick={() => setMobileMenuOpen(false)} className="text-gray-700">
@@ -64,22 +85,29 @@ export default function Welcome({ news }) {
                             </div>
                             <div className="flex flex-col space-y-4">
                                 <a href="#home" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-semibold text-gray-900 hover:bg-gray-50 rounded-md px-3">HOME</a>
-                                {/* Added News link to mobile menu */}
                                 {news && news.length > 0 && (
                                     <a href="#news" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-semibold text-gray-900 hover:bg-gray-50 rounded-md px-3">NEWS</a>
                                 )}
                                 <a href="#services" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-semibold text-gray-900 hover:bg-gray-50 rounded-md px-3">SERVICES</a>
                                 <a href="#about" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-semibold text-gray-900 hover:bg-gray-50 rounded-md px-3">ABOUT</a>
                                 <hr className="my-4" />
-                                <Link href={route('register')} className="block w-full text-center bg-yellow-500 text-white font-bold py-3 px-6 rounded-md hover:bg-yellow-600 transition duration-300">REGISTER</Link>
-                                <Link href={route('login')} className="block w-full text-center bg-blue-800 text-white font-bold py-3 px-6 rounded-md hover:bg-blue-900 transition duration-300">LOG IN</Link>
+
+                                {/* Mobile Auth Logic */}
+                                {auth.user ? (
+                                     <Link href={route('dashboard')} className="block w-full text-center bg-yellow-500 text-white font-bold py-3 px-6 rounded-md hover:bg-yellow-600 transition duration-300">DASHBOARD</Link>
+                                ) : (
+                                    <>
+                                        <Link href={route('register')} className="block w-full text-center bg-yellow-500 text-white font-bold py-3 px-6 rounded-md hover:bg-yellow-600 transition duration-300">REGISTER</Link>
+                                        <Link href={route('login')} className="block w-full text-center bg-blue-800 text-white font-bold py-3 px-6 rounded-md hover:bg-blue-900 transition duration-300 mt-2">LOG IN</Link>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
                 )}
 
 
-                {/* Main Hero Section */}
+                {/* --- HERO SECTION --- */}
                 <main className="container mx-auto mt-16 px-4">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-12 min-h-[80vh]">
                         <div className="md:w-1/2 text-center md:text-left pt-16 md:pt-0">
@@ -91,11 +119,12 @@ export default function Welcome({ news }) {
                                 Providing assistance and essential support to individuals in need.
                             </p>
                             <div className="mt-8 flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0 justify-center md:justify-start">
+                                {/* Smart Apply Button */}
                                 <Link
-                                    href={route('register')}
+                                    href={auth.user ? route('dashboard') : route('register')}
                                     className="w-full sm:w-auto text-center bg-blue-800 text-white font-bold py-4 px-8 rounded-md hover:bg-blue-900 transition duration-300"
                                 >
-                                    APPLY NOW
+                                    {auth.user ? 'GO TO DASHBOARD' : 'APPLY NOW'}
                                 </Link>
                                 <a
                                     href="#about"
@@ -106,12 +135,12 @@ export default function Welcome({ news }) {
                             </div>
                         </div>
                         <div className="md:w-1/2 flex items-center justify-center">
-                            <img src="/images/assista-bg.png" alt="Illustration of people receiving aid" className="w-full h-auto max-w-lg" />
+                            <img src="/images/assista-bg.png" alt="Illustration" className="w-full h-auto max-w-lg" />
                         </div>
                     </div>
                 </main>
 
-                {/* --- THIS IS THE NEW NEWS SECTION --- */}
+                {/* --- NEWS SECTION --- */}
                 {news && news.length > 0 && (
                     <section id="news" className="py-20 bg-white">
                         <div className="container mx-auto px-4">
@@ -137,9 +166,8 @@ export default function Welcome({ news }) {
                         </div>
                     </section>
                 )}
-                {/* --- END OF NEWS SECTION --- */}
 
-                {/* Services Section */}
+                {/* --- SERVICES SECTION --- */}
                 <section id="services" className="py-20 bg-gray-50">
                     <div className="container mx-auto px-4">
                         <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Our Services</h2>
@@ -160,13 +188,13 @@ export default function Welcome({ news }) {
                     </div>
                 </section>
 
-                {/* About Section */}
+                {/* --- ABOUT SECTION --- */}
                 <section id="about" className="py-20">
                     <div className="container mx-auto px-4">
                         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
                             <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">About Assista & AICS</h2>
                             <p className="text-gray-600 leading-7 text-center">
-                                The **Assista** system is a web-based platform designed to digitize and streamline the application process for the DSWD's **Assistance to Individuals in Crisis Situation (AICS)** program. AICS serves as a social safety net or a stop-gap measure to support the recovery of individuals and families from unexpected life events or crises. Our platform allows applicants to submit their requests for medical, burial, or food assistance online, reducing the need for travel and long queues. Administrators can efficiently manage, review, and update the status of these applications, ensuring a faster and more transparent process for everyone involved.
+                                The <strong>Assista</strong> system is a web-based platform designed to digitize and streamline the application process for the DSWD's <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> program. AICS serves as a social safety net or a stop-gap measure to support the recovery of individuals and families from unexpected life events or crises. Our platform allows applicants to submit their requests for medical, burial, or food assistance online, reducing the need for travel and long queues. Administrators can efficiently manage, review, and update the status of these applications, ensuring a faster and more transparent process for everyone involved.
                             </p>
                         </div>
                     </div>
