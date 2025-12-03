@@ -83,12 +83,22 @@ export default function Create() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <InputLabel htmlFor="program" value="Program *" />
-                                        <select id="program" name="program" value={data.program} onChange={(e) => setData('program', e.target.value)} className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                            <option value="">Choose your option</option>
-                                            <option value="AICS - Medical">AICS - Medical Assistance</option>
-                                            <option value="AICS - Burial">AICS - Burial Assistance</option>
-                                            <option value="AICS - Food">AICS - Food Assistance</option>
-                                        </select>
+                                        <select
+    id="program"
+    name="program"
+    value={data.program}
+    onChange={(e) => setData('program', e.target.value)}
+    className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+>
+    <option value="">Select Type of Assistance</option>
+    <option value="Laboratory Tests">Laboratory Tests</option>
+    <option value="Anti-Rabies Vaccine Treatment">Anti-Rabies Vaccine Treatment</option>
+    <option value="Funeral Assistance">Funeral Assistance</option>
+    <option value="Medicine Assistance">Medicine Assistance</option>
+    <option value="Hospitalization">Hospitalization</option>
+    <option value="Chemotherapy">Chemotherapy</option>
+    <option value="Diagnostic Blood Tests">Diagnostic Blood Tests</option>
+</select>
                                         <InputError message={errors.program} className="mt-2" />
                                     </div>
                                     <div>

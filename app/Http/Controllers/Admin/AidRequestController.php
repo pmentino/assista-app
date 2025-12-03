@@ -13,38 +13,48 @@ class AidRequestController extends Controller
     // The index method now accepts the Request object
     public function index(Request $request)
     {
-        // Get filter and sort parameters from the URL, with defaults
-        $filters = $request->only('status', 'program');
-        $sortBy = $request->input('sort_by', 'created_at'); // Default sort by date
-        $sortDirection = $request->input('sort_direction', 'desc'); // Default newest first
+        // Get filter, search, and sort parameters
+        // We added 'search' to the list of filters we accept
+        $filters = $request->only('status', 'program', 'search');
 
-        // Validate sort direction to prevent errors
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortDirection = $request->input('sort_direction', 'desc');
+
         if (!in_array($sortDirection, ['asc', 'desc'])) {
             $sortDirection = 'desc';
         }
 
-        // Build the query
         $applicationsQuery = Application::with('user')
-            // Apply status filter if provided
+            // --- NEW: Search Logic ---
+            ->when($request->input('search'), function ($query, $search) {
+                $query->where(function($q) use ($search) {
+                    // Search by ID, First Name, or Last Name
+                    $q->where('id', 'like', "%{$search}%")
+                      ->orWhere('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      // Optional: Search by user email if you want
+                      ->orWhereHas('user', function($q2) use ($search) {
+                          $q2->where('email', 'like', "%{$search}%");
+                      });
+                });
+            })
+            // --- End Search Logic ---
+
             ->when($request->input('status'), function ($query, $status) {
                 $query->where('status', $status);
             })
-            // Apply program filter if provided
             ->when($request->input('program'), function ($query, $program) {
                 $query->where('program', $program);
             })
-            // Apply sorting
             ->orderBy($sortBy, $sortDirection);
 
-        // Execute the query with pagination (15 items per page)
         $applications = $applicationsQuery->paginate(15)->withQueryString();
 
-        return Inertia::render('Admin/ApplicationsIndex', [ // <-- Ensure this matches your frontend file path
-            // Note: We don't need to pass 'auth' here, middleware handles it.
+        return Inertia::render('Admin/ApplicationsIndex', [
             'applications' => $applications,
-            'filters' => $filters, // Pass the current filters back to the view
-            'sort_by' => $sortBy, // Pass current sort column
-            'sort_direction' => $sortDirection, // Pass current sort direction
+            'filters' => $filters, // 'search' will be passed back here automatically
+            'sort_by' => $sortBy,
+            'sort_direction' => $sortDirection,
         ]);
     }
 }

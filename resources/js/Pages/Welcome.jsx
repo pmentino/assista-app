@@ -168,25 +168,78 @@ export default function Welcome({ auth, news = [] }) {
                 )}
 
                 {/* --- SERVICES SECTION --- */}
-                <section id="services" className="py-20 bg-gray-50">
-                    <div className="container mx-auto px-4">
-                        <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Our Services</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                            <div className="p-8 bg-white rounded-lg shadow-lg transform transition duration-300 hover:scale-105 hover:shadow-xl">
-                                <h3 className="text-xl font-semibold mb-2">Medical Assistance</h3>
-                                <p className="text-gray-600">Support for hospitalization expenses, cost of medicines, and other medical treatments.</p>
-                            </div>
-                            <div className="p-8 bg-white rounded-lg shadow-lg transform transition duration-300 hover:scale-105 hover:shadow-xl">
-                                <h3 className="text-xl font-semibold mb-2">Burial Assistance</h3>
-                                <p className="text-gray-600">Financial aid to help cover funeral and burial expenses for deceased family members.</p>
-                            </div>
-                            <div className="p-8 bg-white rounded-lg shadow-lg transform transition duration-300 hover:scale-105 hover:shadow-xl">
-                                <h3 className="text-xl font-semibold mb-2">Food Assistance</h3>
-                                <p className="text-gray-600">Provision of food packs or financial support for families unable to secure their basic food needs.</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+<section id="services" className="py-20 bg-gray-50">
+    <div className="container mx-auto px-4">
+        <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Our Services</h2>
+
+        {/* Changed from GRID to FLEXBOX.
+            'justify-center' ensures the last row (of 3 items) is perfectly centered.
+        */}
+        <div className="flex flex-wrap justify-center gap-6">
+
+            {/* Service Cards - Using fixed percentage widths to mimic a 4-column grid but with centering */}
+
+            <div className="w-full md:w-[45%] lg:w-[22%] p-6 bg-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center">
+                <div className="bg-blue-100 p-3 rounded-full mb-4">
+                    <svg className="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                </div>
+                <h3 className="text-lg font-bold mb-2 text-blue-800">Laboratory Tests</h3>
+                <p className="text-sm text-gray-600">Financial support for required medical laboratory examinations and workups.</p>
+            </div>
+
+            <div className="w-full md:w-[45%] lg:w-[22%] p-6 bg-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center">
+                <div className="bg-blue-100 p-3 rounded-full mb-4">
+                    <svg className="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <h3 className="text-lg font-bold mb-2 text-blue-800">Anti-Rabies Vaccine</h3>
+                <p className="text-sm text-gray-600">Assistance for animal bite treatment and vaccination courses.</p>
+            </div>
+
+            <div className="w-full md:w-[45%] lg:w-[22%] p-6 bg-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center">
+                <div className="bg-blue-100 p-3 rounded-full mb-4">
+                    <svg className="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 className="text-lg font-bold mb-2 text-blue-800">Funeral Assistance</h3>
+                <p className="text-sm text-gray-600">Support for burial and funeral expenses for indigent families.</p>
+            </div>
+
+            <div className="w-full md:w-[45%] lg:w-[22%] p-6 bg-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center">
+                <div className="bg-blue-100 p-3 rounded-full mb-4">
+                    <svg className="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                </div>
+                <h3 className="text-lg font-bold mb-2 text-blue-800">Medicine Assistance</h3>
+                <p className="text-sm text-gray-600">Provision for prescription medicines and maintenance drugs.</p>
+            </div>
+
+            {/* --- Second Row (Automatically Centered) --- */}
+
+            <div className="w-full md:w-[45%] lg:w-[22%] p-6 bg-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center">
+                <div className="bg-blue-100 p-3 rounded-full mb-4">
+                    <svg className="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                </div>
+                <h3 className="text-lg font-bold mb-2 text-blue-800">Hospitalization</h3>
+                <p className="text-sm text-gray-600">Help with hospital bills, confinement costs, and surgical procedures.</p>
+            </div>
+
+            <div className="w-full md:w-[45%] lg:w-[22%] p-6 bg-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center">
+                <div className="bg-blue-100 p-3 rounded-full mb-4">
+                    <svg className="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                </div>
+                <h3 className="text-lg font-bold mb-2 text-blue-800">Chemotherapy</h3>
+                <p className="text-sm text-gray-600">Financial aid specifically for cancer treatments and chemo sessions.</p>
+            </div>
+
+            <div className="w-full md:w-[45%] lg:w-[22%] p-6 bg-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center">
+                <div className="bg-blue-100 p-3 rounded-full mb-4">
+                    <svg className="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                </div>
+                <h3 className="text-lg font-bold mb-2 text-blue-800">Diagnostic Blood Tests</h3>
+                <p className="text-sm text-gray-600">Coverage for specialized blood chemistry and diagnostic scans.</p>
+            </div>
+
+        </div>
+    </div>
+</section>
 
                 {/* --- ABOUT SECTION --- */}
                 <section id="about" className="py-20">
