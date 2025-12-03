@@ -82,8 +82,15 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
     Route::get('/applications/{application}/reject', [ApplicationController::class, 'reject'])->name('applications.reject');
     Route::post('/applications/{application}/remarks', [ApplicationController::class, 'addRemark'])->name('applications.remarks.store');
 
+    // Reports & Exporting
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+
+    // IMPORTANT: We need TWO export routes to match your frontend logic
+    // 1. For Excel Export (if you still use it)
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
+
+    // 2. For PDF Export (the new feature)
+    Route::get('/reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
 
     // Real News Routes
     Route::resource('news', NewsController::class);
