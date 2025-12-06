@@ -184,4 +184,31 @@ class ApplicationController extends Controller
 
         return redirect()->back()->with('message', 'Remark saved.');
     }
+
+    // ... other methods ...
+
+    // NEW: Generate Claim Stub
+    public function generateClaimStub(ApplicationModel $application)
+    {
+        // Security Check: Ensure only the owner OR an admin can download this
+        if ($application->user_id !== Auth::id() && Auth::user()->type !== 'admin') {
+            abort(403);
+        }
+
+        // Must be approved to get a stub
+        if ($application->status !== 'Approved') {
+            return redirect()->back()->with('error', 'Claim stub is only available for approved applications.');
+        }
+
+        // Generate PDF
+        // Note: Make sure to import Pdf facade at the top: use Barryvdh\DomPDF\Facade\Pdf;
+        // And QR Code: use SimpleSoftwareIO\QrCode\Facades\QrCode;
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.claim_stub', [
+            'application' => $application
+        ]);
+
+        return $pdf->download('Claim_Stub_' . $application->id . '.pdf');
+    }
 }
+

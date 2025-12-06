@@ -52,6 +52,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/applications/{application}/edit', [ApplicationController::class, 'edit'])->name('applications.edit');
     Route::post('/applications/{application}/update', [ApplicationController::class, 'update'])->name('applications.update');
+
+    // Claim Stub Route
+    Route::get('/applications/{application}/claim-stub', [ApplicationController::class, 'generateClaimStub'])->name('applications.claim-stub');
 });
 
 Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
