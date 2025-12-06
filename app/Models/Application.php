@@ -9,9 +9,6 @@ class Application extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     */
     protected $fillable = [
         'user_id',
         'program',
@@ -27,27 +24,21 @@ class Application extends Model
         'barangay',
         'city',
         'contact_number',
-        'facebook_link',
         'email',
-        'status',
+        'facebook_link',
         'attachments',
+        'status',
         'remarks',
         'amount_released',
     ];
 
-    /**
-     * The attributes that should be cast.
-     * THIS IS THE FIX: It tells Laravel to automatically handle the array.
-     *
-     * @var array
-     */
+    // CRITICAL: This tells Laravel to treat the JSON 'attachments' column as a PHP Array
     protected $casts = [
         'attachments' => 'array',
+        'date_of_incident' => 'date',
+        'birth_date' => 'date',
     ];
 
-    /**
-     * Get the user that owns the application.
-     */
     public function user()
     {
         return $this->belongsTo(User::class);

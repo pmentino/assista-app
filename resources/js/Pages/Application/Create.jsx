@@ -3,7 +3,7 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage, router } from '@inertiajs/react'; // <--- Added router import
 import { useState, useEffect } from 'react';
 
 // --- CONFIGURATION: Requirements per Program ---
@@ -48,10 +48,8 @@ const REQUIREMENTS_MAP = {
 };
 
 export default function Create() {
-    // 1. Get auth from global props safely
     const { auth } = usePage().props;
 
-    // 2. Initialize Form with SAFE default values
     const { data, setData, post, processing, errors } = useForm({
         program: '',
         date_of_incident: '',
@@ -66,11 +64,8 @@ export default function Create() {
         barangay: '',
         city: 'Roxas City',
         contact_number: '',
-        // FIX: Safety check here prevents the crash!
         email: auth?.user?.email || '',
         facebook_link: '',
-
-        // File States
         valid_id: null,
         indigency_cert: null,
         attachments: []
@@ -95,12 +90,24 @@ export default function Create() {
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('applications.store'));
+
+        post(route('applications.store'), {
+            forceFormData: true,
+            onSuccess: () => {
+                // Clear form or show success message if needed
+                // Force redirect to dashboard
+                window.location.href = route('dashboard');
+            },
+            onError: (err) => {
+                console.error("Submission Errors:", err);
+                // Handle errors (e.g., show a toast notification)
+            },
+        });
     };
 
     return (
         <AuthenticatedLayout
-            user={auth?.user} // Pass user safely to layout
+            user={auth?.user}
             header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Apply for Assistance</h2>}
         >
             <Head title="Apply" />
@@ -250,7 +257,6 @@ export default function Create() {
                                             required
                                         >
                                             <option value="">Select Barangay</option>
-                                            {/* List of Barangays in Roxas City */}
                                             <option value="Adlawan">Adlawan</option>
                                             <option value="Bago">Bago</option>
                                             <option value="Balijuagan">Balijuagan</option>

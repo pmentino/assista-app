@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage; // Added for deleting old files if needed
+use Illuminate\Support\Facades\Storage;
 
 class ApplicationController extends Controller
 {
@@ -18,17 +18,7 @@ class ApplicationController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Duplicate Check
-        $existingApplication = ApplicationModel::where('user_id', Auth::id())
-            ->where('program', $request->program)
-            ->whereIn('status', ['Pending', 'Approved'])
-            ->first();
-
-        if ($existingApplication) {
-            return redirect()->back()->withErrors(['program' => 'You already have a pending or approved application for this program.']);
-        }
-
-        // 2. Validation
+        // 1. Validation
         $validatedData = $request->validate([
             'program' => 'required|string|max:255',
             'date_of_incident' => 'nullable|date',
@@ -47,46 +37,57 @@ class ApplicationController extends Controller
             'facebook_link' => 'nullable|string|max:255',
             'valid_id' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
             'indigency_cert' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            'attachments' => 'nullable|array', // Allow array of files
             'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
         ]);
 
-        // 3. Create Application Instance
+        // 2. Prepare Data
+        // Remove file inputs from the main data array so we can handle them manually
         $dataToSave = collect($validatedData)->except(['valid_id', 'indigency_cert', 'attachments'])->toArray();
+
         $application = new ApplicationModel($dataToSave);
         $application->user_id = Auth::id();
+        $application->status = 'Pending'; // Ensure status is set
 
-        // 4. Handle File Uploads
-        $attachmentPaths = [];
+        // 3. Handle File Uploads
+        $filePaths = [];
 
+        // Save Valid ID
         if ($request->hasFile('valid_id')) {
-            $attachmentPaths['valid_id'] = $request->file('valid_id')->store('attachments', 'public');
+            $filePaths['valid_id'] = $request->file('valid_id')->store('attachments', 'public');
         }
 
+        // Save Indigency
         if ($request->hasFile('indigency_cert')) {
-            $attachmentPaths['indigency_cert'] = $request->file('indigency_cert')->store('attachments', 'public');
+            $filePaths['indigency_cert'] = $request->file('indigency_cert')->store('attachments', 'public');
         }
 
+        // Save Dynamic Attachments (Array)
         if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                $attachmentPaths[] = $file->store('attachments', 'public');
+            foreach ($request->file('attachments') as $index => $file) {
+                if ($file) {
+                    // Use index to keep order consistent with requirements list
+                    $filePaths[$index] = $file->store('attachments', 'public');
+                }
             }
         }
 
-        $application->attachments = $attachmentPaths;
+        $application->attachments = $filePaths;
         $application->save();
 
+        // 4. Force Redirect to Dashboard
         return redirect()->route('dashboard')->with('message', 'Application submitted successfully!');
     }
 
-    // --- NEW: Edit Page for Resubmission ---
+    // --- Edit Page ---
     public function edit(ApplicationModel $application)
     {
-        // Security: Only allow owner to edit, and ONLY if Rejected
         if ($application->user_id !== Auth::id()) {
             abort(403);
         }
-        if ($application->status !== 'Rejected') {
-             return redirect()->route('dashboard')->with('error', 'You can only edit rejected applications.');
+        // Allow editing if Rejected OR Pending (for testing)
+        if (!in_array($application->status, ['Rejected', 'Pending'])) {
+             return redirect()->route('dashboard')->with('error', 'You cannot edit this application.');
         }
 
         return Inertia::render('Application/Edit', [
@@ -94,14 +95,13 @@ class ApplicationController extends Controller
         ]);
     }
 
-    // --- NEW: Update Logic for Resubmission ---
+    // --- Update Logic ---
     public function update(Request $request, ApplicationModel $application)
     {
         if ($application->user_id !== Auth::id()) {
             abort(403);
         }
 
-        // Validation: Files are NULLABLE here because they might keep the old ones
         $validatedData = $request->validate([
             'program' => 'required|string|max:255',
             'date_of_incident' => 'nullable|date',
@@ -118,39 +118,35 @@ class ApplicationController extends Controller
             'contact_number' => 'required|string|max:20',
             'email' => 'required|email|max:255',
             'facebook_link' => 'nullable|string|max:255',
-            // Files are optional on update
             'valid_id' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
             'indigency_cert' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            'attachments' => 'nullable|array',
             'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
         ]);
 
-        // Update text fields
         $dataToUpdate = collect($validatedData)->except(['valid_id', 'indigency_cert', 'attachments'])->toArray();
         $application->fill($dataToUpdate);
 
-        // Handle File Updates
-        // We start with the existing attachments
+        // Handle Files
         $currentAttachments = $application->attachments ?? [];
 
-        // If a new file is uploaded, replace the old one
         if ($request->hasFile('valid_id')) {
             $currentAttachments['valid_id'] = $request->file('valid_id')->store('attachments', 'public');
         }
-
         if ($request->hasFile('indigency_cert')) {
             $currentAttachments['indigency_cert'] = $request->file('indigency_cert')->store('attachments', 'public');
         }
-
-        // Append new extra attachments if any
         if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                $currentAttachments[] = $file->store('attachments', 'public');
+            foreach ($request->file('attachments') as $index => $file) {
+                if ($file) {
+                    $currentAttachments[$index] = $file->store('attachments', 'public');
+                }
             }
         }
 
         $application->attachments = $currentAttachments;
-        $application->status = 'Pending'; // RESET STATUS TO PENDING
-        $application->remarks = null; // Clear the rejection remark
+        $application->status = 'Pending';
+        $application->remarks = null;
         $application->save();
 
         return redirect()->route('dashboard')->with('message', 'Application resubmitted successfully!');
@@ -158,58 +154,34 @@ class ApplicationController extends Controller
 
     public function approve(Request $request, ApplicationModel $application)
     {
-        // 1. Validate that an amount was sent
         $request->validate([
             'amount' => 'required|numeric|min:0',
         ]);
 
-        // 2. Update Status AND Amount
         $application->update([
             'status' => 'Approved',
             'amount_released' => $request->amount,
-            'remarks' => null // Clear any old remarks
+            'remarks' => null
         ]);
 
-        $application->load('user');
-
-        // 3. (Optional) Send Email Notification Logic would go here...
-        // ...
-
-        return redirect()->back()->with('message', 'Application approved and amount recorded.');
+        return redirect()->back()->with('message', 'Application approved.');
     }
 
     public function reject(ApplicationModel $application)
     {
         $application->update(['status' => 'Rejected']);
-        $application->load('user');
-
-        $webhookUrl = env('MAKE_WEBHOOK_URL');
-        if ($application->user && $application->user->email && $webhookUrl) {
-            Http::post($webhookUrl, [
-                'email' => $application->user->email,
-                'name' => $application->user->name,
-                'status' => 'Rejected',
-                'program' => $application->program,
-                'remarks' => $application->remarks,
-            ]);
-        }
-
-        return redirect()->back()->with('message', 'Application has been rejected.');
+        return redirect()->back()->with('message', 'Application rejected.');
     }
 
     public function addRemark(Request $request, ApplicationModel $application)
     {
-        $request->validate([
-            'remarks' => 'nullable|string',
-        ]);
+        $request->validate(['remarks' => 'nullable|string']);
 
-        // UPDATE: Determine status based on action
-        // Since this is the "Reject with Remarks" modal, we force status to Rejected
         $application->update([
             'remarks' => $request->remarks,
-            'status' => 'Rejected', // <--- THIS LINE IS CRITICAL
+            'status' => 'Rejected' // Force status to Rejected when adding a remark
         ]);
 
-        return redirect()->back()->with('message', 'Application rejected successfully.');
+        return redirect()->back()->with('message', 'Remark saved.');
     }
 }
