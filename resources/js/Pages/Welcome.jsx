@@ -170,7 +170,7 @@ export default function Welcome({ auth, news = [] }) {
                 {/* --- SERVICES SECTION --- */}
 <section id="services" className="py-20 bg-gray-50">
     <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Our Services</h2>
+        <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Our Assistance</h2>
 
         {/* Changed from GRID to FLEXBOX.
             'justify-center' ensures the last row (of 3 items) is perfectly centered.
