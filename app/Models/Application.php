@@ -32,6 +32,7 @@ class Application extends Model
         'status',
         'attachments',
         'remarks',
+        'amount_released',
     ];
 
     /**

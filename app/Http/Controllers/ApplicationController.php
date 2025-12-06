@@ -156,23 +156,26 @@ class ApplicationController extends Controller
         return redirect()->route('dashboard')->with('message', 'Application resubmitted successfully!');
     }
 
-    public function approve(ApplicationModel $application)
+    public function approve(Request $request, ApplicationModel $application)
     {
-        $application->update(['status' => 'Approved', 'remarks' => null]);
+        // 1. Validate that an amount was sent
+        $request->validate([
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        // 2. Update Status AND Amount
+        $application->update([
+            'status' => 'Approved',
+            'amount_released' => $request->amount,
+            'remarks' => null // Clear any old remarks
+        ]);
+
         $application->load('user');
 
-        $webhookUrl = env('MAKE_WEBHOOK_URL');
-        if ($application->user && $application->user->email && $webhookUrl) {
-            Http::post($webhookUrl, [
-                'email' => $application->user->email,
-                'name' => $application->user->name,
-                'status' => 'Approved',
-                'program' => $application->program,
-                'remarks' => $application->remarks,
-            ]);
-        }
+        // 3. (Optional) Send Email Notification Logic would go here...
+        // ...
 
-        return redirect()->back()->with('message', 'Application has been approved.');
+        return redirect()->back()->with('message', 'Application approved and amount recorded.');
     }
 
     public function reject(ApplicationModel $application)

@@ -56,14 +56,32 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', function () {
-        $stats = [
-            'total' => ApplicationModel::count(),
-            'pending' => ApplicationModel::where('status', 'Pending')->count(),
-            'approved' => ApplicationModel::where('status', 'Approved')->count(),
-            'rejected' => ApplicationModel::where('status', 'Rejected')->count(),
-        ];
+        // 1. Basic Counts
+        $totalApps = ApplicationModel::count();
+        $pending = ApplicationModel::where('status', 'Pending')->count();
+        $approved = ApplicationModel::where('status', 'Approved')->count();
+        $rejected = ApplicationModel::where('status', 'Rejected')->count();
+
+        // 2. Financial Analytics (Sum of amounts given)
+        $totalReleased = ApplicationModel::where('status', 'Approved')->sum('amount_released');
+
+        // 3. Barangay Distribution (Top 5 Barangays by approved applications)
+        $barangayStats = ApplicationModel::where('status', 'Approved')
+            ->select('barangay', \Illuminate\Support\Facades\DB::raw('count(*) as total'), \Illuminate\Support\Facades\DB::raw('sum(amount_released) as amount'))
+            ->groupBy('barangay')
+            ->orderByDesc('total')
+            ->limit(5) // Show top 5
+            ->get();
+
         return Inertia::render('Admin/Dashboard', [
-            'stats' => $stats,
+            'stats' => [
+                'total' => $totalApps,
+                'pending' => $pending,
+                'approved' => $approved,
+                'rejected' => $rejected,
+                'total_released' => $totalReleased, // Pass the money total
+            ],
+            'barangayStats' => $barangayStats, // Pass the barangay breakdown
             'auth' => [ 'user' => Auth::user() ]
         ]);
     })->name('dashboard');
@@ -77,7 +95,9 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         ]);
     })->name('applications.show');
 
-    Route::get('/applications/{application}/approve', [ApplicationController::class, 'approve'])->name('applications.approve');
+    // CHANGED: 'get' to 'post' so we can send the Amount
+    Route::post('/applications/{application}/approve', [ApplicationController::class, 'approve'])->name('applications.approve');
+
     Route::get('/applications/{application}/reject', [ApplicationController::class, 'reject'])->name('applications.reject');
     Route::post('/applications/{application}/remarks', [ApplicationController::class, 'addRemark'])->name('applications.remarks.store');
 
