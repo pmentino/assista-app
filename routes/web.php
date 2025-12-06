@@ -55,33 +55,83 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', function () {
-        // 1. Basic Counts
-        $totalApps = ApplicationModel::count();
-        $pending = ApplicationModel::where('status', 'Pending')->count();
-        $approved = ApplicationModel::where('status', 'Approved')->count();
-        $rejected = ApplicationModel::where('status', 'Rejected')->count();
 
-        // 2. Financial Analytics (Sum of amounts given)
-        $totalReleased = ApplicationModel::where('status', 'Approved')->sum('amount_released');
+    // --- UPDATED ADMIN DASHBOARD LOGIC ---
+    Route::get('/dashboard', function (Illuminate\Http\Request $request) {
+        $now = \Carbon\Carbon::now();
 
-        // 3. Barangay Distribution (Top 5 Barangays by approved applications)
-        $barangayStats = ApplicationModel::where('status', 'Approved')
-            ->select('barangay', \Illuminate\Support\Facades\DB::raw('count(*) as total'), \Illuminate\Support\Facades\DB::raw('sum(amount_released) as amount'))
-            ->groupBy('barangay')
-            ->orderByDesc('total')
-            ->limit(5) // Show top 5
+        $stats = [
+            'total' => ApplicationModel::count(),
+            'pending' => ApplicationModel::where('status', 'Pending')->count(),
+            'approved' => ApplicationModel::where('status', 'Approved')->count(),
+            'rejected' => ApplicationModel::where('status', 'Rejected')->count(),
+            'total_released' => ApplicationModel::where('status', 'Approved')->sum('amount_released'),
+
+            // Fixed: Uses $now->copy() so the original $now variable doesn't get messed up
+            'released_today' => ApplicationModel::where('status', 'Approved')
+                ->whereDate('updated_at', $now->today())
+                ->sum('amount_released'),
+
+            'released_week' => ApplicationModel::where('status', 'Approved')
+                ->whereBetween('updated_at', [
+                    $now->copy()->startOfWeek(),
+                    $now->copy()->endOfWeek()
+                ])
+                ->sum('amount_released'),
+
+            'released_month' => ApplicationModel::where('status', 'Approved')
+                ->whereMonth('updated_at', $now->month)
+                ->whereYear('updated_at', $now->year)
+                ->sum('amount_released'),
+        ];
+
+        // 2. Chart Data Logic
+        $chartQuery = ApplicationModel::where('status', 'Approved');
+
+        if ($request->has('start_date') && $request->start_date) {
+            $chartQuery->whereDate('updated_at', '>=', $request->start_date);
+        } else {
+            $chartQuery->whereDate('updated_at', '>=', $now->copy()->subDays(30));
+        }
+
+        if ($request->has('end_date') && $request->end_date) {
+            $chartQuery->whereDate('updated_at', '<=', $request->end_date);
+        }
+
+        if ($request->has('barangay') && $request->barangay != '') {
+            $chartQuery->where('barangay', $request->barangay);
+        }
+
+        $dailyData = $chartQuery->selectRaw('DATE(updated_at) as date, SUM(amount_released) as total')
+            ->groupBy('date')
+            ->orderBy('date')
             ->get();
 
+        $chartData = [
+            'labels' => $dailyData->pluck('date'),
+            'values' => $dailyData->pluck('total'),
+        ];
+
+        // 3. Barangay Stats
+        // 3. Barangay Stats (Fixed Query)
+        $barangayStats = ApplicationModel::where('status', 'Approved')
+            ->whereNotNull('barangay') // Exclude rows without a barangay
+            ->select('barangay', \Illuminate\Support\Facades\DB::raw('count(*) as total'), \Illuminate\Support\Facades\DB::raw('COALESCE(sum(amount_released), 0) as amount'))
+            ->groupBy('barangay')
+            ->orderByDesc('amount')
+            ->limit(5)
+            ->get();
+
+        $allBarangays = ApplicationModel::select('barangay')->distinct()->orderBy('barangay')->pluck('barangay');
+
+        $currentFilters = $request->only(['barangay', 'start_date', 'end_date']);
+
         return Inertia::render('Admin/Dashboard', [
-            'stats' => [
-                'total' => $totalApps,
-                'pending' => $pending,
-                'approved' => $approved,
-                'rejected' => $rejected,
-                'total_released' => $totalReleased, // Pass the money total
-            ],
-            'barangayStats' => $barangayStats, // Pass the barangay breakdown
+            'stats' => $stats,
+            'chartData' => $chartData,
+            'barangayStats' => $barangayStats,
+            'allBarangays' => $allBarangays,
+            'filters' => $currentFilters,
             'auth' => [ 'user' => Auth::user() ]
         ]);
     })->name('dashboard');
@@ -95,18 +145,14 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         ]);
     })->name('applications.show');
 
-    // CHANGED: 'get' to 'post' so we can send the Amount
     Route::post('/applications/{application}/approve', [ApplicationController::class, 'approve'])->name('applications.approve');
-
     Route::get('/applications/{application}/reject', [ApplicationController::class, 'reject'])->name('applications.reject');
     Route::post('/applications/{application}/remarks', [ApplicationController::class, 'addRemark'])->name('applications.remarks.store');
 
-    // --- REPORTS ROUTES ---
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
     Route::get('/reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
 
-    // --- NEWS ROUTES (This was missing!) ---
     Route::resource('news', NewsController::class);
 });
 
