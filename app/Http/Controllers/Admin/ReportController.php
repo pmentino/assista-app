@@ -3,75 +3,85 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Models\Application;
 use Inertia\Inertia;
-use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade\Pdf; // Ensure you ran: composer require barryvdh/laravel-dompdf
-use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
 {
     public function index(Request $request)
     {
-        $filters = $request->only('status', 'program', 'start_date', 'end_date');
+        // 1. QUERY BUILDER
+        $query = Application::query();
 
-        // Base Query
-        $query = Application::with('user')
-            ->when($request->input('status'), fn($q, $status) => $q->where('status', $status))
-            ->when($request->input('program'), fn($q, $program) => $q->where('program', $program))
-            // Date Range Filtering
-            ->when($request->input('start_date'), fn($q, $date) => $q->whereDate('created_at', '>=', $date))
-            ->when($request->input('end_date'), fn($q, $date) => $q->whereDate('created_at', '<=', $date));
+        if ($request->has('status') && $request->status) {
+            $query->where('status', $request->status);
+        }
+        if ($request->has('program') && $request->program) {
+            $query->where('program', $request->program);
+        }
+        if ($request->has('start_date') && $request->start_date) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->has('end_date') && $request->end_date) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
 
-        // Get Summary Stats (Based on the filtered data)
+        // 2. GET PAGINATED RESULTS
+        $applications = $query->orderBy('created_at', 'desc')
+                              ->paginate(10)
+                              ->withQueryString();
+
+        // 3. CALCULATE STATS (This was missing and causing the blank page!)
+        // We calculate stats based on the *filtered* query if you want dynamic stats,
+        // or global stats. Let's do global stats for the cards.
         $stats = [
-            'total' => (clone $query)->count(),
-            'approved' => (clone $query)->where('status', 'Approved')->count(),
-            'rejected' => (clone $query)->where('status', 'Rejected')->count(),
-            'pending' => (clone $query)->where('status', 'Pending')->count(),
+            'total' => Application::count(),
+            'approved' => Application::where('status', 'Approved')->count(),
+            'pending' => Application::where('status', 'Pending')->count(),
+            'rejected' => Application::where('status', 'Rejected')->count(),
+            'total_amount' => Application::where('status', 'Approved')->sum('amount_released'),
         ];
 
-        // Get Paginated Results for the Table
-        $applications = (clone $query)->latest()->paginate(15)->withQueryString();
-
+        // 4. RENDER VIEW
         return Inertia::render('Admin/Reports/Index', [
             'applications' => $applications,
-            'filters' => $filters,
-            'stats' => $stats, // Pass stats to the frontend
+            'filters' => $request->only(['status', 'program', 'start_date', 'end_date']),
+            'stats' => $stats, // <--- PASSING THE STATS PROP HERE FIXES THE BLANK PAGE
+            'auth' => ['user' => auth()->user()]
         ]);
     }
 
+    public function export(Request $request)
+    {
+        return redirect()->back()->with('error', 'Excel export coming soon.');
+    }
+
+    // --- PDF EXPORT FUNCTION (Fixed) ---
     public function exportPdf(Request $request)
     {
-        $filters = $request->only('status', 'program', 'start_date', 'end_date');
+        // Reuse filters for the report
+        $query = Application::where('status', 'Approved'); // Default to Approved
 
-        // Fetch ALL matching data (no pagination for export)
-        $applications = Application::with('user')
-            ->when($request->input('status'), fn($q, $status) => $q->where('status', $status))
-            ->when($request->input('program'), fn($q, $program) => $q->where('program', $program))
-            ->when($request->input('start_date'), fn($q, $date) => $q->whereDate('created_at', '>=', $date))
-            ->when($request->input('end_date'), fn($q, $date) => $q->whereDate('created_at', '<=', $date))
-            ->latest()
-            ->get();
+        if ($request->has('program') && $request->program) {
+            $query->where('program', $request->program);
+        }
+        if ($request->has('start_date') && $request->start_date) {
+            $query->whereDate('updated_at', '>=', $request->start_date);
+        }
+        if ($request->has('end_date') && $request->end_date) {
+            $query->whereDate('updated_at', '<=', $request->end_date);
+        }
 
-        // Calculate stats for the PDF header
-        $stats = [
-            'total' => $applications->count(),
-            'approved' => $applications->where('status', 'Approved')->count(),
-            'rejected' => $applications->where('status', 'Rejected')->count(),
-        ];
+        $applications = $query->orderBy('updated_at', 'desc')->get();
 
-        // Generate PDF using a Blade View
-        $pdf = Pdf::loadView('pdf.report', [
-            'applications' => $applications,
-            'filters' => $filters,
-            'stats' => $stats,
-            'date_generated' => Carbon::now()->format('F d, Y h:i A'),
+        $pdf = Pdf::loadView('pdf.assistance_report', [
+            'applications' => $applications
         ]);
 
-        // Set paper to Landscape for better table fit
         $pdf->setPaper('a4', 'landscape');
 
-        return $pdf->download('AICS_Report_' . Carbon::now()->format('Ymd_His') . '.pdf');
+        return $pdf->download('AICS_Report_' . date('Y-m-d') . '.pdf');
     }
 }

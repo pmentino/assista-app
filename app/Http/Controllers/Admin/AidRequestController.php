@@ -55,6 +55,7 @@ class AidRequestController extends Controller
             'filters' => $filters, // 'search' will be passed back here automatically
             'sort_by' => $sortBy,
             'sort_direction' => $sortDirection,
+            'auth' => [ 'user' => Auth::user() ],
         ]);
     }
 }
