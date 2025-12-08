@@ -63,74 +63,75 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
     Route::get('/dashboard', function (Illuminate\Http\Request $request) {
         $now = \Carbon\Carbon::now();
 
+        // 1. Fetch Budget for Current Month
+        $currentBudget = \App\Models\MonthlyBudget::where('month', $now->month)
+            ->where('year', $now->year)
+            ->first();
+
+        $budgetAmount = $currentBudget ? $currentBudget->amount : 0;
+
+        // 2. Basic Stats & Released Calculation
+        $releasedMonth = ApplicationModel::where('status', 'Approved')
+            ->whereMonth('updated_at', $now->month)
+            ->whereYear('updated_at', $now->year)
+            ->sum('amount_released');
+
+        // 3. Calculate Budget Stats
+        $budgetStats = [
+            'total_budget' => $budgetAmount,
+            'total_used' => $releasedMonth,
+            'remaining' => $budgetAmount - $releasedMonth,
+            'percentage' => $budgetAmount > 0 ? ($releasedMonth / $budgetAmount) * 100 : 0,
+        ];
+
+        // ... (Keep existing Chart Data & Barangay Stats logic here) ...
+        // ... (I'll condense the rest for brevity, assume the chart/barangay logic stays the same) ...
+
+        // RE-COPY your existing Chart & Barangay logic here if you replaced the whole block,
+        // OR just pass 'budgetStats' to Inertia below:
+
+        // --- EXISTING STATS ARRAY ---
         $stats = [
             'total' => ApplicationModel::count(),
             'pending' => ApplicationModel::where('status', 'Pending')->count(),
             'approved' => ApplicationModel::where('status', 'Approved')->count(),
             'rejected' => ApplicationModel::where('status', 'Rejected')->count(),
             'total_released' => ApplicationModel::where('status', 'Approved')->sum('amount_released'),
-
-            // Fixed: Uses $now->copy() so the original $now variable doesn't get messed up
-            'released_today' => ApplicationModel::where('status', 'Approved')
-                ->whereDate('updated_at', $now->today())
-                ->sum('amount_released'),
-
-            'released_week' => ApplicationModel::where('status', 'Approved')
-                ->whereBetween('updated_at', [
-                    $now->copy()->startOfWeek(),
-                    $now->copy()->endOfWeek()
-                ])
-                ->sum('amount_released'),
-
-            'released_month' => ApplicationModel::where('status', 'Approved')
-                ->whereMonth('updated_at', $now->month)
-                ->whereYear('updated_at', $now->year)
-                ->sum('amount_released'),
+            'released_today' => ApplicationModel::where('status', 'Approved')->whereDate('updated_at', $now->today())->sum('amount_released'),
+            'released_week' => ApplicationModel::where('status', 'Approved')->whereBetween('updated_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()])->sum('amount_released'),
+            'released_month' => $releasedMonth, // Use variable calculated above
         ];
 
-        // 2. Chart Data Logic
+        // --- RE-ADD CHART & BARANGAY QUERIES HERE (Same as previous step) ---
+        // (Copy the Chart Data & Barangay Stats logic from your previous file version here)
+        // ...
+        // ...
+
+        // Just to ensure the code works, here is the minimal Chart/Barangay logic again:
         $chartQuery = ApplicationModel::where('status', 'Approved');
+        if ($request->has('start_date') && $request->start_date) { $chartQuery->whereDate('updated_at', '>=', $request->start_date); }
+        else { $chartQuery->whereDate('updated_at', '>=', $now->copy()->subDays(30)); }
+        if ($request->has('end_date') && $request->end_date) { $chartQuery->whereDate('updated_at', '<=', $request->end_date); }
+        if ($request->has('barangay') && $request->barangay != '') { $chartQuery->where('barangay', $request->barangay); }
 
-        if ($request->has('start_date') && $request->start_date) {
-            $chartQuery->whereDate('updated_at', '>=', $request->start_date);
-        } else {
-            $chartQuery->whereDate('updated_at', '>=', $now->copy()->subDays(30));
-        }
+        $dailyData = $chartQuery->selectRaw('DATE(updated_at) as date, SUM(amount_released) as total')->groupBy('date')->orderBy('date')->get();
+        $chartData = ['labels' => $dailyData->pluck('date'), 'values' => $dailyData->pluck('total')];
 
-        if ($request->has('end_date') && $request->end_date) {
-            $chartQuery->whereDate('updated_at', '<=', $request->end_date);
-        }
-
-        if ($request->has('barangay') && $request->barangay != '') {
-            $chartQuery->where('barangay', $request->barangay);
-        }
-
-        $dailyData = $chartQuery->selectRaw('DATE(updated_at) as date, SUM(amount_released) as total')
-            ->groupBy('date')
-            ->orderBy('date')
-            ->get();
-
-        $chartData = [
-            'labels' => $dailyData->pluck('date'),
-            'values' => $dailyData->pluck('total'),
-        ];
-
-        // 3. Barangay Stats
-        // 3. Barangay Stats (Fixed Query)
+        // 3. Barangay Stats (Fixed Sorting)
         $barangayStats = ApplicationModel::where('status', 'Approved')
-            ->whereNotNull('barangay') // Exclude rows without a barangay
-            ->select('barangay', \Illuminate\Support\Facades\DB::raw('count(*) as total'), \Illuminate\Support\Facades\DB::raw('COALESCE(sum(amount_released), 0) as amount'))
+            ->select('barangay', \Illuminate\Support\Facades\DB::raw('count(*) as total'), \Illuminate\Support\Facades\DB::raw('sum(amount_released) as amount'))
             ->groupBy('barangay')
-            ->orderByDesc('amount')
+            // CAST to DECIMAL ensures 12500 > 2000
+            ->orderByRaw('CAST(sum(amount_released) as DECIMAL(15,2)) DESC')
             ->limit(5)
             ->get();
-
         $allBarangays = ApplicationModel::select('barangay')->distinct()->orderBy('barangay')->pluck('barangay');
-
         $currentFilters = $request->only(['barangay', 'start_date', 'end_date']);
+
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => $stats,
+            'budgetStats' => $budgetStats, // <--- PASS THIS NEW DATA
             'chartData' => $chartData,
             'barangayStats' => $barangayStats,
             'allBarangays' => $allBarangays,
@@ -138,6 +139,22 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
             'auth' => [ 'user' => Auth::user() ]
         ]);
     })->name('dashboard');
+
+    // --- NEW ROUTE: SET BUDGET ---
+    Route::post('/dashboard/budget', function (Illuminate\Http\Request $request) {
+        $request->validate([
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        $now = \Carbon\Carbon::now();
+
+        \App\Models\MonthlyBudget::updateOrCreate(
+            ['month' => $now->month, 'year' => $now->year],
+            ['amount' => $request->amount]
+        );
+
+        return redirect()->back()->with('message', 'Monthly budget updated successfully.');
+    })->name('dashboard.budget');
 
     Route::get('/applications', [AidRequestController::class, 'index'])->name('applications.index');
 
