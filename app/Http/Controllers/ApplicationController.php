@@ -18,7 +18,6 @@ class ApplicationController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Validation
         $validatedData = $request->validate([
             'program' => 'required|string|max:255',
             'date_of_incident' => 'nullable|date',
@@ -37,36 +36,26 @@ class ApplicationController extends Controller
             'facebook_link' => 'nullable|string|max:255',
             'valid_id' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
             'indigency_cert' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
-            'attachments' => 'nullable|array', // Allow array of files
+            'attachments' => 'nullable|array',
             'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
         ]);
 
-        // 2. Prepare Data
-        // Remove file inputs from the main data array so we can handle them manually
         $dataToSave = collect($validatedData)->except(['valid_id', 'indigency_cert', 'attachments'])->toArray();
 
         $application = new ApplicationModel($dataToSave);
         $application->user_id = Auth::id();
-        $application->status = 'Pending'; // Ensure status is set
+        $application->status = 'Pending';
 
-        // 3. Handle File Uploads
         $filePaths = [];
-
-        // Save Valid ID
         if ($request->hasFile('valid_id')) {
             $filePaths['valid_id'] = $request->file('valid_id')->store('attachments', 'public');
         }
-
-        // Save Indigency
         if ($request->hasFile('indigency_cert')) {
             $filePaths['indigency_cert'] = $request->file('indigency_cert')->store('attachments', 'public');
         }
-
-        // Save Dynamic Attachments (Array)
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $index => $file) {
                 if ($file) {
-                    // Use index to keep order consistent with requirements list
                     $filePaths[$index] = $file->store('attachments', 'public');
                 }
             }
@@ -75,17 +64,14 @@ class ApplicationController extends Controller
         $application->attachments = $filePaths;
         $application->save();
 
-        // 4. Force Redirect to Dashboard
         return redirect()->route('dashboard')->with('message', 'Application submitted successfully!');
     }
 
-    // --- Edit Page ---
     public function edit(ApplicationModel $application)
     {
         if ($application->user_id !== Auth::id()) {
             abort(403);
         }
-        // Allow editing if Rejected OR Pending (for testing)
         if (!in_array($application->status, ['Rejected', 'Pending'])) {
              return redirect()->route('dashboard')->with('error', 'You cannot edit this application.');
         }
@@ -95,7 +81,6 @@ class ApplicationController extends Controller
         ]);
     }
 
-    // --- Update Logic ---
     public function update(Request $request, ApplicationModel $application)
     {
         if ($application->user_id !== Auth::id()) {
@@ -127,9 +112,7 @@ class ApplicationController extends Controller
         $dataToUpdate = collect($validatedData)->except(['valid_id', 'indigency_cert', 'attachments'])->toArray();
         $application->fill($dataToUpdate);
 
-        // Handle Files
         $currentAttachments = $application->attachments ?? [];
-
         if ($request->hasFile('valid_id')) {
             $currentAttachments['valid_id'] = $request->file('valid_id')->store('attachments', 'public');
         }
@@ -152,6 +135,7 @@ class ApplicationController extends Controller
         return redirect()->route('dashboard')->with('message', 'Application resubmitted successfully!');
     }
 
+    // --- THIS IS THE FIX FOR THE DATABASE (APPROVED DATE) ---
     public function approve(Request $request, ApplicationModel $application)
     {
         $request->validate([
@@ -161,6 +145,7 @@ class ApplicationController extends Controller
         $application->update([
             'status' => 'Approved',
             'amount_released' => $request->amount,
+            'approved_date' => now(), // <--- SAVES THE TIME
             'remarks' => null
         ]);
 
@@ -179,30 +164,21 @@ class ApplicationController extends Controller
 
         $application->update([
             'remarks' => $request->remarks,
-            'status' => 'Rejected' // Force status to Rejected when adding a remark
+            'status' => 'Rejected'
         ]);
 
         return redirect()->back()->with('message', 'Remark saved.');
     }
 
-    // ... other methods ...
-
-    // NEW: Generate Claim Stub
     public function generateClaimStub(ApplicationModel $application)
     {
-        // Security Check: Ensure only the owner OR an admin can download this
         if ($application->user_id !== Auth::id() && Auth::user()->type !== 'admin') {
             abort(403);
         }
 
-        // Must be approved to get a stub
         if ($application->status !== 'Approved') {
             return redirect()->back()->with('error', 'Claim stub is only available for approved applications.');
         }
-
-        // Generate PDF
-        // Note: Make sure to import Pdf facade at the top: use Barryvdh\DomPDF\Facade\Pdf;
-        // And QR Code: use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.claim_stub', [
             'application' => $application
@@ -211,4 +187,3 @@ class ApplicationController extends Controller
         return $pdf->download('Claim_Stub_' . $application->id . '.pdf');
     }
 }
-

@@ -1,14 +1,15 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm } from '@inertiajs/react';
 import {
-  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler,
+    Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { useState } from 'react';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
-export default function Dashboard({ auth, stats, budgetStats, chartData, barangayStats, allBarangays, filters }) {
+// Added 'budgetLogs' to the props here
+export default function Dashboard({ auth, stats, budgetStats, chartData, barangayStats, allBarangays, filters, budgetLogs }) {
     const user = auth?.user || { name: 'Admin' };
 
     // --- STATE MANAGEMENT ---
@@ -87,7 +88,7 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                         </div>
                     </div>
 
-                    {/* --- NEW: BUDGET MONITORING SECTION --- */}
+                    {/* --- BUDGET MONITORING SECTION --- */}
                     {budgetStats && (
                         <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-8 border-l-8 border-indigo-600">
                             <div className="p-6">
@@ -128,7 +129,7 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center mb-6">
                                     <div className="p-4 bg-gray-50 rounded border border-gray-100">
                                         <span className="block text-gray-500 text-xs uppercase font-bold">Allocated Budget</span>
                                         <span className="block text-xl font-extrabold text-gray-800">{formatCurrency(budgetStats.total_budget)}</span>
@@ -144,6 +145,52 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                                         </span>
                                     </div>
                                 </div>
+
+                                {/* --- NEW: BUDGET AUDIT TRAIL (Professor's Request) --- */}
+                                <div className="mt-8 border-t pt-6">
+                                    <h4 className="text-sm font-bold text-gray-700 mb-4 uppercase">Budget Allocation History</h4>
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-full text-sm text-left">
+                                            <thead className="bg-gray-50 text-gray-500 font-medium border-b">
+                                                <tr>
+                                                    <th className="py-2 px-4">Date & Time</th>
+                                                    <th className="py-2 px-4">Action</th>
+                                                    <th className="py-2 px-4">Admin</th>
+                                                    <th className="py-2 px-4 text-right">Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y">
+                                                {budgetLogs && budgetLogs.length > 0 ? (
+                                                    budgetLogs.map((log) => (
+                                                        <tr key={log.id} className="hover:bg-gray-50">
+                                                            <td className="py-2 px-4 text-gray-600">
+                                                                {new Date(log.created_at).toLocaleString('en-PH', {
+                                                                    dateStyle: 'medium',
+                                                                    timeStyle: 'short'
+                                                                })}
+                                                            </td>
+                                                            <td className="py-2 px-4">
+                                                                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                                                    {log.action}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-2 px-4 text-gray-600">{log.user?.name || 'System'}</td>
+                                                            <td className="py-2 px-4 text-right font-bold text-gray-800">
+                                                                {formatCurrency(log.amount)}
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan="4" className="py-4 text-center text-gray-400 italic">No budget history found.</td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                {/* --- END AUDIT TRAIL --- */}
+
                             </div>
                         </div>
                     )}

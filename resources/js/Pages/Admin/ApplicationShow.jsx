@@ -52,26 +52,25 @@ export default function ApplicationShow({ application }) {
         remarks: application.remarks || '',
     });
 
-    // NEW: Form for Approval (Amount)
+    // Form for Approval (Amount)
     const approveForm = useForm({
         amount: '',
     });
 
     const [showRejectModal, setShowRejectModal] = useState(false);
-    const [showApproveModal, setShowApproveModal] = useState(false); // NEW State
+    const [showApproveModal, setShowApproveModal] = useState(false);
 
     const submitRemark = (e) => {
         e.preventDefault();
         post(route('admin.applications.remarks.store', application.id), {
             preserveScroll: true,
             onSuccess: () => {
-                 setShowRejectModal(false);
-                 window.location.reload();
+                setShowRejectModal(false);
+                window.location.reload();
             },
         });
     };
 
-    // NEW: Handle Approval Submission
     const submitApprove = (e) => {
         e.preventDefault();
         approveForm.post(route('admin.applications.approve', application.id), {
@@ -113,8 +112,20 @@ export default function ApplicationShow({ application }) {
                                         Submitted by: <span className="font-semibold text-gray-900">{application.first_name} {application.last_name}</span>
                                     </p>
                                     <p className="text-sm text-gray-500">
-                                        Date: {new Date(application.created_at).toLocaleDateString()}
+                                        Date Submitted: {new Date(application.created_at).toLocaleDateString()}
                                     </p>
+
+                                    {/* --- NEW CODE: SHOW APPROVED DATE HERE --- */}
+                                    {application.status === 'Approved' && application.approved_date && (
+                                       <p className="text-sm text-green-700 font-bold mt-1">
+                                           Date Approved: {new Date(application.approved_date).toLocaleString('en-PH', {
+                                               year: 'numeric', month: 'long', day: 'numeric',
+                                               hour: '2-digit', minute: '2-digit'
+                                           })}
+                                       </p>
+                                    )}
+                                    {/* ----------------------------------------- */}
+
                                     {/* Display Amount if Approved */}
                                     {application.status === 'Approved' && application.amount_released && (
                                         <p className="mt-2 text-lg font-bold text-green-600">
@@ -125,7 +136,6 @@ export default function ApplicationShow({ application }) {
                                 <div className="flex gap-3">
                                     {application.status === 'Pending' && (
                                         <>
-                                            {/* Changed Link to Button to open Modal */}
                                             <button
                                                 onClick={() => setShowApproveModal(true)}
                                                 className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded shadow"
@@ -150,7 +160,7 @@ export default function ApplicationShow({ application }) {
                                 </div>
                             </div>
 
-                            {/* Details Grid (Same as before) */}
+                            {/* Details Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                                 <div className="bg-gray-50 p-4 rounded-lg border">
                                     <h4 className="font-bold text-lg mb-3 border-b border-gray-200 pb-2 text-gray-700">Personal Information</h4>
@@ -172,7 +182,7 @@ export default function ApplicationShow({ application }) {
                                 </div>
                             </div>
 
-                            {/* Attachments Section (Same as before) */}
+                            {/* Attachments Section */}
                             <div className="mb-8">
                                 <h4 className="font-bold text-lg mb-4 text-gray-800">Submitted Documents</h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -231,7 +241,7 @@ export default function ApplicationShow({ application }) {
                                 </div>
                             )}
 
-                            {/* --- NEW: APPROVAL MODAL --- */}
+                            {/* --- APPROVAL MODAL --- */}
                             {showApproveModal && (
                                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
                                     <div className="bg-white p-6 rounded-lg shadow-xl w-96 transform transition-all scale-100">

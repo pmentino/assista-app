@@ -132,6 +132,7 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         return Inertia::render('Admin/Dashboard', [
             'stats' => $stats,
             'budgetStats' => $budgetStats, // <--- PASS THIS NEW DATA
+            'budgetLogs'  => \App\Models\BudgetLog::with('user')->latest()->take(5)->get(),
             'chartData' => $chartData,
             'barangayStats' => $barangayStats,
             'allBarangays' => $allBarangays,
@@ -140,7 +141,6 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         ]);
     })->name('dashboard');
 
-    // --- NEW ROUTE: SET BUDGET ---
     Route::post('/dashboard/budget', function (Illuminate\Http\Request $request) {
         $request->validate([
             'amount' => 'required|numeric|min:0',
@@ -148,12 +148,21 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
 
         $now = \Carbon\Carbon::now();
 
+        // Update Budget
         \App\Models\MonthlyBudget::updateOrCreate(
             ['month' => $now->month, 'year' => $now->year],
             ['amount' => $request->amount]
         );
 
-        return redirect()->back()->with('message', 'Monthly budget updated successfully.');
+        // LOGGING (Fixes the red error)
+        \App\Models\BudgetLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Budget Update',
+            'amount' => $request->amount,
+            'balance_after' => $request->amount, // <--- YOU MUST HAVE THIS LINE
+        ]);
+
+        return redirect()->back()->with('message', 'Budget updated successfully.');
     })->name('dashboard.budget');
 
     Route::get('/applications', [AidRequestController::class, 'index'])->name('applications.index');

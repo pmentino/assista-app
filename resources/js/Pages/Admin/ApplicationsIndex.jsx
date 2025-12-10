@@ -44,11 +44,9 @@ export default function ApplicationsIndex({ applications, filters: initialFilter
     const [filters, setFilters] = useState({
         status: initialFilters.status || '',
         program: initialFilters.program || '',
-        search: initialFilters.search || '', // <-- Added Search
+        search: initialFilters.search || '',
     });
 
-    // Use a ref to prevent the effect from running on the very first render if you like,
-    // but Inertia usually handles this gracefully.
     const isFirstRun = useRef(true);
 
     useEffect(() => {
@@ -57,7 +55,6 @@ export default function ApplicationsIndex({ applications, filters: initialFilter
             return;
         }
 
-        // Set a timeout to delay the search request (Debounce) so it doesn't reload on every letter
         const timer = setTimeout(() => {
             const query = pickBy(filters);
             const currentParams = new URLSearchParams(window.location.search);
@@ -69,9 +66,9 @@ export default function ApplicationsIndex({ applications, filters: initialFilter
                 preserveScroll: true,
                 replace: true,
             });
-        }, 300); // 300ms delay
+        }, 300);
 
-        return () => clearTimeout(timer); // Cleanup timeout if user types again
+        return () => clearTimeout(timer);
     }, [filters]);
 
     const handleFilterChange = (e) => {
@@ -133,27 +130,27 @@ export default function ApplicationsIndex({ applications, filters: initialFilter
                                 </div>
 
                                 {/* Program Filter */}
-<div className="w-full md:w-1/4">
-    <label htmlFor="program" className="block text-sm font-medium text-gray-700">Program</label>
-    <select
-        id="program" name="program" value={filters.program}
-        onChange={handleFilterChange}
-        className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-    >
-        <option value="">All Programs</option>
-        <option value="Laboratory Tests">Laboratory Tests</option>
-        <option value="Anti-Rabies Vaccine Treatment">Anti-Rabies Vaccine Treatment</option>
-        <option value="Funeral Assistance">Funeral Assistance</option>
-        <option value="Medicine Assistance">Medicine Assistance</option>
-        <option value="Hospitalization">Hospitalization</option>
-        <option value="Chemotherapy">Chemotherapy</option>
-        <option value="Diagnostic Blood Tests">Diagnostic Blood Tests</option>
-    </select>
-</div>
+                                <div className="w-full md:w-1/4">
+                                    <label htmlFor="program" className="block text-sm font-medium text-gray-700">Program</label>
+                                    <select
+                                        id="program" name="program" value={filters.program}
+                                        onChange={handleFilterChange}
+                                        className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                    >
+                                        <option value="">All Programs</option>
+                                        <option value="Laboratory Tests">Laboratory Tests</option>
+                                        <option value="Anti-Rabies Vaccine Treatment">Anti-Rabies Vaccine Treatment</option>
+                                        <option value="Funeral Assistance">Funeral Assistance</option>
+                                        <option value="Medicine Assistance">Medicine Assistance</option>
+                                        <option value="Hospitalization">Hospitalization</option>
+                                        <option value="Chemotherapy">Chemotherapy</option>
+                                        <option value="Diagnostic Blood Tests">Diagnostic Blood Tests</option>
+                                    </select>
+                                </div>
 
                                 {/* Reset Button */}
                                 <div>
-                                     <button
+                                    <button
                                         onClick={() => setFilters({ status: '', program: '', search: '' })}
                                         className="px-4 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-200 transition"
                                     >
@@ -168,11 +165,11 @@ export default function ApplicationsIndex({ applications, filters: initialFilter
                                     <thead className="bg-gray-50">
                                         <tr>
                                             <SortableHeader label="ID" columnName="id" sortBy={initialSortBy} sortDirection={initialSortDirection} />
-                                            {/* Changed label to be clearer */}
                                             <SortableHeader label="Full Name" columnName="first_name" sortBy={initialSortBy} sortDirection={initialSortDirection} />
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Program</th>
                                             <SortableHeader label="Status" columnName="status" sortBy={initialSortBy} sortDirection={initialSortDirection} />
-                                            <SortableHeader label="Date Submitted" columnName="created_at" sortBy={initialSortBy} sortDirection={initialSortDirection} />
+                                            {/* NEW HEADER FOR TIME */}
+                                            <SortableHeader label="Date Approved" columnName="approved_date" sortBy={initialSortBy} sortDirection={initialSortDirection} />
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
@@ -194,7 +191,22 @@ export default function ApplicationsIndex({ applications, filters: initialFilter
                                                             {application.status}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(application.created_at).toLocaleDateString()}</td>
+                                                    {/* NEW COLUMN DATA FOR TIME */}
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {application.approved_date ? (
+                                                            <span className="font-medium text-gray-700">
+                                                                {new Date(application.approved_date).toLocaleString('en-PH', {
+                                                                    year: 'numeric',
+                                                                    month: 'short',
+                                                                    day: 'numeric',
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit'
+                                                                })}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-gray-400">-</span>
+                                                        )}
+                                                    </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                         <Link href={route('admin.applications.show', application.id)} className="text-indigo-600 hover:text-indigo-900 font-bold">
                                                             View
