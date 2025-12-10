@@ -145,7 +145,7 @@ class ApplicationController extends Controller
         $application->update([
             'status' => 'Approved',
             'amount_released' => $request->amount,
-            'approved_date' => now(), // <--- LOOK FOR THIS LINE
+            'approved_date' => now(), // <--- THIS IS THE MAGIC LINE
             'remarks' => null
         ]);
 

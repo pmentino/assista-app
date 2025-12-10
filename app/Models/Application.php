@@ -30,6 +30,7 @@ class Application extends Model
         'status',
         'remarks',
         'amount_released',
+        'approved_date',
     ];
 
     // CRITICAL: This tells Laravel to treat the JSON 'attachments' column as a PHP Array

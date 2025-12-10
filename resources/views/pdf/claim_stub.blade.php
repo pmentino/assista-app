@@ -1,47 +1,58 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Certificate of Eligibility</title>
+    <title>Certificate of Eligibility - {{ $application->last_name }}</title>
     <style>
-        body { font-family: 'Times New Roman', serif; font-size: 12px; margin: 0; padding: 20px; }
+        /* SET PAPER SIZE TO LONG BOND PAPER (8.5 x 13 inches) */
+        @page { size: 21.59cm 33.02cm; margin: 1.5cm 1.5cm; }
+
+        body { font-family: 'Times New Roman', serif; font-size: 11pt; margin: 0; padding: 0; line-height: 1.2; }
 
         /* Header Layout */
-        .header-container { width: 100%; text-align: center; margin-bottom: 20px; position: relative; }
-        .logo-left { position: absolute; left: 0; top: 0; width: 80px; }
-        .logo-right { position: absolute; right: 0; top: 0; width: 80px; }
-        .header-text h4 { margin: 0; font-weight: normal; font-size: 12px; }
-        .header-text h3 { margin: 2px 0; font-weight: bold; font-size: 14px; }
-        .header-text p { margin: 0; font-size: 10px; font-style: italic; }
+        .header-container { width: 100%; text-align: center; margin-bottom: 10px; position: relative; }
+        /* Placeholder boxes for logos if files are missing, avoids broken image icon layout shifts */
+        .logo-placeholder { width: 60px; height: 60px; border: 1px dashed #ccc; position: absolute; top: 0; }
+        .logo-left { left: 10px; }
+        .logo-right { right: 10px; }
+
+        /* If you have real logos, use these classes instead: */
+        /* .logo-left { position: absolute; left: 10px; top: 0; width: 65px; } */
+        /* .logo-right { position: absolute; right: 10px; top: 0; width: 65px; } */
+
+        .header-text h4 { margin: 0; font-weight: normal; font-size: 10pt; font-family: 'Old English Text MT', serif; }
+        .header-text h3 { margin: 2px 0; font-weight: bold; font-size: 11pt; }
+        .header-text p { margin: 0; font-size: 8pt; }
 
         /* Title */
-        .title { text-align: center; font-weight: bold; text-decoration: underline; font-size: 16px; margin: 20px 0; }
+        .title { text-align: center; font-weight: bold; text-decoration: underline; font-size: 13pt; margin: 10px 0; text-transform: uppercase; }
 
-        /* Checkboxes Section */
-        .checkbox-section { width: 100%; margin-bottom: 15px; font-size: 11px; }
-        .checkbox-section td { vertical-align: top; }
-        .check-box { display: inline-block; width: 12px; height: 12px; border: 1px solid #000; margin-right: 5px; }
-        .checked { background-color: #000; } /* Simple fill for checked */
+        /* Checkboxes Section - Compact */
+        .checkbox-section { width: 100%; margin-bottom: 5px; font-size: 9pt; }
+        .checkbox-section td { vertical-align: top; padding-bottom: 2px; }
+        .check-box { display: inline-block; width: 9px; height: 9px; border: 1px solid #000; margin-right: 4px; }
+        .checked { background-color: #000; }
 
         /* Main Body */
-        .certify-text { text-align: justify; line-height: 1.5; margin-bottom: 10px; text-indent: 30px; }
-        .details-line { border-bottom: 1px solid #000; display: inline-block; width: 200px; text-align: center; font-weight: bold; }
+        .certify-text { text-align: justify; margin-bottom: 8px; text-indent: 30px; }
+        .details-line { border-bottom: 1px solid #000; display: inline-block; padding: 0 5px; font-weight: bold; text-align: center; }
 
-        /* Family Table */
-        .family-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-        .family-table th { border-bottom: 1px solid #000; padding: 5px; text-align: center; font-weight: bold; }
-        .family-table td { border-bottom: 1px solid #ccc; padding: 5px; }
+        /* Family Table - Compact */
+        .family-table { width: 100%; border-collapse: collapse; margin: 5px 0; font-size: 10pt; }
+        .family-table th { border-bottom: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; }
+        .family-table td { border-bottom: 1px solid #ccc; padding: 3px; }
 
         /* Signatures */
-        .signatures { width: 100%; margin-top: 40px; }
+        .signatures { width: 100%; margin-top: 20px; margin-bottom: 10px; }
         .signatures td { width: 50%; vertical-align: top; padding: 0 10px; }
-        .sig-line { border-top: 1px solid #000; margin-top: 30px; width: 90%; }
-        .role { font-size: 10px; font-style: italic; }
+        .sig-line { border-top: 1px solid #000; margin-top: 25px; width: 90%; }
+        .role { font-size: 8pt; font-style: italic; }
 
-        /* Footer Declaration */
-        .declaration { font-size: 9px; font-style: italic; text-align: justify; margin-top: 30px; border-top: 1px dotted #ccc; padding-top: 10px; }
+        /* Acknowledgement Receipt (Bottom Part) */
+        .receipt-section { margin-top: 20px; border-top: 2px dashed #000; padding-top: 15px; }
+        .receipt-title { text-align: center; font-weight: bold; font-size: 12pt; margin-bottom: 10px; text-transform: uppercase; }
 
-        /* QR Code for Validation */
-        .qr-code { position: absolute; bottom: 100px; right: 0; opacity: 0.8; }
+        /* Declaration Text */
+        .declaration { font-size: 7pt; font-style: italic; text-align: justify; margin-top: 10px; color: #555; }
     </style>
 </head>
 <body>
@@ -52,7 +63,7 @@
             <h3>CITY OF ROXAS</h3>
             <h4>Province of Capiz</h4>
             <h3>Office of the City Social Welfare and Development Officer</h3>
-            <p>Inzo Arnaldo Village, Roxas City, 5800 | Tel: (036) 52026-83</p>
+            <p>Inzo Arnaldo Village, Roxas City | Tel: (036) 52026-83</p>
         </div>
     </div>
 
@@ -81,21 +92,23 @@
         </tr>
     </table>
 
-    <p>This is to certify that <span class="details-line" style="width: 250px;">{{ strtoupper($application->first_name . ' ' . $application->last_name) }}</span> residing at barangay <span class="details-line">{{ $application->barangay }}</span>, Roxas City with the following family members:</p>
+    <div class="certify-text">
+        This is to certify that <span class="details-line" style="min-width: 200px;">{{ strtoupper($application->first_name . ' ' . $application->last_name) }}</span> residing at barangay <span class="details-line" style="min-width: 100px;">{{ $application->barangay }}</span>, Roxas City with the following family members:
+    </div>
 
     <table class="family-table">
         <thead>
             <tr>
-                <th>NAME</th>
-                <th>AGE</th>
-                <th>RELATIONSHIP</th>
+                <th width="40%">NAME</th>
+                <th width="20%">AGE</th>
+                <th width="40%">RELATIONSHIP</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td>(Self)</td>
-                <td>{{ \Carbon\Carbon::parse($application->birth_date)->age }}</td>
-                <td>Beneficiary</td>
+                <td>{{ strtoupper($application->first_name . ' ' . $application->last_name) }}</td>
+                <td style="text-align: center;">{{ \Carbon\Carbon::parse($application->birth_date)->age }}</td>
+                <td style="text-align: center;">Beneficiary (Self)</td>
             </tr>
             <tr><td>&nbsp;</td><td></td><td></td></tr>
             <tr><td>&nbsp;</td><td></td><td></td></tr>
@@ -103,27 +116,27 @@
     </table>
 
     <div class="certify-text">
-        The above-named client has been found eligible for financial assistance from <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> program. Based on the assessment conducted by the undersigned social worker, it is strongly recommended that the client/beneficiary be extended financial assistance to defray the expenses in the amount of <strong>Php {{ number_format($application->amount_released, 2) }}</strong>.
+        The above-named client has been found eligible for financial assistance from <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> program. Based on the assessment, it is strongly recommended that the client be extended financial assistance in the amount of <strong>Php {{ number_format($application->amount_released, 2) }}</strong>.
     </div>
 
     <div class="certify-text">
-        It is further certified that the client is in crisis situation, in need of financial assistance and incapable to cover the aforementioned expenses due to financial constraint.
+        It is further certified that the client is in crisis situation and incapable to cover the expenses due to financial constraint.
     </div>
 
-    <p style="margin-top: 20px;">
-        Issued this <span class="details-line" style="width: 50px;">{{ date('jS') }}</span> day of <span class="details-line" style="width: 100px;">{{ date('F, Y') }}</span> at City Social Welfare and Development Office, Inzo Arnaldo Village, Roxas City.
+    <p style="margin: 5px 0;">
+        Issued this <span class="details-line" style="min-width: 40px;">{{ date('jS') }}</span> day of <span class="details-line" style="min-width: 80px;">{{ date('F, Y') }}</span> at CSWDO, Roxas City.
     </p>
 
     <table class="signatures">
         <tr>
             <td>
-                Assessed by:<br><br><br>
+                Assessed by:<br><br>
                 <strong>BIVIEN B. DELA CRUZ, RSW</strong>
                 <div class="sig-line"></div>
                 <div class="role">Social Welfare Officer I</div>
             </td>
             <td>
-                Approved by:<br><br><br>
+                Approved by:<br><br>
                 <strong>PERSEUS L. CORDOVA</strong>
                 <div class="sig-line"></div>
                 <div class="role">City Social Welfare and Development Officer</div>
@@ -131,17 +144,46 @@
         </tr>
     </table>
 
-    <div class="qr-code">
-        <img src="data:image/svg+xml;base64, {!! base64_encode(QrCode::format('svg')->size(80)->generate($application->id . '-' . $application->first_name)) !!} ">
+    <div class="declaration">
+        "I declare under pain of criminal prosecution that all information provided herewith are TRUE and CORRECT. I authorize the Agency Head to verify stated contents."
     </div>
 
-    <div class="declaration">
-        "I declare under pain of criminal prosecution that all the information provided herewith are TRUE, CORRECT, VALID, and COMPLETE pursuant to existing laws, rules, and regulations of the Republic of the Philippines. I authorize the Agency Head/Authorized Representatives to verify and validate the contents stated herein."
-        <br><br>
-        <div style="text-align: center; width: 300px; margin: 20px auto;">
-            <div class="sig-line"></div>
-            <strong>Name and signature of the client/beneficiary</strong>
+    <div style="text-align: center; width: 200px; margin: 15px auto 0;">
+        <div class="sig-line" style="margin-top: 5px;"></div>
+        <div style="font-size: 7pt; font-weight: bold;">Signature of Beneficiary</div>
+    </div>
+
+    <div class="receipt-section">
+        <div class="receipt-title">ACKNOWLEDGEMENT RECEIPT</div>
+
+        <div style="text-align: right; font-size: 9pt; margin-bottom: 5px;">
+            NO. <strong>{{ $application->id }}</strong>
         </div>
+
+        <div class="certify-text">
+            I, <span class="details-line" style="min-width: 200px;">{{ strtoupper($application->first_name . ' ' . $application->last_name) }}</span>, acknowledge receipt of cash assistance amounting to <span class="details-line" style="min-width: 80px;">Php {{ number_format($application->amount_released, 2) }}</span> from the Roxas City Government (AICS).
+        </div>
+
+        <div class="certify-text">
+            This assistance is for <span class="details-line" style="min-width: 120px;">{{ $application->program }}</span> expenses. I confirm receipt in full without obligation for repayment.
+        </div>
+
+        <table class="signatures" style="margin-top: 20px;">
+            <tr>
+                <td>
+                    Received by:<br><br>
+                    <div class="sig-line"></div>
+                    <div style="text-align: center; font-size: 8pt;">Client / Beneficiary</div>
+                </td>
+                <td>
+                    Received from:<br><br>
+                    <div class="sig-line"></div>
+                    <div style="text-align: center; font-size: 8pt;">Special Disbursing Officer (SDO)</div>
+                </td>
+            </tr>
+        </table>
+
+        <div style="margin-top: 5px; font-size: 8pt;">Date: {{ date('F d, Y') }}</div>
     </div>
 
 </body>
