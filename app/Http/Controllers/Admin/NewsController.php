@@ -13,12 +13,16 @@ class NewsController extends Controller
 {
     public function index()
     {
-        $news = News::latest()->get();
+        $news = News::latest()->paginate(10);
+
         return Inertia::render('Admin/News/Index', [
             'news' => $news,
-            'auth' => ['user' => Auth::user()] // <--- FIXED: Passes user info to avoid crash
+            // *** THIS WAS THE MISSING DATA ***
+            'auth' => [
+                'user' => Auth::user(),
+            ],
         ]);
-    }
+}
 
     public function create()
     {
@@ -48,6 +52,26 @@ class NewsController extends Controller
 
         return redirect()->route('admin.news.index')->with('message', 'News posted successfully!');
     }
+
+    // app/Http/Controllers/Admin/NewsController.php
+
+// ... (other methods like index, store, create, etc.)
+
+/**
+ * Show the form for editing the specified news item.
+ */
+public function edit(News $news)
+{
+    // Pass the specific news item data to the Inertia component
+    return Inertia::render('Admin/News/Edit', [
+        'news' => $news,
+        'auth' => [
+            'user' => Auth::user(),
+        ],
+    ]);
+}
+
+// ... (other methods like update, destroy, etc.)
 
     public function destroy(News $news)
     {
