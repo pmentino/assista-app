@@ -6,10 +6,10 @@ import { Toaster, toast } from 'react-hot-toast';
 export default function AuthenticatedLayout({ user, header, children }) {
     const { props } = usePage();
 
-    // FIX 1: Use the prop 'user' OR fallback to the global auth user (safer)
+    // Use the prop 'user' OR fallback to the global auth user (safer)
     const currentUser = user || props.auth?.user;
 
-    // FIX 2: Check 'type' (database column) instead of 'role'
+    // Check 'type' (database column) instead of 'role'
     const isAdmin = currentUser && currentUser.type === 'admin';
     const isStaff = currentUser && currentUser.type === 'staff';
 
@@ -54,7 +54,7 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                         </Link>
                                         <Link
                                             href={route('admin.applications.index')}
-                                            // FIX 3: Wildcard 'admin.applications.*' keeps it active for sub-pages
+                                            // Wildcard 'admin.applications.*' keeps it active for sub-pages
                                             className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (route().current('admin.applications.*') ? 'border-yellow-400 text-white' : 'border-transparent text-gray-300 hover:text-white hover:border-gray-300')}
                                         >
                                             All Applications
@@ -65,12 +65,15 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                         >
                                             Reports
                                         </Link>
+
+                                        {/* --- FIX: HARDCODED NEWS LINK TO PREVENT CRASH --- */}
                                         <Link
-                                            href={route('admin.news.index')}
-                                            className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (route().current('admin.news.*') ? 'border-yellow-400 text-white' : 'border-transparent text-gray-300 hover:text-white hover:border-gray-300')}
+                                            href="/admin/news"
+                                            className={'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none ' + (window.location.pathname.startsWith('/admin/news') ? 'border-yellow-400 text-white' : 'border-transparent text-gray-300 hover:text-white hover:border-gray-300')}
                                         >
                                             News
                                         </Link>
+                                        {/* ----------------------------------------------- */}
                                     </>
                                 )}
 

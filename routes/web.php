@@ -182,7 +182,16 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
     Route::get('/reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
 
-    Route::resource('news', NewsController::class);
+// --- PUBLIC NEWS ROUTE ---
+Route::get('/news', function () {
+    $news = \App\Models\News::latest()->paginate(9);
+    return Inertia::render('News/Index', [ // Points to resources/js/Pages/News/Index.jsx
+        'news' => $news,
+        'canLogin' => Route::has('login'),
+        'canRegister' => Route::has('register'),
+    ]);
+})->name('public.news'); // Let's give it a unique name to avoid confusion
+
 });
 
 require __DIR__.'/auth.php';

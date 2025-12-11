@@ -33,12 +33,11 @@ export default function Welcome({ auth, news = [] }) {
                         <nav className="hidden md:flex items-center space-x-8">
                             <a href="#home" className="text-gray-200 hover:text-white font-medium">HOME</a>
 
-                            {/* News Link (Only if news exists) */}
+                            {/* News Link */}
                             {news && news.length > 0 && (
                                 <a href="#news" className="text-gray-200 hover:text-white font-medium">NEWS</a>
                             )}
 
-                            {/* UPDATED: Changed SERVICES to ASSISTANCE */}
                             <a href="#assistance" className="text-gray-200 hover:text-white font-medium">ASSISTANCE</a>
                             <a href="#about" className="text-gray-200 hover:text-white font-medium">ABOUT</a>
 
@@ -88,7 +87,6 @@ export default function Welcome({ auth, news = [] }) {
                                 {news && news.length > 0 && (
                                     <a href="#news" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-semibold text-gray-900 hover:bg-gray-50 rounded-md px-3">NEWS</a>
                                 )}
-                                {/* UPDATED: Changed SERVICES to ASSISTANCE */}
                                 <a href="#assistance" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-semibold text-gray-900 hover:bg-gray-50 rounded-md px-3">ASSISTANCE</a>
                                 <a href="#about" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-semibold text-gray-900 hover:bg-gray-50 rounded-md px-3">ABOUT</a>
                                 <hr className="my-4" />
@@ -146,16 +144,23 @@ export default function Welcome({ auth, news = [] }) {
                     <section id="news" className="py-20 bg-white">
                         <div className="container mx-auto px-4">
                             <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Latest Updates</h2>
+
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 {news.map((article) => (
                                     <div key={article.id} className="bg-gray-50 rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                                        {article.image_path && (
-                                            <img
-                                                src={`/storage/${article.image_path}`}
-                                                alt={article.title}
-                                                className="w-full h-48 object-cover"
-                                            />
-                                        )}
+
+                                        {/* --- UPDATED: PLACEHOLDER LOGIC --- */}
+                                        <img
+                                            src={article.image_path ? `/storage/${article.image_path}` : '/images/placeholder.jpg'}
+                                            alt={article.title}
+                                            className="w-full h-48 object-cover"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = '/images/placeholder.jpg';
+                                            }}
+                                        />
+                                        {/* ---------------------------------- */}
+
                                         <div className="p-6">
                                             <p className="text-sm text-gray-500 mb-2">{new Date(article.created_at).toLocaleDateString()}</p>
                                             <h3 className="text-xl font-bold text-gray-900 mb-2">{article.title}</h3>
@@ -164,11 +169,23 @@ export default function Welcome({ auth, news = [] }) {
                                     </div>
                                 ))}
                             </div>
+
+                            {/* --- UPDATED: SEE MORE BUTTON --- */}
+                            <div className="text-center mt-12">
+                                <Link
+    href="/news"
+    className="inline-block bg-white text-blue-800 font-bold py-3 px-8 rounded-full border-2 border-blue-800 hover:bg-blue-800 hover:text-white transition duration-300 shadow-md"
+>
+    View All Updates &rarr;
+</Link>
+                            </div>
+                            {/* ------------------------------- */}
+
                         </div>
                     </section>
                 )}
 
-                {/* --- ASSISTANCE SECTION (Formerly Services) --- */}
+                {/* --- ASSISTANCE SECTION --- */}
                 <section id="assistance" className="py-20 bg-gray-50">
                     <div className="container mx-auto px-4">
                         <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Our Assistance</h2>
@@ -211,7 +228,7 @@ export default function Welcome({ auth, news = [] }) {
                                 <p className="text-sm text-gray-600">Provision for prescription medicines and maintenance drugs.</p>
                             </div>
 
-                            {/* --- Second Row (Automatically Centered) --- */}
+                            {/* --- Second Row --- */}
 
                             {/* Card 5 */}
                             <div className="w-full md:w-[45%] lg:w-[22%] p-6 bg-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center">
