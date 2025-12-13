@@ -141,46 +141,67 @@ export default function Welcome({ auth, news = [] }) {
 
                 {/* --- NEWS SECTION --- */}
                 {news && news.length > 0 && (
-                    <section id="news" className="py-20 bg-white">
+                    <section id="news" className="py-24 bg-white">
                         <div className="container mx-auto px-4">
-                            <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Latest Updates</h2>
+                            <div className="text-center mb-16">
+                                <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">Latest Updates</h2>
+                                <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+                                    Stay informed with the latest announcements, guidelines, and schedules from the CSWDO.
+                                </p>
+                            </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                                 {news.map((article) => (
-                                    <div key={article.id} className="bg-gray-50 rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
-
-                                        {/* --- UPDATED: PLACEHOLDER LOGIC --- */}
-                                        <img
-                                            src={article.image_path ? `/storage/${article.image_path}` : '/images/placeholder.jpg'}
-                                            alt={article.title}
-                                            className="w-full h-48 object-cover"
-                                            onError={(e) => {
-                                                e.target.onerror = null;
-                                                e.target.src = '/images/placeholder.jpg';
-                                            }}
-                                        />
-                                        {/* ---------------------------------- */}
-
-                                        <div className="p-6">
-                                            <p className="text-sm text-gray-500 mb-2">{new Date(article.created_at).toLocaleDateString()}</p>
-                                            <h3 className="text-xl font-bold text-gray-900 mb-2">{article.title}</h3>
-                                            <p className="text-gray-600 line-clamp-3">{article.content}</p>
+                                    <Link
+                                        key={article.id}
+                                        href={route('news.show', article.id)}
+                                        className="group flex flex-col h-full bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden transform hover:-translate-y-1"
+                                    >
+                                        {/* Image Container */}
+                                        <div className="relative h-56 w-full overflow-hidden bg-gray-100">
+                                            {article.image_path ? (
+                                                <img
+                                                    src={`/storage/${article.image_path}`}
+                                                    alt={article.title}
+                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                                    <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg>
+                                                </div>
+                                            )}
+                                            {/* Date Badge */}
+                                            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-blue-800 shadow-sm">
+                                                {article.created_at ? new Date(article.created_at).toLocaleDateString() : 'Update'}
+                                            </div>
                                         </div>
-                                    </div>
+
+                                        {/* Content */}
+                                        <div className="p-6 flex-1 flex flex-col">
+                                            <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-700 transition-colors line-clamp-2">
+                                                {article.title}
+                                            </h3>
+                                            <p className="text-gray-600 text-sm line-clamp-3 mb-6 flex-1">
+                                                {article.content}
+                                            </p>
+                                            <div className="flex items-center text-blue-600 font-semibold text-sm group-hover:translate-x-1 transition-transform">
+                                                Read Full Story
+                                                <svg className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                                            </div>
+                                        </div>
+                                    </Link>
                                 ))}
                             </div>
 
-                            {/* --- UPDATED: SEE MORE BUTTON --- */}
-                            <div className="text-center mt-12">
+                            {/* Fixed "View All" Button */}
+                            <div className="text-center">
                                 <Link
-    href="/news"
-    className="inline-block bg-white text-blue-800 font-bold py-3 px-8 rounded-full border-2 border-blue-800 hover:bg-blue-800 hover:text-white transition duration-300 shadow-md"
->
-    View All Updates &rarr;
-</Link>
+                                    href={route('news.index')}
+                                    className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-blue-900 bg-blue-50 border-2 border-blue-200 rounded-full hover:bg-blue-100 hover:border-blue-300 transition-all duration-300 shadow-sm"
+                                >
+                                    View All Updates
+                                </Link>
                             </div>
-                            {/* ------------------------------- */}
-
                         </div>
                     </section>
                 )}

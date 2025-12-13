@@ -34,15 +34,22 @@ Route::get('/', function () {
     ]);
 });
 
-// MOVED THIS HERE (OUTSIDE ADMIN GROUP): This is the Public News Page
+// Public News Route
 Route::get('/news', function () {
-    $news = \App\Models\News::latest()->paginate(9);
-    return Inertia::render('News/Index', [ // Loads Public Card View
-        'news' => $news,
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
+    return Inertia::render('News/Index', [
+        'news' => \App\Models\News::latest()->get(),
+        // IMPORTANT: Pass auth manually if using a closure, or let HandleInertiaRequests do it (standard)
+        'auth' => ['user' => Auth::user()]
     ]);
-})->name('news.index'); // Public route name
+})->name('news.index');
+
+// Individual News Article
+Route::get('/news/{news}', function (\App\Models\News $news) {
+    return Inertia::render('News/Show', [
+        'news' => $news,
+        'auth' => ['user' => Auth::user()]
+    ]);
+})->name('news.show');
 
 
 // --- USER AUTHENTICATED ROUTES ---
