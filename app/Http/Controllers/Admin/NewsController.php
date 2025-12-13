@@ -5,32 +5,41 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\News;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; // Added this
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class NewsController extends Controller
 {
+    /**
+     * Display a listing of the news.
+     */
     public function index()
     {
-        $news = News::latest()->paginate(10);
+        // We use get() instead of paginate() so your React 'news.map' works perfectly
+        $news = News::latest()->get();
 
         return Inertia::render('Admin/News/Index', [
             'news' => $news,
-            // *** THIS WAS THE MISSING DATA ***
             'auth' => [
                 'user' => Auth::user(),
             ],
         ]);
-}
+    }
 
+    /**
+     * Show the form for creating a new resource.
+     */
     public function create()
     {
         return Inertia::render('Admin/News/Create', [
-            'auth' => ['user' => Auth::user()] // <--- FIXED: Passes user info here too
+            'auth' => ['user' => Auth::user()]
         ]);
     }
 
+    /**
+     * Store a newly created resource in storage.
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -53,65 +62,57 @@ class NewsController extends Controller
         return redirect()->route('admin.news.index')->with('message', 'News posted successfully!');
     }
 
-    // app/Http/Controllers/Admin/NewsController.php
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(News $news)
+    {
+        return Inertia::render('Admin/News/Edit', [
+            'news' => $news,
+            'auth' => [
+                'user' => Auth::user(),
+            ],
+        ]);
+    }
 
-// ... (other methods like index, store, create, etc.)
-
-/**
- * Show the form for editing the specified news item.
- */
-public function edit(News $news)
-{
-    // Pass the specific news item data to the Inertia component
-    return Inertia::render('Admin/News/Edit', [
-        'news' => $news,
-        'auth' => [
-            'user' => Auth::user(),
-        ],
-    ]);
-}
-
-// ... inside NewsController class
-
+    /**
+     * Update the specified resource in storage.
+     */
     public function update(Request $request, News $news)
     {
         // 1. Validate Input
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Max 2MB
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // 2. Handle Image Upload (If a new one is provided)
+        // 2. Handle Image Upload
         if ($request->hasFile('image')) {
-            // Delete old image if it exists to save space
-            if ($news->image_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($news->image_path)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($news->image_path);
+            // Delete old image to save space
+            if ($news->image_path && Storage::disk('public')->exists($news->image_path)) {
+                Storage::disk('public')->delete($news->image_path);
             }
-
-            // Store new image
-            $path = $request->file('image')->store('news_images', 'public');
-            $news->image_path = $path;
+            // Store new one
+            $news->image_path = $request->file('image')->store('news_images', 'public');
         }
 
-        // 3. Update Text Fields
+        // 3. Update Text
         $news->title = $validated['title'];
         $news->content = $validated['content'];
         $news->save();
 
-        // 4. Redirect with Success Message
         return redirect()->route('admin.news.index')->with('message', 'News updated successfully.');
     }
 
-// ... (other methods like update, destroy, etc.)
-
-    // ... inside NewsController class
-
+    /**
+     * Remove the specified resource from storage.
+     */
     public function destroy(News $news)
     {
         // 1. Delete the image file if it exists
-        if ($news->image_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($news->image_path)) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($news->image_path);
+        if ($news->image_path && Storage::disk('public')->exists($news->image_path)) {
+            Storage::disk('public')->delete($news->image_path);
         }
 
         // 2. Delete the record from database
@@ -121,4 +122,3 @@ public function edit(News $news)
         return redirect()->route('admin.news.index')->with('message', 'News item deleted successfully.');
     }
 }
-

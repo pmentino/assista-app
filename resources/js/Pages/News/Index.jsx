@@ -2,10 +2,10 @@ import { Head, Link } from '@inertiajs/react';
 
 export default function Index({ news = [], auth }) {
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 font-sans text-gray-900 antialiased">
             <Head title="News & Updates" />
 
-            {/* --- PUBLIC HEADER (Matches Welcome Page) --- */}
+            {/* --- PUBLIC HEADER (Always visible) --- */}
             <header className="bg-blue-800 shadow-md sticky top-0 z-50">
                 <div className="container mx-auto flex items-center justify-between p-4 px-6">
                     <Link href="/" className="flex items-center gap-3">
@@ -19,7 +19,7 @@ export default function Index({ news = [], auth }) {
                         <Link href="/#assistance" className="text-gray-200 hover:text-white font-medium transition">ASSISTANCE</Link>
                         <Link href="/#about" className="text-gray-200 hover:text-white font-medium transition">ABOUT</Link>
 
-                        {/* Dashboard Button */}
+                        {/* Dynamic Button: Shows 'Dashboard' if logged in, 'Login' if not */}
                         <Link
                             href={auth?.user ? route('dashboard') : route('login')}
                             className="bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-bold py-2 px-6 rounded-full shadow transition-transform transform hover:scale-105"
@@ -31,12 +31,12 @@ export default function Index({ news = [], auth }) {
             </header>
 
             {/* --- MAIN CONTENT --- */}
-            <main className="py-16">
+            <main className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
+                    <div className="text-center mb-12">
                         <h2 className="text-4xl font-extrabold text-blue-900 tracking-tight">Latest Updates</h2>
                         <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-                            Official announcements, schedules, and guidelines from the City Social Welfare and Development Office.
+                            Stay informed with the latest announcements from the CSWDO.
                         </p>
                     </div>
 
@@ -46,7 +46,7 @@ export default function Index({ news = [], auth }) {
                                 <Link
                                     href={route('news.show', item.id)}
                                     key={item.id}
-                                    className="group flex flex-col bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 transform hover:-translate-y-2"
+                                    className="group flex flex-col bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 transform hover:-translate-y-2 h-full"
                                 >
                                     {/* Image Section */}
                                     <div className="relative h-56 w-full bg-gray-200 overflow-hidden">
@@ -64,7 +64,7 @@ export default function Index({ news = [], auth }) {
                                             </div>
                                         )}
                                         <div className="absolute top-4 right-4 bg-blue-900/90 backdrop-blur text-white text-xs font-bold px-3 py-1 rounded-lg shadow-sm">
-                                            {new Date(item.created_at).toLocaleDateString()}
+                                            {item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Update'}
                                         </div>
                                     </div>
 
@@ -87,20 +87,12 @@ export default function Index({ news = [], auth }) {
                             ))}
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl shadow-sm border border-gray-200 mx-4">
-                            <svg className="h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                            </svg>
-                            <p className="text-gray-500 text-lg">No news updates found.</p>
+                        <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-gray-200 mx-4">
+                            <p className="text-gray-500 text-lg">No news updates available.</p>
                         </div>
                     )}
                 </div>
             </main>
-
-            {/* --- SIMPLE FOOTER --- */}
-            <footer className="bg-blue-900 text-white py-8 text-center mt-auto">
-                <p className="text-sm opacity-75">&copy; {new Date().getFullYear()} CSWDO Assista System. All rights reserved.</p>
-            </footer>
         </div>
     );
 }
