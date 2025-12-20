@@ -1,73 +1,36 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage, Link } from '@inertiajs/react';
 import { useState } from 'react';
 
-// --- CONFIGURATION: Requirements Labels ---
+// --- CONFIGURATION ---
 const REQUIREMENTS_MAP = {
-    'Hospitalization': [
-        'Personal Letter to Mayor',
-        'Final Hospital Bill',
-        'Medical Abstract / Medical Certificate',
-        'Promissory Note'
-    ],
-    'Laboratory Tests': [
-        'Personal Letter to Mayor',
-        'Laboratory Request',
-        'Medical Certificate'
-    ],
-    'Anti-Rabies Vaccine Treatment': [
-        'Personal Letter to Mayor',
-        'Rabies Vaccination Card',
-        'Medical Certificate'
-    ],
-    'Medicine Assistance': [
-        'Personal Letter to Mayor',
-        'Prescription',
-        'Medical Certificate'
-    ],
-    'Funeral Assistance': [
-        'Personal Letter to Mayor',
-        'Death Certificate',
-        'Burial Contract'
-    ],
-    'Chemotherapy': [
-        'Personal Letter to Mayor',
-        'Chemotherapy Protocol',
-        'Medical Certificate',
-        'Quotation of Medicine'
-    ],
-    'Diagnostic Blood Tests': [
-        'Personal Letter to Mayor',
-        'Diagnostic Request',
-        'Medical Certificate'
-    ]
+    'Hospitalization': ['Personal Letter to Mayor', 'Final Hospital Bill', 'Medical Abstract / Certificate', 'Promissory Note'],
+    'Laboratory Tests': ['Personal Letter to Mayor', 'Laboratory Request', 'Medical Certificate'],
+    'Anti-Rabies Vaccine Treatment': ['Personal Letter to Mayor', 'Rabies Vaccination Card', 'Medical Certificate'],
+    'Medicine Assistance': ['Personal Letter to Mayor', 'Prescription', 'Medical Certificate'],
+    'Funeral Assistance': ['Personal Letter to Mayor', 'Death Certificate', 'Burial Contract'],
+    'Chemotherapy': ['Personal Letter to Mayor', 'Chemotherapy Protocol', 'Medical Certificate', 'Quotation of Medicine'],
+    'Diagnostic Blood Tests': ['Personal Letter to Mayor', 'Diagnostic Request', 'Medical Certificate']
 };
 
 export default function ApplicationShow({ application }) {
     const { auth } = usePage().props;
     const user = auth?.user || { name: 'Admin' };
 
-    // Form for Rejection
-    const { data, setData, post, processing } = useForm({
-        remarks: application.remarks || '',
-    });
+    // Forms
+    const { data, setData, post, processing } = useForm({ remarks: application.remarks || '' });
+    const approveForm = useForm({ amount: '' });
 
-    // Form for Approval (Amount)
-    const approveForm = useForm({
-        amount: '',
-    });
-
+    // Modals
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [showApproveModal, setShowApproveModal] = useState(false);
 
+    // Handlers
     const submitRemark = (e) => {
         e.preventDefault();
         post(route('admin.applications.remarks.store', application.id), {
             preserveScroll: true,
-            onSuccess: () => {
-                setShowRejectModal(false);
-                window.location.reload();
-            },
+            onSuccess: () => { setShowRejectModal(false); window.location.reload(); },
         });
     };
 
@@ -75,213 +38,249 @@ export default function ApplicationShow({ application }) {
         e.preventDefault();
         approveForm.post(route('admin.applications.approve', application.id), {
             preserveScroll: true,
-            onSuccess: () => {
-                setShowApproveModal(false);
-                window.location.reload();
-            }
+            onSuccess: () => { setShowApproveModal(false); window.location.reload(); }
         });
     };
 
-    const getAttachmentLabel = (index) => {
-        if (!application.program) return `Attachment ${parseInt(index) + 1}`;
+    const getAttachmentLabel = (key) => {
+        const labels = { valid_id: 'Valid Government ID', indigency_cert: 'Certificate of Indigency' };
+        if (labels[key]) return labels[key];
+
+        // Dynamic Requirement Labeling
+        if (!application.program) return `Attachment ${key}`;
         const programReqs = REQUIREMENTS_MAP[application.program];
-        const i = parseInt(index);
-        if (programReqs && programReqs[i]) {
-            return programReqs[i];
-        }
-        return `Attachment #${i + 1}`;
+        const index = parseInt(key);
+        return (programReqs && programReqs[index]) ? programReqs[index] : `Supporting Document #${index + 1}`;
+    };
+
+    const statusColors = {
+        'Approved': 'bg-green-100 text-green-800 border-green-200',
+        'Rejected': 'bg-red-100 text-red-800 border-red-200',
+        'Pending': 'bg-yellow-100 text-yellow-800 border-yellow-200',
     };
 
     return (
         <AuthenticatedLayout
             user={user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Application Details</h2>}
+            header={
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-4">
+                        <Link href={route('admin.applications.index')} className="text-gray-500 hover:text-gray-700">
+                            &larr; Back
+                        </Link>
+                        <h2 className="font-bold text-2xl text-gray-800 leading-tight">
+                            Application #{String(application.id).padStart(5, '0')}
+                        </h2>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${statusColors[application.status] || 'bg-gray-100'}`}>
+                            {application.status}
+                        </span>
+                    </div>
+                    {/* Action Buttons (Only for Pending) */}
+                    {application.status === 'Pending' && (
+                        <div className="flex gap-2">
+                            <button onClick={() => setShowRejectModal(true)} className="px-4 py-2 bg-white border border-red-300 text-red-700 font-bold rounded-lg shadow-sm hover:bg-red-50 transition">
+                                Reject
+                            </button>
+                            <button onClick={() => setShowApproveModal(true)} className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700 transition">
+                                Approve Application
+                            </button>
+                        </div>
+                    )}
+                </div>
+            }
         >
             <Head title={`Application #${application.id}`} />
 
-            <div className="py-12">
+            <div className="py-10 bg-gray-50 min-h-screen">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
 
-                            {/* Header / Actions */}
-                            <div className="flex flex-col md:flex-row justify-between items-start mb-6 border-b pb-4 gap-4">
-                                <div>
-                                    <h3 className="text-3xl font-bold mb-1 text-blue-900">{application.program}</h3>
-                                    <p className="text-sm text-gray-500">
-                                        Submitted by: <span className="font-semibold text-gray-900">{application.first_name} {application.last_name}</span>
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                        Date Submitted: {new Date(application.created_at).toLocaleDateString()}
-                                    </p>
+                    {/* --- MAIN CONTENT GRID --- */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                                    {/* --- NEW CODE: SHOW APPROVED DATE HERE --- */}
-                                    {application.status === 'Approved' && application.approved_date && (
-                                       <p className="text-sm text-green-700 font-bold mt-1">
-                                           Date Approved: {new Date(application.approved_date).toLocaleString('en-PH', {
-                                               year: 'numeric', month: 'long', day: 'numeric',
-                                               hour: '2-digit', minute: '2-digit'
-                                           })}
-                                       </p>
-                                    )}
-                                    {/* ----------------------------------------- */}
+                        {/* LEFT COLUMN: Applicant Details */}
+                        <div className="lg:col-span-2 space-y-6">
 
-                                    {/* Display Amount if Approved */}
-                                    {application.status === 'Approved' && application.amount_released && (
-                                        <p className="mt-2 text-lg font-bold text-green-600">
-                                            Amount Released: ₱{new Intl.NumberFormat('en-PH').format(application.amount_released)}
-                                        </p>
-                                    )}
+                            {/* Card 1: Request Info */}
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
+                                    <h3 className="font-bold text-gray-800">Assistance Request</h3>
                                 </div>
-                                <div className="flex gap-3">
-                                    {application.status === 'Pending' && (
-                                        <>
-                                            <button
-                                                onClick={() => setShowApproveModal(true)}
-                                                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded shadow"
-                                            >
-                                                Approve
-                                            </button>
-                                            <button
-                                                onClick={() => setShowRejectModal(true)}
-                                                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded shadow"
-                                            >
-                                                Reject
-                                            </button>
-                                        </>
-                                    )}
-                                    <span className={`px-4 py-2 rounded-full font-bold text-sm border ${
-                                        application.status === 'Approved' ? 'bg-green-100 text-green-800 border-green-200' :
-                                        application.status === 'Rejected' ? 'bg-red-100 text-red-800 border-red-200' :
-                                        'bg-yellow-100 text-yellow-800 border-yellow-200'
-                                    }`}>
-                                        {application.status}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Details Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                                <div className="bg-gray-50 p-4 rounded-lg border">
-                                    <h4 className="font-bold text-lg mb-3 border-b border-gray-200 pb-2 text-gray-700">Personal Information</h4>
-                                    <div className="space-y-3 text-sm">
-                                        <p><span className="font-medium text-gray-500 block">Full Name:</span> {application.first_name} {application.middle_name} {application.last_name} {application.suffix_name}</p>
-                                        <p><span className="font-medium text-gray-500 block">Birth Date:</span> {new Date(application.birth_date).toLocaleDateString()}</p>
-                                        <p><span className="font-medium text-gray-500 block">Sex:</span> {application.sex}</p>
-                                        <p><span className="font-medium text-gray-500 block">Civil Status:</span> {application.civil_status}</p>
-                                    </div>
-                                </div>
-                                <div className="bg-gray-50 p-4 rounded-lg border">
-                                    <h4 className="font-bold text-lg mb-3 border-b border-gray-200 pb-2 text-gray-700">Contact & Address</h4>
-                                    <div className="space-y-3 text-sm">
-                                        <p><span className="font-medium text-gray-500 block">Address:</span> {application.house_no} {application.barangay}, {application.city}</p>
-                                        <p><span className="font-medium text-gray-500 block">Contact No:</span> {application.contact_number}</p>
-                                        <p><span className="font-medium text-gray-500 block">Email:</span> {application.email}</p>
-                                        <p><span className="font-medium text-gray-500 block">Facebook:</span> {application.facebook_link || 'N/A'}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Attachments Section */}
-                            <div className="mb-8">
-                                <h4 className="font-bold text-lg mb-4 text-gray-800">Submitted Documents</h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                    {application.attachments?.valid_id && (
-                                        <div className="border rounded-lg p-4 bg-blue-50 hover:bg-blue-100 transition">
-                                            <p className="font-bold text-sm text-blue-900 mb-2">Valid ID</p>
-                                            <a href={`/storage/${application.attachments.valid_id}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-sm font-medium flex items-center">
-                                                View Document
-                                            </a>
+                                <div className="p-6">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div>
+                                            <p className="text-sm text-gray-500 uppercase font-bold tracking-wide">Program Type</p>
+                                            <p className="text-xl font-bold text-blue-900 mt-1">{application.program}</p>
                                         </div>
-                                    )}
-                                    {application.attachments?.indigency_cert && (
-                                        <div className="border rounded-lg p-4 bg-blue-50 hover:bg-blue-100 transition">
-                                            <p className="font-bold text-sm text-blue-900 mb-2">Social Case Summary</p>
-                                            <a href={`/storage/${application.attachments.indigency_cert}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-sm font-medium flex items-center">
-                                                View Document
-                                            </a>
+                                        <div className="text-right">
+                                            <p className="text-sm text-gray-500 uppercase font-bold tracking-wide">Date Submitted</p>
+                                            <p className="text-gray-900 mt-1">{new Date(application.created_at).toLocaleDateString()}</p>
                                         </div>
-                                    )}
-                                    {application.attachments && Object.entries(application.attachments).map(([key, path]) => {
-                                        if (key === 'valid_id' || key === 'indigency_cert' || typeof path !== 'string') return null;
-                                        return (
-                                            <div key={key} className="border rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition">
-                                                <p className="font-bold text-sm text-gray-800 mb-2">{getAttachmentLabel(key)}</p>
-                                                <a href={`/storage/${path}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-sm font-medium flex items-center">
-                                                    View Document
-                                                </a>
+                                    </div>
+
+                                    {/* Approved Details */}
+                                    {application.status === 'Approved' && (
+                                        <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-100 flex justify-between items-center">
+                                            <div>
+                                                <p className="text-xs font-bold text-green-800 uppercase">Amount Released</p>
+                                                <p className="text-2xl font-bold text-green-700">₱{new Intl.NumberFormat('en-PH').format(application.amount_released)}</p>
                                             </div>
+                                            <div className="text-right">
+                                                <p className="text-xs font-bold text-green-800 uppercase">Date Approved</p>
+                                                <p className="text-green-900 font-medium">
+                                                    {application.approved_date ? new Date(application.approved_date).toLocaleDateString() : 'N/A'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Rejected Details */}
+                                    {application.status === 'Rejected' && application.remarks && (
+                                        <div className="mt-6 p-4 bg-red-50 rounded-lg border border-red-100">
+                                            <p className="text-xs font-bold text-red-800 uppercase mb-1">Reason for Rejection</p>
+                                            <p className="text-red-900">{application.remarks}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Card 2: Documents */}
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
+                                    <h3 className="font-bold text-gray-800">Submitted Documents</h3>
+                                </div>
+                                <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {application.attachments && Object.entries(application.attachments).map(([key, path]) => {
+                                        if (typeof path !== 'string') return null;
+                                        return (
+                                            <a
+                                                key={key}
+                                                href={`/storage/${path}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition group"
+                                            >
+                                                <div className="bg-blue-100 p-3 rounded-md text-blue-600 mr-4 group-hover:bg-blue-200">
+                                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-gray-800 group-hover:text-blue-800">{getAttachmentLabel(key)}</p>
+                                                    <p className="text-xs text-gray-500">Click to view file</p>
+                                                </div>
+                                            </a>
                                         );
                                     })}
                                 </div>
                             </div>
-
-                            {/* --- REJECTION MODAL --- */}
-                            {showRejectModal && (
-                                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
-                                    <div className="bg-white p-6 rounded-lg shadow-xl w-96 transform transition-all scale-100">
-                                        <h3 className="text-lg font-bold mb-4 text-red-700">Reject Application</h3>
-                                        <form onSubmit={submitRemark}>
-                                            <div className="mb-4">
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">Reason</label>
-                                                <textarea
-                                                    className="w-full border-gray-300 rounded-md shadow-sm focus:border-red-500 focus:ring-red-500"
-                                                    rows="4"
-                                                    value={data.remarks}
-                                                    onChange={(e) => setData('remarks', e.target.value)}
-                                                    required
-                                                ></textarea>
-                                            </div>
-                                            <div className="flex justify-end gap-2">
-                                                <button type="button" onClick={() => setShowRejectModal(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Cancel</button>
-                                                <button type="submit" disabled={processing} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Confirm Rejection</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* --- APPROVAL MODAL --- */}
-                            {showApproveModal && (
-                                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
-                                    <div className="bg-white p-6 rounded-lg shadow-xl w-96 transform transition-all scale-100">
-                                        <h3 className="text-lg font-bold mb-4 text-green-700">Approve Application</h3>
-                                        <p className="text-sm text-gray-500 mb-4">Please enter the total amount of financial assistance to be released.</p>
-                                        <form onSubmit={submitApprove}>
-                                            <div className="mb-4">
-                                                <label className="block text-sm font-bold text-gray-700 mb-2">Amount (PHP) *</label>
-                                                <div className="relative rounded-md shadow-sm">
-                                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                        <span className="text-gray-500 sm:text-sm">₱</span>
-                                                    </div>
-                                                    <input
-                                                        type="number"
-                                                        className="focus:ring-green-500 focus:border-green-500 block w-full pl-7 sm:text-sm border-gray-300 rounded-md"
-                                                        placeholder="0.00"
-                                                        value={approveForm.data.amount}
-                                                        onChange={(e) => approveForm.setData('amount', e.target.value)}
-                                                        required
-                                                        min="0"
-                                                        step="0.01"
-                                                    />
-                                                </div>
-                                                {approveForm.errors.amount && (
-                                                    <p className="text-red-500 text-xs mt-1">{approveForm.errors.amount}</p>
-                                                )}
-                                            </div>
-                                            <div className="flex justify-end gap-2">
-                                                <button type="button" onClick={() => setShowApproveModal(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Cancel</button>
-                                                <button type="submit" disabled={approveForm.processing} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold shadow">
-                                                    Confirm & Approve
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            )}
-
                         </div>
+
+                        {/* RIGHT COLUMN: Profile Info */}
+                        <div className="space-y-6">
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
+                                    <h3 className="font-bold text-gray-800">Applicant Profile</h3>
+                                </div>
+                                <div className="p-6 space-y-4">
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Full Name</label>
+                                        <p className="text-gray-900 font-medium">{application.first_name} {application.middle_name} {application.last_name} {application.suffix_name}</p>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Birth Date</label>
+                                            <p className="text-gray-900">{new Date(application.birth_date).toLocaleDateString()}</p>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Sex</label>
+                                            <p className="text-gray-900">{application.sex}</p>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Civil Status</label>
+                                        <p className="text-gray-900">{application.civil_status}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
+                                    <h3 className="font-bold text-gray-800">Contact Details</h3>
+                                </div>
+                                <div className="p-6 space-y-4">
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Address</label>
+                                        <p className="text-gray-900">{application.house_no} {application.barangay}, {application.city}</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Phone Number</label>
+                                        <p className="text-gray-900 font-mono">{application.contact_number}</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Email Address</label>
+                                        <p className="text-gray-900">{application.email}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
+
+                    {/* --- REJECTION MODAL --- */}
+                    {showRejectModal && (
+                        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 backdrop-blur-sm">
+                            <div className="bg-white p-6 rounded-xl shadow-2xl w-96 transform transition-all scale-100">
+                                <h3 className="text-lg font-bold mb-2 text-red-700">Reject Application</h3>
+                                <p className="text-sm text-gray-500 mb-4">Please provide a reason for rejection. This will be visible to the applicant.</p>
+                                <form onSubmit={submitRemark}>
+                                    <textarea
+                                        className="w-full border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-red-500 mb-4"
+                                        rows="4"
+                                        value={data.remarks}
+                                        onChange={(e) => setData('remarks', e.target.value)}
+                                        placeholder="Enter reason here..."
+                                        required
+                                    ></textarea>
+                                    <div className="flex justify-end gap-2">
+                                        <button type="button" onClick={() => setShowRejectModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200">Cancel</button>
+                                        <button type="submit" disabled={processing} className="px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 shadow">Confirm Rejection</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* --- APPROVAL MODAL --- */}
+                    {showApproveModal && (
+                        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 backdrop-blur-sm">
+                            <div className="bg-white p-6 rounded-xl shadow-2xl w-96 transform transition-all scale-100">
+                                <h3 className="text-lg font-bold mb-2 text-green-700">Approve Application</h3>
+                                <p className="text-sm text-gray-500 mb-4">Enter the approved assistance amount to release.</p>
+                                <form onSubmit={submitApprove}>
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Amount (PHP)</label>
+                                        <div className="relative rounded-md shadow-sm">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><span className="text-gray-500 sm:text-sm font-bold">₱</span></div>
+                                            <input
+                                                type="number"
+                                                className="focus:ring-green-500 focus:border-green-500 block w-full pl-7 sm:text-lg font-bold border-gray-300 rounded-lg py-3"
+                                                placeholder="0.00"
+                                                value={approveForm.data.amount}
+                                                onChange={(e) => approveForm.setData('amount', e.target.value)}
+                                                required
+                                                min="0"
+                                                step="0.01"
+                                            />
+                                        </div>
+                                        {approveForm.errors.amount && <p className="text-red-500 text-xs mt-1">{approveForm.errors.amount}</p>}
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                        <button type="button" onClick={() => setShowApproveModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200">Cancel</button>
+                                        <button type="submit" disabled={approveForm.processing} className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 shadow">Confirm Approval</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
                 </div>
             </div>
         </AuthenticatedLayout>

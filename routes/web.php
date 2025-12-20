@@ -135,7 +135,6 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
             ->select('barangay', \Illuminate\Support\Facades\DB::raw('count(*) as total'), \Illuminate\Support\Facades\DB::raw('sum(amount_released) as amount'))
             ->groupBy('barangay')
             ->orderByRaw('CAST(sum(amount_released) as DECIMAL(15,2)) DESC')
-            ->limit(5)
             ->get();
 
         $allBarangays = ApplicationModel::select('barangay')->distinct()->orderBy('barangay')->pluck('barangay');

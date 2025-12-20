@@ -1,103 +1,126 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, Head } from '@inertiajs/react';
 
-// Icon components for the mobile menu
-const MenuIcon = () => (
-    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
-    </svg>
-);
-const CloseIcon = () => (
-    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-    </svg>
-);
+// --- ICONS ---
+const MenuIcon = () => (<svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" /></svg>);
+const CloseIcon = () => (<svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>);
+
+// --- DATA: YOUR EXACT CONTENT ---
+const assistancePrograms = [
+    {
+        title: 'Hospitalization',
+        desc: 'Help with hospital bills, confinement costs, and surgical procedures.',
+        icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'
+    },
+    {
+        title: 'Medicine Assistance',
+        desc: 'Provision for prescription medicines and maintenance drugs.',
+        icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z'
+    },
+    {
+        title: 'Laboratory / Diagnostic Tests',
+        desc: 'Financial support for required medical laboratory examinations and workups.',
+        icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01'
+    },
+    {
+        title: 'Chemotherapy',
+        desc: 'Financial aid specifically for cancer treatments and chemo sessions.',
+        icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'
+    },
+    {
+        title: 'Anti-Rabies Vaccine',
+        desc: 'Assistance for animal bite treatment and vaccination courses.',
+        icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
+    },
+    {
+        title: 'Funeral Assistance',
+        desc: 'Support for burial and funeral expenses for indigent families.',
+        icon: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+    },
+    {
+        title: 'Educational Assistance',
+        desc: 'Financial aid for students in crisis situations.',
+        icon: 'M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z'
+    }
+];
 
 export default function Welcome({ auth, news = [] }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => setScrolled(window.scrollY > 20);
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     return (
         <>
             <Head title="Welcome to Assista" />
-            <div className="min-h-screen bg-white text-gray-800">
+            <div className="min-h-screen bg-gray-50 text-gray-800 font-sans scroll-smooth">
 
                 {/* --- HEADER --- */}
-                <header id="#home" className="bg-blue-800 shadow-sm sticky top-0 z-50">
-                    <div className="container mx-auto flex items-center justify-between p-4">
-                        <a href="#home" className="flex items-center cursor-pointer">
-                            <img src="/images/logo.png" alt="Assista Logo" className="h-10 w-auto mr-3" />
-                            <span className="text-2xl font-bold text-white">ASSISTA</span>
+                <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-blue-900 shadow-md py-2' : 'bg-blue-800 py-4'}`}>
+                    <div className="container mx-auto px-4 md:px-8 flex items-center justify-between">
+                        <a href="#home" className="flex items-center gap-3 group">
+                            <div className="bg-white p-1 rounded-full group-hover:scale-105 transition-transform">
+                                <img src="/images/logo.png" alt="Logo" className="h-8 w-auto" />
+                            </div>
+                            <span className="text-xl md:text-2xl font-extrabold text-white tracking-wide">ASSISTA</span>
                         </a>
 
                         {/* DESKTOP NAV */}
-                        <nav className="hidden md:flex items-center space-x-8">
-                            <a href="#home" className="text-gray-200 hover:text-white font-medium">HOME</a>
+                        <nav className="hidden md:flex items-center space-x-8 text-sm font-bold tracking-wide">
+                            {['HOME', 'NEWS', 'ASSISTANCE', 'ABOUT'].map((item) => (
+                                <a key={item} href={`#${item.toLowerCase()}`} className="text-gray-300 hover:text-white transition-colors relative group">
+                                    {item}
+                                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-yellow-400 transition-all group-hover:w-full"></span>
+                                </a>
+                            ))}
 
-                            {/* News Link */}
-                            {news && news.length > 0 && (
-                                <a href="#news" className="text-gray-200 hover:text-white font-medium">NEWS</a>
-                            )}
-
-                            <a href="#assistance" className="text-gray-200 hover:text-white font-medium">ASSISTANCE</a>
-                            <a href="#about" className="text-gray-200 hover:text-white font-medium">ABOUT</a>
-
-                            {/* Auth Logic */}
                             {auth.user ? (
-                                <Link
-                                    href={route('dashboard')}
-                                    className="bg-yellow-500 text-white font-bold py-2 px-6 rounded-md hover:bg-yellow-600 transition duration-300"
-                                >
+                                <Link href={route('dashboard')} className="bg-yellow-500 hover:bg-yellow-400 text-blue-900 px-6 py-2 rounded-full transition-transform hover:scale-105 shadow-lg">
                                     DASHBOARD
                                 </Link>
                             ) : (
-                                <>
-                                    <Link href={route('login')} className="text-gray-200 hover:text-white font-medium">LOG IN</Link>
-                                    <Link
-                                        href={route('register')}
-                                        className="bg-yellow-500 text-white font-bold py-2 px-6 rounded-md hover:bg-yellow-600 transition duration-300"
-                                    >
-                                        REGISTER
+                                <div className="flex gap-4">
+                                    <Link href={route('login')} className="text-white hover:text-yellow-400 transition">LOG IN</Link>
+                                    <Link href={route('register')} className="bg-white text-blue-900 px-5 py-2 rounded-full hover:bg-gray-100 font-bold shadow-md transition-transform hover:scale-105">
+                                        GET STARTED
                                     </Link>
-                                </>
+                                </div>
                             )}
                         </nav>
 
-                        {/* Mobile Menu Button */}
-                        <div className="md:hidden">
-                            <button onClick={() => setMobileMenuOpen(true)} className="text-white">
-                                <MenuIcon />
-                            </button>
-                        </div>
+                        {/* MOBILE MENU BUTTON */}
+                        <button className="md:hidden text-white focus:outline-none" onClick={() => setMobileMenuOpen(true)}>
+                            <MenuIcon />
+                        </button>
                     </div>
                 </header>
 
                 {/* --- MOBILE MENU OVERLAY --- */}
                 {mobileMenuOpen && (
-                    <div className="md:hidden fixed inset-0 z-50">
-                        <div className="fixed inset-0 bg-black bg-opacity-25" onClick={() => setMobileMenuOpen(false)} />
-                        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-xs bg-white p-6 overflow-y-auto">
-                            <div className="flex items-center justify-between mb-6">
-                                <span className="text-xl font-bold text-blue-800">MENU</span>
-                                <button onClick={() => setMobileMenuOpen(false)} className="text-gray-700">
-                                    <CloseIcon />
-                                </button>
+                    <div className="fixed inset-0 z-50 flex justify-end">
+                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
+                        <div className="relative bg-white w-3/4 max-w-sm h-full shadow-2xl p-6 flex flex-col transform transition-transform duration-300 ease-in-out">
+                            <div className="flex justify-between items-center mb-8 border-b pb-4">
+                                <span className="text-xl font-bold text-blue-900">MENU</span>
+                                <button onClick={() => setMobileMenuOpen(false)} className="text-gray-500 hover:text-red-500"><CloseIcon /></button>
                             </div>
-                            <div className="flex flex-col space-y-4">
-                                <a href="#home" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-semibold text-gray-900 hover:bg-gray-50 rounded-md px-3">HOME</a>
-                                {news && news.length > 0 && (
-                                    <a href="#news" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-semibold text-gray-900 hover:bg-gray-50 rounded-md px-3">NEWS</a>
-                                )}
-                                <a href="#assistance" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-semibold text-gray-900 hover:bg-gray-50 rounded-md px-3">ASSISTANCE</a>
-                                <a href="#about" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-semibold text-gray-900 hover:bg-gray-50 rounded-md px-3">ABOUT</a>
-                                <hr className="my-4" />
-
-                                {/* Mobile Auth Logic */}
+                            <nav className="flex flex-col space-y-4 text-lg font-medium text-gray-700">
+                                <a href="#home" onClick={() => setMobileMenuOpen(false)} className="hover:text-blue-600 border-b border-gray-100 pb-2">Home</a>
+                                <a href="#news" onClick={() => setMobileMenuOpen(false)} className="hover:text-blue-600 border-b border-gray-100 pb-2">News & Updates</a>
+                                <a href="#assistance" onClick={() => setMobileMenuOpen(false)} className="hover:text-blue-600 border-b border-gray-100 pb-2">Assistance Programs</a>
+                                <a href="#about" onClick={() => setMobileMenuOpen(false)} className="hover:text-blue-600 border-b border-gray-100 pb-2">About Us</a>
+                            </nav>
+                            <div className="mt-auto space-y-3">
                                 {auth.user ? (
-                                     <Link href={route('dashboard')} className="block w-full text-center bg-yellow-500 text-white font-bold py-3 px-6 rounded-md hover:bg-yellow-600 transition duration-300">DASHBOARD</Link>
+                                    <Link href={route('dashboard')} className="block w-full text-center bg-blue-900 text-white py-3 rounded-lg font-bold shadow-lg">Go to Dashboard</Link>
                                 ) : (
                                     <>
-                                        <Link href={route('register')} className="block w-full text-center bg-yellow-500 text-white font-bold py-3 px-6 rounded-md hover:bg-yellow-600 transition duration-300">REGISTER</Link>
-                                        <Link href={route('login')} className="block w-full text-center bg-blue-800 text-white font-bold py-3 px-6 rounded-md hover:bg-blue-900 transition duration-300 mt-2">LOG IN</Link>
+                                        <Link href={route('login')} className="block w-full text-center border-2 border-blue-900 text-blue-900 py-3 rounded-lg font-bold hover:bg-blue-50">Log In</Link>
+                                        <Link href={route('register')} className="block w-full text-center bg-yellow-500 text-blue-900 py-3 rounded-lg font-bold shadow-lg hover:bg-yellow-400">Register Now</Link>
                                     </>
                                 )}
                             </div>
@@ -105,198 +128,141 @@ export default function Welcome({ auth, news = [] }) {
                     </div>
                 )}
 
-
                 {/* --- HERO SECTION --- */}
-                <main className="container mx-auto mt-16 px-4">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-12 min-h-[80vh]">
-                        <div className="md:w-1/2 text-center md:text-left pt-16 md:pt-0">
-                            <img src="/images/dswd-logo.png" alt="DSWD Logo" className="h-24 md:h-32 w-auto mb-6 mx-auto md:mx-0" />
-                            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight">
-                                Assistance to Individuals in Crisis Situation (AICS)
+                <section id="home" className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden bg-white scroll-mt-24">
+                    <div className="container mx-auto px-4 flex flex-col-reverse md:flex-row items-center gap-12">
+                        <div className="md:w-1/2 text-center md:text-left z-10">
+                            <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-800 px-4 py-1.5 rounded-full text-sm font-bold mb-6 shadow-sm border border-blue-100">
+                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                Online Applications Open
+                            </div>
+                            <h1 className="text-4xl md:text-6xl font-extrabold text-slate-900 leading-tight mb-6">
+                                Assistance to Individuals in <span className="text-blue-700">Crisis Situation (AICS)</span>
                             </h1>
-                            <p className="mt-4 text-lg text-gray-600">
-                                Providing assistance and essential support to individuals in need.
+                            <p className="text-lg text-slate-600 mb-8 max-w-lg mx-auto md:mx-0 leading-relaxed">
+                                Providing assistance and essential support to individuals in need. Our platform offers immediate medical, burial, and educational assistance to families in crisis.
                             </p>
-                            <div className="mt-8 flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0 justify-center md:justify-start">
-                                {/* Smart Apply Button */}
-                                <Link
-                                    href={auth.user ? route('dashboard') : route('register')}
-                                    className="w-full sm:w-auto text-center bg-blue-800 text-white font-bold py-4 px-8 rounded-md hover:bg-blue-900 transition duration-300"
-                                >
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                                <Link href={auth.user ? route('dashboard') : route('register')} className="bg-blue-700 hover:bg-blue-800 text-white px-8 py-4 rounded-xl font-bold shadow-lg shadow-blue-200 transition-all hover:-translate-y-1">
                                     {auth.user ? 'GO TO DASHBOARD' : 'APPLY NOW'}
                                 </Link>
-                                <a
-                                    href="#about"
-                                    className="w-full sm:w-auto text-center bg-white text-blue-800 font-bold py-4 px-8 rounded-md border-2 border-blue-800 hover:bg-gray-100 transition duration-300"
-                                >
+                                <a href="#about" className="bg-white text-slate-700 border border-slate-200 px-8 py-4 rounded-xl font-bold hover:bg-slate-50 transition-all">
                                     LEARN MORE
                                 </a>
                             </div>
                         </div>
-                        <div className="md:w-1/2 flex items-center justify-center">
-                            <img src="/images/assista-bg.png" alt="Illustration" className="w-full h-auto max-w-lg" />
+                        <div className="md:w-1/2 relative">
+                            <div className="absolute inset-0 bg-blue-100 rounded-full filter blur-3xl opacity-30 transform scale-75 animate-pulse"></div>
+                            <img src="/images/assista-bg.png" alt="Helping Hand" className="relative z-10 w-full max-w-md mx-auto drop-shadow-2xl hover:scale-105 transition-transform duration-500" />
                         </div>
                     </div>
-                </main>
+                </section>
 
                 {/* --- NEWS SECTION --- */}
                 {news && news.length > 0 && (
-                    <section id="news" className="py-24 bg-white">
+                    <section id="news" className="py-24 bg-slate-50 scroll-mt-24">
                         <div className="container mx-auto px-4">
                             <div className="text-center mb-16">
-                                <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">Latest Updates</h2>
-                                <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-                                    Stay informed with the latest announcements, guidelines, and schedules from the CSWDO.
-                                </p>
+                                <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Latest Updates</h2>
+                                <p className="text-slate-500 max-w-2xl mx-auto">Official announcements from the City Social Welfare and Development Office.</p>
                             </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                                {news.map((article) => (
-                                    <Link
-                                        key={article.id}
-                                        href={route('news.show', article.id)}
-                                        className="group flex flex-col h-full bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden transform hover:-translate-y-1"
-                                    >
-                                        {/* Image Container */}
-                                        <div className="relative h-56 w-full overflow-hidden bg-gray-100">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                {news.slice(0, 3).map((article) => (
+                                    <Link key={article.id} href={route('news.show', article.id)} className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full border border-slate-100">
+                                        <div className="h-48 overflow-hidden bg-gray-200 relative">
                                             {article.image_path ? (
-                                                <img
-                                                    src={`/storage/${article.image_path}`}
-                                                    alt={article.title}
-                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                                />
+                                                <img src={`/storage/${article.image_path}`} alt={article.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                                             ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                                    <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg>
-                                                </div>
+                                                <div className="flex items-center justify-center h-full text-gray-400"><svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
                                             )}
-                                            {/* Date Badge */}
-                                            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-blue-800 shadow-sm">
-                                                {article.created_at ? new Date(article.created_at).toLocaleDateString() : 'Update'}
+                                            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-blue-900 shadow-sm">
+                                                {new Date(article.created_at).toLocaleDateString()}
                                             </div>
                                         </div>
-
-                                        {/* Content */}
                                         <div className="p-6 flex-1 flex flex-col">
-                                            <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-700 transition-colors line-clamp-2">
-                                                {article.title}
-                                            </h3>
-                                            <p className="text-gray-600 text-sm line-clamp-3 mb-6 flex-1">
-                                                {article.content}
-                                            </p>
-                                            <div className="flex items-center text-blue-600 font-semibold text-sm group-hover:translate-x-1 transition-transform">
-                                                Read Full Story
-                                                <svg className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-                                            </div>
+                                            <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-blue-700 transition-colors line-clamp-2">{article.title}</h3>
+                                            <p className="text-slate-500 text-sm line-clamp-3 mb-4 flex-1">{article.content}</p>
+                                            <span className="text-blue-600 font-bold text-sm flex items-center group-hover:translate-x-2 transition-transform">Read More &rarr;</span>
                                         </div>
                                     </Link>
                                 ))}
                             </div>
-
-                            {/* Fixed "View All" Button */}
-                            <div className="text-center">
-                                <Link
-                                    href={route('news.index')}
-                                    className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-blue-900 bg-blue-50 border-2 border-blue-200 rounded-full hover:bg-blue-100 hover:border-blue-300 transition-all duration-300 shadow-sm"
-                                >
-                                    View All Updates
+                            <div className="text-center mt-12">
+                                <Link href={route('news.index')} className="inline-block px-8 py-3 border-2 border-blue-600 text-blue-600 font-bold rounded-full hover:bg-blue-600 hover:text-white transition-colors">
+                                    View All News
                                 </Link>
                             </div>
                         </div>
                     </section>
                 )}
 
-                {/* --- ASSISTANCE SECTION --- */}
-                <section id="assistance" className="py-20 bg-gray-50">
+                {/* --- ASSISTANCE PROGRAMS --- */}
+                <section id="assistance" className="py-24 bg-gray-50 scroll-mt-24">
                     <div className="container mx-auto px-4">
-                        <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Our Assistance</h2>
-
-                        <div className="flex flex-wrap justify-center gap-6">
-
-                            {/* Card 1 */}
-                            <div className="w-full md:w-[45%] lg:w-[22%] p-6 bg-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center">
-                                <div className="bg-blue-100 p-3 rounded-full mb-4">
-                                    <svg className="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                                </div>
-                                <h3 className="text-lg font-bold mb-2 text-blue-800">Laboratory Tests</h3>
-                                <p className="text-sm text-gray-600">Financial support for required medical laboratory examinations and workups.</p>
-                            </div>
-
-                            {/* Card 2 */}
-                            <div className="w-full md:w-[45%] lg:w-[22%] p-6 bg-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center">
-                                <div className="bg-blue-100 p-3 rounded-full mb-4">
-                                    <svg className="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                                </div>
-                                <h3 className="text-lg font-bold mb-2 text-blue-800">Anti-Rabies Vaccine</h3>
-                                <p className="text-sm text-gray-600">Assistance for animal bite treatment and vaccination courses.</p>
-                            </div>
-
-                            {/* Card 3 */}
-                            <div className="w-full md:w-[45%] lg:w-[22%] p-6 bg-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center">
-                                <div className="bg-blue-100 p-3 rounded-full mb-4">
-                                    <svg className="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                </div>
-                                <h3 className="text-lg font-bold mb-2 text-blue-800">Funeral Assistance</h3>
-                                <p className="text-sm text-gray-600">Support for burial and funeral expenses for indigent families.</p>
-                            </div>
-
-                            {/* Card 4 */}
-                            <div className="w-full md:w-[45%] lg:w-[22%] p-6 bg-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center">
-                                <div className="bg-blue-100 p-3 rounded-full mb-4">
-                                    <svg className="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                                </div>
-                                <h3 className="text-lg font-bold mb-2 text-blue-800">Medicine Assistance</h3>
-                                <p className="text-sm text-gray-600">Provision for prescription medicines and maintenance drugs.</p>
-                            </div>
-
-                            {/* --- Second Row --- */}
-
-                            {/* Card 5 */}
-                            <div className="w-full md:w-[45%] lg:w-[22%] p-6 bg-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center">
-                                <div className="bg-blue-100 p-3 rounded-full mb-4">
-                                    <svg className="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                                </div>
-                                <h3 className="text-lg font-bold mb-2 text-blue-800">Hospitalization</h3>
-                                <p className="text-sm text-gray-600">Help with hospital bills, confinement costs, and surgical procedures.</p>
-                            </div>
-
-                            {/* Card 6 */}
-                            <div className="w-full md:w-[45%] lg:w-[22%] p-6 bg-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center">
-                                <div className="bg-blue-100 p-3 rounded-full mb-4">
-                                    <svg className="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                                </div>
-                                <h3 className="text-lg font-bold mb-2 text-blue-800">Chemotherapy</h3>
-                                <p className="text-sm text-gray-600">Financial aid specifically for cancer treatments and chemo sessions.</p>
-                            </div>
-
-                            {/* Card 7 */}
-                            <div className="w-full md:w-[45%] lg:w-[22%] p-6 bg-white rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center">
-                                <div className="bg-blue-100 p-3 rounded-full mb-4">
-                                    <svg className="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                                </div>
-                                <h3 className="text-lg font-bold mb-2 text-blue-800">Diagnostic Blood Tests</h3>
-                                <p className="text-sm text-gray-600">Coverage for specialized blood chemistry and diagnostic scans.</p>
-                            </div>
-
-                        </div>
-                    </div>
-                </section>
-
-                {/* --- ABOUT SECTION --- */}
-                <section id="about" className="py-20">
-                    <div className="container mx-auto px-4">
-                        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
-                            <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">About Assista & AICS</h2>
-                            <p className="text-gray-600 leading-7 text-center">
-                                The <strong>Assista</strong> system is a web-based platform designed to digitize and streamline the application process for the DSWD's <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> program. AICS serves as a social safety net or a stop-gap measure to support the recovery of individuals and families from unexpected life events or crises. Our platform allows applicants to submit their requests for medical, burial, or food assistance online, reducing the need for travel and long queues. Administrators can efficiently manage, review, and update the status of these applications, ensuring a faster and more transparent process for everyone involved.
+                        <div className="text-center mb-16">
+                            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Assistance Programs</h2>
+                            <p className="text-slate-500 max-w-2xl mx-auto">
+                                We provide financial aid for various crisis situations. Check if you are eligible.
                             </p>
                         </div>
+
+                        {/* FIX: Added 'justify-center' to center the odd items in the last row.
+                           Changed grid to flex-wrap for better centering of odd items.
+                        */}
+                        <div className="flex flex-wrap justify-center gap-6">
+                            {assistancePrograms.map((item, idx) => (
+                                <div
+                                    key={idx}
+                                    className="w-full sm:w-[48%] lg:w-[22%] p-8 border border-slate-100 rounded-2xl bg-white hover:shadow-xl hover:-translate-y-2 transition-all duration-300 text-center group cursor-default flex flex-col items-center"
+                                >
+                                    <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
+                                        </svg>
+                                    </div>
+                                    <h3 className="font-bold text-lg text-slate-800 mb-2 min-h-[3rem] flex items-center justify-center">
+                                        {item.title}
+                                    </h3>
+                                    <p className="text-sm text-slate-500 leading-relaxed">
+                                        {item.desc}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+                {/* --- ABOUT SECTION --- */}
+                <section id="about" className="py-24 bg-slate-50 scroll-mt-24">
+                    <div className="container mx-auto px-4">
+                        <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-8 md:p-12 border border-slate-100">
+                            <h2 className="text-3xl md:text-4xl font-bold text-center text-slate-900 mb-8">About Assista & AICS</h2>
+                            <div className="prose prose-lg text-slate-600 leading-relaxed text-justify mx-auto">
+                                <p>
+                                    The <strong>Assista</strong> system is a web-based platform designed to digitize and streamline the application process for the DSWD's <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> program.
+                                </p>
+                                <p className="mt-4">
+                                    AICS serves as a social safety net or a stop-gap measure to support the recovery of individuals and families from unexpected life events or crises. Our platform allows applicants to submit their requests for medical, burial, or food assistance online, reducing the need for travel and long queues.
+                                </p>
+                                <p className="mt-4">
+                                    Administrators can efficiently manage, review, and update the status of these applications, ensuring a faster and more transparent process for everyone involved.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
-                <footer className="py-10 text-center text-sm text-gray-500">
-                    Assista © 2025 - A Capstone Project for Filamer Christian University.
+                {/* --- FOOTER --- */}
+                <footer className="bg-slate-900 text-slate-400 py-12 border-t border-slate-800">
+                    <div className="container mx-auto px-4 text-center">
+                        <div className="flex items-center justify-center gap-3 mb-6 opacity-80">
+                            <img src="/images/logo.png" alt="Logo" className="h-8 w-auto grayscale brightness-200" />
+                            <span className="text-xl font-bold text-white tracking-wide">ASSISTA</span>
+                        </div>
+                        <p className="text-sm mb-4">&copy; {new Date().getFullYear()} City Social Welfare and Development Office. All rights reserved.</p>
+                        <p className="text-xs">A Capstone Project for Filamer Christian University.</p>
+                    </div>
                 </footer>
+
             </div>
         </>
     );
