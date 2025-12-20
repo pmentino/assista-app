@@ -4,7 +4,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\Admin\AidRequestController;
 use App\Http\Controllers\Admin\ReportController;
-use App\Http\Controllers\Admin\NewsController; // This is the ADMIN controller
+use App\Http\Controllers\Admin\NewsController;
+use App\Http\Controllers\Admin\AuditLogController; // <--- ADDED THIS
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -12,7 +13,7 @@ use Inertia\Inertia;
 use App\Models\Application as ApplicationModel;
 use App\Models\News;
 
-// --- PUBLIC ROUTES (Accessible by everyone) ---
+// --- PUBLIC ROUTES ---
 
 Route::get('/', function () {
     $news = [];
@@ -20,9 +21,7 @@ Route::get('/', function () {
         if (\Illuminate\Support\Facades\Schema::hasTable('news')) {
              $news = News::latest()->take(3)->get();
         }
-    } catch (\Exception $e) {
-        // Ignore
-    }
+    } catch (\Exception $e) { }
 
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -38,7 +37,6 @@ Route::get('/', function () {
 Route::get('/news', function () {
     return Inertia::render('News/Index', [
         'news' => \App\Models\News::latest()->get(),
-        // IMPORTANT: Pass auth manually if using a closure, or let HandleInertiaRequests do it (standard)
         'auth' => ['user' => Auth::user()]
     ]);
 })->name('news.index');
@@ -75,12 +73,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/applications/{application}/edit', [ApplicationController::class, 'edit'])->name('applications.edit');
     Route::post('/applications/{application}/update', [ApplicationController::class, 'update'])->name('applications.update');
 
-    // Claim Stub Route
     Route::get('/applications/{application}/claim-stub', [ApplicationController::class, 'generateClaimStub'])->name('applications.claim-stub');
 });
 
 
-// --- ADMIN ROUTES (Protected by 'is_admin') ---
+// --- ADMIN ROUTES ---
 
 Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
 
@@ -152,7 +149,10 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         ]);
     })->name('dashboard');
 
-    // 2. BUDGET UPDATE ROUTE
+    // 2. AUDIT LOGS ROUTE (Fixed: Moved outside the dashboard function)
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs');
+
+    // 3. BUDGET UPDATE ROUTE
     Route::post('/dashboard/budget', function (Illuminate\Http\Request $request) {
         $request->validate([ 'amount' => 'required|numeric|min:0' ]);
         $now = \Carbon\Carbon::now();
@@ -172,7 +172,7 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         return redirect()->back()->with('message', 'Budget updated successfully.');
     })->name('dashboard.budget');
 
-    // 3. APPLICATIONS ROUTES
+    // 4. APPLICATIONS ROUTES
     Route::get('/applications', [AidRequestController::class, 'index'])->name('applications.index');
 
     Route::get('/applications/{application}', function (ApplicationModel $application) {
@@ -182,17 +182,16 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         ]);
     })->name('applications.show');
 
-    Route::post('/applications/{application}/approve', [ApplicationController::class, 'approve'])->name('applications.approve');
-    Route::get('/applications/{application}/reject', [ApplicationController::class, 'reject'])->name('applications.reject');
-    Route::post('/applications/{application}/remarks', [ApplicationController::class, 'addRemark'])->name('applications.remarks.store');
+    Route::post('/applications/{application}/approve', [App\Http\Controllers\ApplicationController::class, 'approve'])->name('applications.approve');
+    Route::get('/applications/{application}/reject', [App\Http\Controllers\ApplicationController::class, 'reject'])->name('applications.reject');
+    Route::post('/applications/{application}/remarks', [App\Http\Controllers\ApplicationController::class, 'addRemark'])->name('applications.remarks.store');
 
-    // 4. REPORTS ROUTES
+    // 5. REPORTS ROUTES
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
     Route::get('/reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
 
-    // 5. ADMIN NEWS ROUTES (THIS WAS MISSING!)
-    // This connects /admin/news to your Admin/NewsController.php
+    // 6. ADMIN NEWS ROUTES
     Route::resource('news', NewsController::class);
 
 });

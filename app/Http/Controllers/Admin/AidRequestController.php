@@ -4,58 +4,56 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Application;
-use Illuminate\Http\Request; // <-- Import Request
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class AidRequestController extends Controller
 {
-    // The index method now accepts the Request object
     public function index(Request $request)
     {
-        // Get filter, search, and sort parameters
-        // We added 'search' to the list of filters we accept
-        $filters = $request->only('status', 'program', 'search');
+        $query = Application::query();
 
-        $sortBy = $request->input('sort_by', 'created_at');
-        $sortDirection = $request->input('sort_direction', 'desc');
-
-        if (!in_array($sortDirection, ['asc', 'desc'])) {
-            $sortDirection = 'desc';
+        // Search Logic
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('id', 'like', "%{$request->search}%")
+                  ->orWhere('first_name', 'like', "%{$request->search}%")
+                  ->orWhere('last_name', 'like', "%{$request->search}%");
+            });
         }
 
-        $applicationsQuery = Application::with('user')
-            // --- NEW: Search Logic ---
-            ->when($request->input('search'), function ($query, $search) {
-                $query->where(function($q) use ($search) {
-                    // Search by ID, First Name, or Last Name
-                    $q->where('id', 'like', "%{$search}%")
-                      ->orWhere('first_name', 'like', "%{$search}%")
-                      ->orWhere('last_name', 'like', "%{$search}%")
-                      // Optional: Search by user email if you want
-                      ->orWhereHas('user', function($q2) use ($search) {
-                          $q2->where('email', 'like', "%{$search}%");
-                      });
-                });
-            })
-            // --- End Search Logic ---
+        // Status Filter
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
 
-            ->when($request->input('status'), function ($query, $status) {
-                $query->where('status', $status);
-            })
-            ->when($request->input('program'), function ($query, $program) {
-                $query->where('program', $program);
-            })
-            ->orderBy($sortBy, $sortDirection);
+        // Program Filter
+        if ($request->program) {
+            $query->where('program', $request->program);
+        }
 
-        $applications = $applicationsQuery->paginate(15)->withQueryString();
+        // --- SORTING FIX ---
+        // 1. Set a default field if 'sort_by' is empty
+        $sortField = $request->input('sort_by') ?: 'created_at';
 
-        return Inertia::render('Admin/ApplicationsIndex', [
+        // 2. Set a default direction if 'sort_direction' is empty or invalid
+        $sortDirection = $request->input('sort_direction');
+        if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
+            $sortDirection = 'desc'; // Default fallback
+        }
+
+        // Apply sorting
+        $applications = $query->orderBy($sortField, $sortDirection)
+            ->paginate(10)
+            ->withQueryString();
+
+        return Inertia::render('Admin/AidRequests/Index', [
             'applications' => $applications,
-            'filters' => $filters, // 'search' will be passed back here automatically
-            'sort_by' => $sortBy,
+            'filters' => $request->only(['search', 'status', 'program']),
+            'sort_by' => $sortField,
             'sort_direction' => $sortDirection,
-            'auth' => [ 'user' => Auth::user() ],
+            'auth' => ['user' => Auth::user()]
         ]);
     }
 }
