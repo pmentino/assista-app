@@ -10,14 +10,6 @@
 
         /* Header Layout */
         .header-container { width: 100%; text-align: center; margin-bottom: 10px; position: relative; }
-        /* Placeholder boxes for logos if files are missing, avoids broken image icon layout shifts */
-        .logo-placeholder { width: 60px; height: 60px; border: 1px dashed #ccc; position: absolute; top: 0; }
-        .logo-left { left: 10px; }
-        .logo-right { right: 10px; }
-
-        /* If you have real logos, use these classes instead: */
-        /* .logo-left { position: absolute; left: 10px; top: 0; width: 65px; } */
-        /* .logo-right { position: absolute; right: 10px; top: 0; width: 65px; } */
 
         .header-text h4 { margin: 0; font-weight: normal; font-size: 10pt; font-family: 'Old English Text MT', serif; }
         .header-text h3 { margin: 2px 0; font-weight: bold; font-size: 11pt; }
@@ -26,7 +18,7 @@
         /* Title */
         .title { text-align: center; font-weight: bold; text-decoration: underline; font-size: 13pt; margin: 10px 0; text-transform: uppercase; }
 
-        /* Checkboxes Section - Compact */
+        /* Checkboxes Section */
         .checkbox-section { width: 100%; margin-bottom: 5px; font-size: 9pt; }
         .checkbox-section td { vertical-align: top; padding-bottom: 2px; }
         .check-box { display: inline-block; width: 9px; height: 9px; border: 1px solid #000; margin-right: 4px; }
@@ -34,9 +26,18 @@
 
         /* Main Body */
         .certify-text { text-align: justify; margin-bottom: 8px; text-indent: 30px; }
-        .details-line { border-bottom: 1px solid #000; display: inline-block; padding: 0 5px; font-weight: bold; text-align: center; }
 
-        /* Family Table - Compact */
+        /* FIXED: Added vertical-align to stop floating text */
+        .details-line {
+            border-bottom: 1px solid #000;
+            display: inline-block;
+            text-align: center;
+            font-weight: bold;
+            padding: 0 5px;
+            vertical-align: bottom;
+        }
+
+        /* Family Table */
         .family-table { width: 100%; border-collapse: collapse; margin: 5px 0; font-size: 10pt; }
         .family-table th { border-bottom: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; }
         .family-table td { border-bottom: 1px solid #ccc; padding: 3px; }
@@ -106,7 +107,7 @@
         </thead>
         <tbody>
             <tr>
-                <td>{{ strtoupper($application->first_name . ' ' . $application->last_name) }}</td>
+                <td style="text-align: center;">{{ strtoupper($application->first_name . ' ' . $application->last_name) }}</td>
                 <td style="text-align: center;">{{ \Carbon\Carbon::parse($application->birth_date)->age }}</td>
                 <td style="text-align: center;">Beneficiary (Self)</td>
             </tr>
@@ -116,7 +117,7 @@
     </table>
 
     <div class="certify-text">
-        The above-named client has been found eligible for financial assistance from <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> program. Based on the assessment, it is strongly recommended that the client be extended financial assistance in the amount of <strong>Php {{ number_format($application->amount_released, 2) }}</strong>.
+        The above-named client has been found eligible for financial assistance from <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> program. Based on the assessment, it is strongly recommended that the client be extended financial assistance in the amount of <strong>Php <span class="details-line" style="min-width: 80px;">{{ number_format($application->amount_released, 2) }}</span></strong>.
     </div>
 
     <div class="certify-text">
@@ -157,14 +158,14 @@
         <div class="receipt-title">ACKNOWLEDGEMENT RECEIPT</div>
 
         <div style="text-align: right; font-size: 9pt; margin-bottom: 5px;">
-            NO. <strong>{{ $application->id }}</strong>
+            NO. <strong>{{ str_pad($application->id, 6, '0', STR_PAD_LEFT) }}</strong>
         </div>
 
-        <div class="certify-text">
-            I, <span class="details-line" style="min-width: 200px;">{{ strtoupper($application->first_name . ' ' . $application->last_name) }}</span>, acknowledge receipt of cash assistance amounting to <span class="details-line" style="min-width: 80px;">Php {{ number_format($application->amount_released, 2) }}</span> from the Roxas City Government (AICS).
+        <div class="certify-text" style="text-indent: 0;">
+            I, <span class="details-line" style="min-width: 200px;">{{ strtoupper($application->first_name . ' ' . $application->last_name) }}</span>, acknowledge receipt of cash assistance amounting to Php <span class="details-line" style="min-width: 80px;">{{ number_format($application->amount_released, 2) }}</span> from the Roxas City Government (AICS).
         </div>
 
-        <div class="certify-text">
+        <div class="certify-text" style="text-indent: 0;">
             This assistance is for <span class="details-line" style="min-width: 120px;">{{ $application->program }}</span> expenses. I confirm receipt in full without obligation for repayment.
         </div>
 

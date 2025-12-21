@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Application;
-use App\Models\AuditLog; // Import AuditLog model
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf; // <--- THIS LINE WAS MISSING!
 
 class ApplicationController extends Controller
 {
@@ -22,7 +23,7 @@ class ApplicationController extends Controller
     // Submit new application
     public function store(Request $request)
     {
-        // Validation (simplified for brevity, keep your original validation if strict)
+        // Validation
         $validated = $request->validate([
             'program' => 'required',
             'first_name' => 'required',
@@ -49,7 +50,7 @@ class ApplicationController extends Controller
         $app = new Application();
         $app->user_id = Auth::id();
         $app->fill($request->except(['valid_id', 'indigency_cert', 'attachments']));
-        $app->attachments = $paths; // Assuming cast to array in model
+        $app->attachments = $paths;
         $app->status = 'Pending';
         $app->save();
 
@@ -72,7 +73,7 @@ class ApplicationController extends Controller
         return redirect()->route('dashboard');
     }
 
-    // --- ADMIN ACTIONS (This is where we add LOGGING) ---
+    // --- ADMIN ACTIONS (With Logging) ---
 
     public function approve(Request $request, Application $application)
     {
@@ -87,7 +88,7 @@ class ApplicationController extends Controller
             'approved_date' => now(),
         ]);
 
-        // *** LOGGING THE APPROVAL ***
+        // Audit Log
         $this->logActivity('Approved Application', "Approved App #{$application->id} for {$application->first_name} {$application->last_name}. Amount: ₱" . number_format($request->amount, 2));
 
         return redirect()->back()->with('message', 'Application approved successfully.');
@@ -95,8 +96,6 @@ class ApplicationController extends Controller
 
     public function reject(Request $request, Application $application)
     {
-        // This might be a GET request in your routes, strictly it should be POST/PUT
-        // But adapting to your current setup:
         $application->update(['status' => 'Rejected']);
 
         $this->logActivity('Rejected Application', "Rejected App #{$application->id}");
@@ -115,20 +114,28 @@ class ApplicationController extends Controller
             'remarks' => $request->remarks,
         ]);
 
-        // *** LOGGING THE REJECTION ***
         $this->logActivity('Rejected Application', "Rejected App #{$application->id} - Reason: {$request->remarks}");
 
         return redirect()->back()->with('message', 'Application rejected.');
     }
 
+    // --- CLAIM STUB GENERATION ---
     public function generateClaimStub(Application $application)
     {
+        // 1. Security Check: Only allow if Approved
         if ($application->status !== 'Approved') {
-            abort(403);
+            abort(403, 'This application is not approved yet.');
         }
 
-        // Simulating PDF generation or returning a view
-        // Ideally use DomPDF here
-        return response()->json(['message' => 'Claim stub generation to be implemented']);
+        // 2. Load the View
+        $pdf = Pdf::loadView('pdf.claim_stub', [
+            'application' => $application
+        ]);
+
+        // 3. Set Paper Size (Long Bond Paper is 8.5 x 13 inches)
+        $pdf->setPaper([0, 0, 612, 936], 'portrait');
+
+        // 4. Stream the PDF
+        return $pdf->stream('Certificate_Eligibility_' . $application->id . '.pdf');
     }
 }

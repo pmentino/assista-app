@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { pickBy } from 'lodash';
 import Pagination from '@/Components/Pagination';
 
-// Helper Components
+// --- HELPER COMPONENTS ---
 const SortArrow = ({ direction }) => {
     if (direction === 'asc') return <span className="ml-1 text-blue-600">↑</span>;
     if (direction === 'desc') return <span className="ml-1 text-blue-600">↓</span>;
@@ -20,6 +20,7 @@ const SortableHeader = ({ label, columnName, sortBy, sortDirection }) => {
         const currentParams = new URLSearchParams(window.location.search);
         currentParams.set('sort_by', columnName);
         currentParams.set('sort_direction', newDirection);
+
         router.get(route('admin.applications.index'), Object.fromEntries(currentParams.entries()), {
             preserveState: true,
             replace: true,
@@ -69,8 +70,6 @@ export default function Index({ applications, filters: initialFilters = {}, sort
         setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
-    // *** CRITICAL FIX: SAFETY CHECK ***
-    // This line prevents the "undefined" crash
     const appList = applications?.data || [];
 
     return (
@@ -94,24 +93,38 @@ export default function Index({ applications, filters: initialFilters = {}, sort
                         {/* Toolbar */}
                         <div className="p-5 border-b border-gray-100 bg-white grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                             <div className="md:col-span-5 relative">
-                                <input type="text" name="search" value={filters.search} onChange={handleFilterChange} placeholder="Search by Applicant Name or ID..." className="block w-full pl-4 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm" />
+                                <input
+                                    type="text"
+                                    name="search"
+                                    value={filters.search}
+                                    onChange={handleFilterChange}
+                                    placeholder="Search by Applicant Name or ID..."
+                                    className="block w-full pl-4 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm"
+                                />
                             </div>
                             <div className="md:col-span-3">
-                                <select name="status" value={filters.status} onChange={handleFilterChange} className="block w-full border-gray-300 rounded-lg sm:text-sm shadow-sm">
+                                <select name="status" value={filters.status} onChange={handleFilterChange} className="block w-full border-gray-300 rounded-lg sm:text-sm shadow-sm cursor-pointer">
                                     <option value="">All Statuses</option>
                                     <option value="Pending">Pending Review</option>
                                     <option value="Approved">Approved</option>
                                     <option value="Rejected">Rejected</option>
                                 </select>
                             </div>
+
+                            {/* --- CORRECTED PROGRAM LIST (7 TYPES) --- */}
                             <div className="md:col-span-3">
-                                <select name="program" value={filters.program} onChange={handleFilterChange} className="block w-full border-gray-300 rounded-lg sm:text-sm shadow-sm">
+                                <select name="program" value={filters.program} onChange={handleFilterChange} className="block w-full border-gray-300 rounded-lg sm:text-sm shadow-sm cursor-pointer">
                                     <option value="">All Programs</option>
-                                    <option value="Medical Assistance">Medical Assistance</option>
+                                    <option value="Hospitalization">Hospitalization</option>
+                                    <option value="Laboratory Tests">Laboratory Tests</option>
+                                    <option value="Anti-Rabies Vaccine Treatment">Anti-Rabies Vaccine Treatment</option>
+                                    <option value="Medicine Assistance">Medicine Assistance</option>
                                     <option value="Funeral Assistance">Funeral Assistance</option>
-                                    <option value="Educational Assistance">Educational Assistance</option>
+                                    <option value="Chemotherapy">Chemotherapy</option>
+                                    <option value="Diagnostic Blood Tests">Diagnostic Blood Tests</option>
                                 </select>
                             </div>
+
                             <div className="md:col-span-1 text-right">
                                 {(filters.search || filters.status || filters.program) && (
                                     <button onClick={() => setFilters({ search: '', status: '', program: '' })} className="text-sm text-red-600 hover:underline font-bold">Reset</button>
@@ -170,16 +183,20 @@ export default function Index({ applications, filters: initialFilters = {}, sort
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="6" className="px-6 py-12 text-center text-gray-500">No applications found.</td>
+                                            <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                                                No applications found matching your criteria.
+                                            </td>
                                         </tr>
                                     )}
                                 </tbody>
                             </table>
                         </div>
 
+                        {/* Pagination */}
                         <div className="p-4 border-t border-gray-100 bg-gray-50">
                             {applications?.links && <Pagination links={applications.links} />}
                         </div>
+
                     </div>
                 </div>
             </div>

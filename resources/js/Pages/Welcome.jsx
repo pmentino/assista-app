@@ -5,30 +5,15 @@ import { Link, Head } from '@inertiajs/react';
 const MenuIcon = () => (<svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" /></svg>);
 const CloseIcon = () => (<svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>);
 
-// --- DATA: YOUR EXACT CONTENT ---
+// --- CORRECT DATA: THE 7 VALID ASSISTANCE TYPES ---
 const assistancePrograms = [
     {
-        title: 'Hospitalization',
-        desc: 'Help with hospital bills, confinement costs, and surgical procedures.',
-        icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'
-    },
-    {
-        title: 'Medicine Assistance',
-        desc: 'Provision for prescription medicines and maintenance drugs.',
-        icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z'
-    },
-    {
-        title: 'Laboratory / Diagnostic Tests',
+        title: 'Laboratory Tests',
         desc: 'Financial support for required medical laboratory examinations and workups.',
         icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01'
     },
     {
-        title: 'Chemotherapy',
-        desc: 'Financial aid specifically for cancer treatments and chemo sessions.',
-        icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'
-    },
-    {
-        title: 'Anti-Rabies Vaccine',
+        title: 'Anti-Rabies Vaccine Treatment',
         desc: 'Assistance for animal bite treatment and vaccination courses.',
         icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
     },
@@ -38,9 +23,24 @@ const assistancePrograms = [
         icon: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
     },
     {
-        title: 'Educational Assistance',
-        desc: 'Financial aid for students in crisis situations.',
-        icon: 'M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z'
+        title: 'Medicine Assistance',
+        desc: 'Provision for prescription medicines and maintenance drugs.',
+        icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z'
+    },
+    {
+        title: 'Hospitalization',
+        desc: 'Help with hospital bills, confinement costs, and surgical procedures.',
+        icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'
+    },
+    {
+        title: 'Chemotherapy',
+        desc: 'Financial aid specifically for cancer treatments and chemo sessions.',
+        icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'
+    },
+    {
+        title: 'Diagnostic Blood Tests',
+        desc: 'Coverage for specialized blood chemistry and diagnostic scans.',
+        icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z'
     }
 ];
 
@@ -140,7 +140,7 @@ export default function Welcome({ auth, news = [] }) {
                                 Assistance to Individuals in <span className="text-blue-700">Crisis Situation (AICS)</span>
                             </h1>
                             <p className="text-lg text-slate-600 mb-8 max-w-lg mx-auto md:mx-0 leading-relaxed">
-                                Providing assistance and essential support to individuals in need. Our platform offers immediate medical, burial, and educational assistance to families in crisis.
+                                Providing assistance and essential support to individuals in need. Our platform offers immediate medical, burial, and other financial assistance to families in crisis.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                                 <Link href={auth.user ? route('dashboard') : route('register')} className="bg-blue-700 hover:bg-blue-800 text-white px-8 py-4 rounded-xl font-bold shadow-lg shadow-blue-200 transition-all hover:-translate-y-1">
@@ -196,7 +196,7 @@ export default function Welcome({ auth, news = [] }) {
                     </section>
                 )}
 
-                {/* --- ASSISTANCE PROGRAMS --- */}
+                {/* --- ASSISTANCE PROGRAMS (THE 7 CORRECT TYPES) --- */}
                 <section id="assistance" className="py-24 bg-gray-50 scroll-mt-24">
                     <div className="container mx-auto px-4">
                         <div className="text-center mb-16">
@@ -206,9 +206,7 @@ export default function Welcome({ auth, news = [] }) {
                             </p>
                         </div>
 
-                        {/* FIX: Added 'justify-center' to center the odd items in the last row.
-                           Changed grid to flex-wrap for better centering of odd items.
-                        */}
+                        {/* Centered Flex Layout for 7 items */}
                         <div className="flex flex-wrap justify-center gap-6">
                             {assistancePrograms.map((item, idx) => (
                                 <div
@@ -231,10 +229,11 @@ export default function Welcome({ auth, news = [] }) {
                         </div>
                     </div>
                 </section>
+
                 {/* --- ABOUT SECTION --- */}
-                <section id="about" className="py-24 bg-slate-50 scroll-mt-24">
+                <section id="about" className="py-24 bg-white scroll-mt-24">
                     <div className="container mx-auto px-4">
-                        <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-8 md:p-12 border border-slate-100">
+                        <div className="max-w-4xl mx-auto bg-slate-50 rounded-2xl shadow-sm p-8 md:p-12 border border-slate-100">
                             <h2 className="text-3xl md:text-4xl font-bold text-center text-slate-900 mb-8">About Assista & AICS</h2>
                             <div className="prose prose-lg text-slate-600 leading-relaxed text-justify mx-auto">
                                 <p>
