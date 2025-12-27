@@ -67,7 +67,7 @@ class ReportController extends Controller
 
         $applications = $query->orderBy('created_at', 'desc')->get();
 
-        $pdf = Pdf::loadView('exports.applications', [
+        $pdf = Pdf::loadView('pdf.assistance_report', [
             'applications' => $applications,
             'filters' => $request->all()
         ]);

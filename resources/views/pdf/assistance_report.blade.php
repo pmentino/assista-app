@@ -35,15 +35,18 @@
         <tr>
             <td width="15%"><strong>Period Covered:</strong></td>
             <td>
-                {{ $start_date ? date('F j, Y', strtotime($start_date)) : 'Start' }} -
-                {{ $end_date ? date('F j, Y', strtotime($end_date)) : 'Current' }}
+                {{ isset($filters['start_date']) ? date('F j, Y', strtotime($filters['start_date'])) : 'Start' }} -
+                {{ isset($filters['end_date']) ? date('F j, Y', strtotime($filters['end_date'])) : 'Present' }}
             </td>
             <td width="15%"><strong>Date Printed:</strong></td>
             <td>{{ date('F j, Y h:i A') }}</td>
         </tr>
         <tr>
             <td><strong>Program:</strong></td>
-            <td>Assistance to Individuals in Crisis Situation (AICS)</td>
+            <td>
+                {{ $filters['program'] ?? 'All Programs' }}
+                (Status: {{ $filters['status'] ?? 'All' }})
+            </td>
             <td><strong>Printed By:</strong></td>
             <td>{{ auth()->user()->name ?? 'Admin' }}</td>
         </tr>
@@ -53,7 +56,8 @@
         <thead>
             <tr>
                 <th width="5%">NO.</th>
-                <th width="15%">DATE & TIME<br>APPROVED</th> <th width="25%">BENEFICIARY NAME</th>
+                <th width="15%">DATE & TIME<br>APPROVED</th>
+                <th width="25%">BENEFICIARY NAME</th>
                 <th width="15%">BARANGAY</th>
                 <th width="20%">TYPE OF ASSISTANCE</th>
                 <th width="10%">STATUS</th>
@@ -69,7 +73,7 @@
                         {{ \Carbon\Carbon::parse($app->approved_date)->format('m/d/Y') }}<br>
                         <small>{{ \Carbon\Carbon::parse($app->approved_date)->format('h:i A') }}</small>
                     @else
-                        -
+                        {{ $app->created_at->format('m/d/Y') }}
                     @endif
                 </td>
                 <td>
@@ -80,7 +84,9 @@
                 <td>{{ $app->barangay }}</td>
                 <td>{{ $app->program }}</td>
                 <td class="text-center">{{ $app->status }}</td>
-                <td class="text-right">{{ number_format($app->amount_released, 2) }}</td>
+                <td class="text-right">
+                    {{ $app->amount_released > 0 ? number_format($app->amount_released, 2) : '-' }}
+                </td>
             </tr>
             @endforeach
 
@@ -110,7 +116,8 @@
                 Reviewed by:<br>
                 <div class="text-center">
                     <br><br>
-                    <span style="font-weight: bold;">PERSEUS L. CORDOVA</span><br> <div class="signature-line"></div>
+                    <span style="font-weight: bold;">PERSEUS L. CORDOVA</span><br>
+                    <div class="signature-line"></div>
                     Social Welfare Officer
                 </div>
             </td>

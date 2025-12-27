@@ -5,21 +5,28 @@ use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\Admin\AidRequestController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\NewsController;
-use App\Http\Controllers\Admin\AuditLogController; // <--- ADDED THIS
+use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\AssistanceProgramController; // Ensure this exists
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Models\Application as ApplicationModel;
 use App\Models\News;
+use App\Models\AssistanceProgram; // Ensure this exists
 
 // --- PUBLIC ROUTES ---
 
 Route::get('/', function () {
     $news = [];
+    $programs = []; // New variable for dynamic programs
+
     try {
         if (\Illuminate\Support\Facades\Schema::hasTable('news')) {
              $news = News::latest()->take(3)->get();
+        }
+        if (\Illuminate\Support\Facades\Schema::hasTable('assistance_programs')) {
+             $programs = AssistanceProgram::where('is_active', true)->get();
         }
     } catch (\Exception $e) { }
 
@@ -29,6 +36,7 @@ Route::get('/', function () {
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
         'news' => $news,
+        'programs' => $programs, // Pass programs to the view
         'auth' => ['user' => Auth::user()],
     ]);
 });
@@ -149,7 +157,7 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         ]);
     })->name('dashboard');
 
-    // 2. AUDIT LOGS ROUTE (Fixed: Moved outside the dashboard function)
+    // 2. AUDIT LOGS ROUTE
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs');
 
     // 3. BUDGET UPDATE ROUTE
@@ -193,6 +201,9 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
 
     // 6. ADMIN NEWS ROUTES
     Route::resource('news', NewsController::class);
+
+    // 7. ASSISTANCE PROGRAMS MANAGEMENT (NEW)
+    Route::resource('programs', AssistanceProgramController::class);
 
 });
 
