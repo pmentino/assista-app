@@ -102,36 +102,39 @@
     </div>
 
     <table class="footer">
-        <tr>
-            <td width="33%">
-                Prepared by:<br>
-                <div class="text-center">
-                    <br><br>
-                    <span style="font-weight: bold; text-transform: uppercase;">{{ auth()->user()->name ?? 'STAFF' }}</span><br>
-                    <div class="signature-line"></div>
-                    Admin / Social Welfare Staff
-                </div>
-            </td>
-            <td width="33%">
-                Reviewed by:<br>
-                <div class="text-center">
-                    <br><br>
-                    <span style="font-weight: bold;">PERSEUS L. CORDOVA</span><br>
-                    <div class="signature-line"></div>
-                    Social Welfare Officer
-                </div>
-            </td>
-            <td width="33%">
-                Approved by:<br>
-                <div class="text-center">
-                    <br><br>
-                    <span style="font-weight: bold;">BIVIEN B. DELA CRUZ, RSW</span><br>
-                    <div class="signature-line"></div>
-                    CSWD Officer
-                </div>
-            </td>
-        </tr>
-    </table>
+    <tr>
+        <td width="33%">
+            Prepared by:<br>
+            <div class="text-center">
+                <br><br>
+                {{-- Logged in Admin Name --}}
+                <span style="font-weight: bold; text-transform: uppercase;">{{ strtoupper($signatories['prepared_by']) }}</span><br>
+                <div class="signature-line"></div>
+                Admin / Staff
+            </div>
+        </td>
+        <td width="33%">
+            Reviewed by:<br>
+            <div class="text-center">
+                <br><br>
+                {{-- Dynamic Social Worker Name --}}
+                <span style="font-weight: bold; text-transform: uppercase;">{{ strtoupper($signatories['reviewed_by']) }}</span><br>
+                <div class="signature-line"></div>
+                Social Welfare Officer
+            </div>
+        </td>
+        <td width="33%">
+            Approved by:<br>
+            <div class="text-center">
+                <br><br>
+                {{-- Dynamic CSWDO Head Name --}}
+                <span style="font-weight: bold; text-transform: uppercase;">{{ strtoupper($signatories['approved_by']) }}</span><br>
+                <div class="signature-line"></div>
+                CSWD Officer
+            </div>
+        </td>
+    </tr>
+</table>
 
     <div style="position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 8pt; color: #555;">
         System Generated Report | Assista-App v1.0 | This document is for official use only.

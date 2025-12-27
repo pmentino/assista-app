@@ -129,21 +129,23 @@
     </p>
 
     <table class="signatures">
-        <tr>
-            <td>
-                Assessed by:<br><br>
-                <strong>BIVIEN B. DELA CRUZ, RSW</strong>
-                <div class="sig-line"></div>
-                <div class="role">Social Welfare Officer I</div>
-            </td>
-            <td>
-                Approved by:<br><br>
-                <strong>PERSEUS L. CORDOVA</strong>
-                <div class="sig-line"></div>
-                <div class="role">City Social Welfare and Development Officer</div>
-            </td>
-        </tr>
-    </table>
+    <tr>
+        <td>
+            Assessed by:<br><br>
+            {{-- DYNAMIC SIGNATORY --}}
+            <strong>{{ strtoupper($signatories['assessed_by']) }}</strong>
+            <div class="sig-line"></div>
+            <div class="role">Social Welfare Officer / Verifier</div>
+        </td>
+        <td>
+            Approved by:<br><br>
+            {{-- DYNAMIC SIGNATORY --}}
+            <strong>{{ strtoupper($signatories['approved_by']) }}</strong>
+            <div class="sig-line"></div>
+            <div class="role">City Social Welfare and Development Officer</div>
+        </td>
+    </tr>
+</table>
 
     <div class="declaration">
         "I declare under pain of criminal prosecution that all information provided herewith are TRUE and CORRECT. I authorize the Agency Head to verify stated contents."

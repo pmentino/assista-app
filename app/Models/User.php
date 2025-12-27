@@ -18,11 +18,18 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'role', // Added role to fillable
-    ];
+    'name',
+    'email',
+    'password',
+    'profile_photo_path', // <--- Added
+    'contact_number',     // <--- Added
+    'civil_status',       // <--- Added
+    'sex',                // <--- Added
+    'birth_date',         // <--- Added
+    'barangay',           // <--- Added
+    'city',               // <--- Added
+    'house_no',           // <--- Added
+];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -50,7 +57,7 @@ class User extends Authenticatable
     /**
      * Get the applications for the user.
      */
-    
+
     public function applications(): HasMany
     {
         return $this->hasMany(Application::class);

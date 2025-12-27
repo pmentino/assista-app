@@ -14,6 +14,7 @@ use Inertia\Inertia;
 use App\Models\Application as ApplicationModel;
 use App\Models\News;
 use App\Models\AssistanceProgram; // Ensure this exists
+use App\Http\Controllers\Admin\SettingController;
 
 // --- PUBLIC ROUTES ---
 
@@ -204,6 +205,10 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
 
     // 7. ASSISTANCE PROGRAMS MANAGEMENT (NEW)
     Route::resource('programs', AssistanceProgramController::class);
+
+    // 8. SYSTEM SETTINGS
+Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
 
 });
 

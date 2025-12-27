@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Setting;
 use App\Models\Application;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
@@ -121,21 +122,25 @@ class ApplicationController extends Controller
 
     // --- CLAIM STUB GENERATION ---
     public function generateClaimStub(Application $application)
-    {
-        // 1. Security Check: Only allow if Approved
-        if ($application->status !== 'Approved') {
-            abort(403, 'This application is not approved yet.');
-        }
-
-        // 2. Load the View
-        $pdf = Pdf::loadView('pdf.claim_stub', [
-            'application' => $application
-        ]);
-
-        // 3. Set Paper Size (Long Bond Paper is 8.5 x 13 inches)
-        $pdf->setPaper([0, 0, 612, 936], 'portrait');
-
-        // 4. Stream the PDF
-        return $pdf->stream('Certificate_Eligibility_' . $application->id . '.pdf');
+{
+    if ($application->status !== 'Approved') {
+        abort(403, 'This application is not approved yet.');
     }
+
+    // 1. Fetch Dynamic Signatories from Settings
+    $signatories = [
+        'assessed_by' => Setting::where('key', 'signatory_social_worker')->value('value') ?? 'BIVIEN B. DELA CRUZ, RSW',
+        'approved_by' => Setting::where('key', 'signatory_cswdo_head')->value('value') ?? 'PERSEUS L. CORDOVA',
+    ];
+
+    // 2. Pass them to the View
+    $pdf = Pdf::loadView('pdf.claim_stub', [
+        'application' => $application,
+        'signatories' => $signatories // <--- Passing the data here
+    ]);
+
+    $pdf->setPaper([0, 0, 612, 936], 'portrait');
+
+    return $pdf->stream('Certificate_Eligibility_' . $application->id . '.pdf');
+}
 }

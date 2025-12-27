@@ -68,6 +68,9 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                         <Link href={route('admin.audit-logs')} className={navLinkClasses(route().current('admin.audit-logs'))}>
                                             Audit Logs
                                         </Link>
+                                        <Link href={route('admin.settings.index')} className={navLinkClasses(route().current('admin.settings.*'))}>
+    Settings
+</Link>
                                     </>
                                 )}
                             </div>

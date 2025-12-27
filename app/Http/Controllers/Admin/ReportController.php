@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Setting;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use Illuminate\Http\Request;
@@ -15,12 +16,12 @@ class ReportController extends Controller
     {
         $query = Application::query();
 
-        // 1. Filter by Status (Only if specific status is selected)
+        // 1. Filter by Status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        // 2. Filter by Program (Only if specific program is selected)
+        // 2. Filter by Program
         if ($request->filled('program')) {
             $query->where('program', $request->program);
         }
@@ -35,12 +36,12 @@ class ReportController extends Controller
             $query->whereDate('created_at', '<=', $request->end_date);
         }
 
-        // Fetch Data: Newest Created First (Usually Pending items appear first)
+        // Fetch Data: Newest Created First
         $applications = $query->orderBy('created_at', 'desc')
                               ->paginate(15)
                               ->withQueryString();
 
-        // Stats for cards (Static totals for context)
+        // Stats for cards
         $stats = [
             'total' => Application::count(),
             'approved' => Application::where('status', 'Approved')->count(),
@@ -58,18 +59,36 @@ class ReportController extends Controller
 
     public function exportPdf(Request $request)
     {
+        // --- FIX START: Define the query and apply filters again ---
         $query = Application::query();
 
-        if ($request->filled('status')) $query->where('status', $request->status);
-        if ($request->filled('program')) $query->where('program', $request->program);
-        if ($request->filled('start_date')) $query->whereDate('created_at', '>=', $request->start_date);
-        if ($request->filled('end_date')) $query->whereDate('created_at', '<=', $request->end_date);
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('program')) {
+            $query->where('program', $request->program);
+        }
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+        // --- FIX END ---
 
         $applications = $query->orderBy('created_at', 'desc')->get();
 
+        // 1. Fetch Dynamic Signatories
+        $signatories = [
+            'prepared_by' => Auth::user()->name,
+            'reviewed_by' => Setting::where('key', 'signatory_social_worker')->value('value') ?? 'SOCIAL WORKER',
+            'approved_by' => Setting::where('key', 'signatory_cswdo_head')->value('value') ?? 'CSWDO HEAD',
+        ];
+
         $pdf = Pdf::loadView('pdf.assistance_report', [
             'applications' => $applications,
-            'filters' => $request->all()
+            'filters' => $request->all(),
+            'signatories' => $signatories
         ]);
 
         return $pdf->download('Assista_Report_' . date('Y-m-d') . '.pdf');

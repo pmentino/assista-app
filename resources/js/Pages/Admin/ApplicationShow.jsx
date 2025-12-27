@@ -218,6 +218,21 @@ export default function ApplicationShow({ application }) {
                                         <label className="text-xs font-bold text-gray-500 uppercase">Email Address</label>
                                         <p className="text-gray-900">{application.email}</p>
                                     </div>
+
+                                    {/* --- ADDED FACEBOOK LINK --- */}
+                                    {application.facebook_link && (
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Facebook Profile</label>
+                                            <a
+                                                href={application.facebook_link}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="block mt-1 text-blue-600 hover:text-blue-800 hover:underline truncate"
+                                            >
+                                                {application.facebook_link}
+                                            </a>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

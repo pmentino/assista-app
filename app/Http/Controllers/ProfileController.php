@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
@@ -28,17 +29,44 @@ class ProfileController extends Controller
      * Update the user's profile information.
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
-    {
-        $request->user()->fill($request->validated());
+{
+    // 1. Validate all the new fields
+    $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($request->user()->id)],
+        'contact_number' => ['nullable', 'string', 'max:20'],
+        'civil_status' => ['nullable', 'string'],
+        'sex' => ['nullable', 'string'],
+        'birth_date' => ['nullable', 'date'],
+        'barangay' => ['nullable', 'string'],
+        'house_no' => ['nullable', 'string'],
+        'photo' => ['nullable', 'image', 'max:2048'], // Max 2MB image
+    ]);
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+    $user = $request->user();
+
+    // 2. Handle Photo Upload
+    if ($request->hasFile('photo')) {
+        // Delete old photo if it exists
+        if ($user->profile_photo_path) {
+            Storage::disk('public')->delete($user->profile_photo_path);
         }
-
-        $request->user()->save();
-
-        return Redirect::route('profile.edit');
+        // Save new photo
+        $path = $request->file('photo')->store('profile-photos', 'public');
+        $user->profile_photo_path = $path;
     }
+
+    // 3. Update Text Fields
+    $user->fill($request->except('photo'));
+
+    if ($user->isDirty('email')) {
+        $user->email_verified_at = null;
+    }
+
+    $user->save();
+
+    return Redirect::route('profile.edit');
+}
 
     /**
      * Delete the user's account.
