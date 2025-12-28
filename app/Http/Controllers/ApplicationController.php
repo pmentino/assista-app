@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ApplicationStatusUpdated;
 use App\Models\Setting;
 use App\Models\Application;
 use App\Models\AuditLog;
@@ -9,7 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
-use Barryvdh\DomPDF\Facade\Pdf; // <--- THIS LINE WAS MISSING!
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon; // <--- IMPORTANT: Needed for date calculations
 
 class ApplicationController extends Controller
 {
@@ -24,13 +27,46 @@ class ApplicationController extends Controller
     // Submit new application
     public function store(Request $request)
     {
-        // Validation
+        $user = Auth::user();
+
+        // --- 1. DUPLICATE CHECK (Prevent spamming) ---
+        // If they have ANY application that is currently 'Pending', block them.
+        $hasPending = Application::where('user_id', $user->id)
+            ->where('status', 'Pending')
+            ->exists();
+
+        if ($hasPending) {
+            return redirect()->back()->withErrors([
+                'program' => 'You already have a pending application. Please wait for the result before applying again.'
+            ]);
+        }
+
+        // --- 2. COOLDOWN SYSTEM (3 Months Rule) ---
+        // Check the last time they were APPROVED.
+        $lastApproved = Application::where('user_id', $user->id)
+            ->where('status', 'Approved')
+            ->orderBy('approved_date', 'desc') // Get the most recent one
+            ->first();
+
+        if ($lastApproved && $lastApproved->approved_date) {
+            $lastDate = Carbon::parse($lastApproved->approved_date);
+            $nextEligibleDate = $lastDate->copy()->addMonths(3); // 3 Month Cooldown
+
+            // If today is BEFORE the next eligible date, block them.
+            if (Carbon::now()->lt($nextEligibleDate)) {
+                return redirect()->back()->withErrors([
+                    'program' => 'You have received assistance recently. Per guidelines, you can apply again on ' . $nextEligibleDate->format('F d, Y') . '.'
+                ]);
+            }
+        }
+
+        // --- 3. STANDARD VALIDATION ---
         $validated = $request->validate([
             'program' => 'required',
             'first_name' => 'required',
             'last_name' => 'required',
             'contact_number' => 'required',
-            // ... add other fields as needed
+            // Add other specific validations if needed
         ]);
 
         // Handle File Uploads
@@ -76,71 +112,94 @@ class ApplicationController extends Controller
 
     // --- ADMIN ACTIONS (With Logging) ---
 
-    public function approve(Request $request, Application $application)
-    {
-        $request->validate([
-            'amount' => 'required|numeric|min:0',
-        ]);
+   public function approve(Request $request, Application $application)
+{
+    $request->validate([
+        'amount' => 'required|numeric|min:0',
+    ]);
 
-        $application->update([
-            'status' => 'Approved',
-            'amount_released' => $request->amount,
-            'remarks' => null,
-            'approved_date' => now(),
-        ]);
+    $application->update([
+        'status' => 'Approved',
+        'amount_released' => $request->amount,
+        'remarks' => null,
+        'approved_date' => now(),
+    ]);
 
-        // Audit Log
-        $this->logActivity('Approved Application', "Approved App #{$application->id} for {$application->first_name} {$application->last_name}. Amount: ₱" . number_format($request->amount, 2));
-
-        return redirect()->back()->with('message', 'Application approved successfully.');
+    // --- NEW: Send Email ---
+    // Ensure the application has a user loaded to get the email
+    if ($application->user && $application->user->email) {
+        Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
     }
+
+    // Audit Log
+    AuditLog::create([
+        'user_id' => Auth::id(),
+        'action' => 'Approved Application',
+        'details' => "Approved App #{$application->id} for {$application->first_name}. Amount: ₱" . number_format($request->amount, 2)
+    ]);
+
+    return redirect()->back()->with('message', 'Application approved and notification sent.');
+}
 
     public function reject(Request $request, Application $application)
     {
         $application->update(['status' => 'Rejected']);
 
-        $this->logActivity('Rejected Application', "Rejected App #{$application->id}");
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Rejected Application',
+            'details' => "Rejected App #{$application->id}"
+        ]);
 
         return redirect()->back();
     }
 
     public function addRemark(Request $request, Application $application)
-    {
-        $request->validate([
-            'remarks' => 'required|string|max:1000',
-        ]);
+{
+    $request->validate([
+        'remarks' => 'required|string|max:1000',
+    ]);
 
-        $application->update([
-            'status' => 'Rejected',
-            'remarks' => $request->remarks,
-        ]);
+    $application->update([
+        'status' => 'Rejected',
+        'remarks' => $request->remarks,
+    ]);
 
-        $this->logActivity('Rejected Application', "Rejected App #{$application->id} - Reason: {$request->remarks}");
-
-        return redirect()->back()->with('message', 'Application rejected.');
+    // --- NEW: Send Email ---
+    if ($application->user && $application->user->email) {
+        Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
     }
+
+    AuditLog::create([
+        'user_id' => Auth::id(),
+        'action' => 'Rejected Application',
+        'details' => "Rejected App #{$application->id} - Reason: {$request->remarks}"
+    ]);
+
+    return redirect()->back()->with('message', 'Application rejected and notification sent.');
+}
 
     // --- CLAIM STUB GENERATION ---
     public function generateClaimStub(Application $application)
-{
-    if ($application->status !== 'Approved') {
-        abort(403, 'This application is not approved yet.');
+    {
+        if ($application->status !== 'Approved') {
+            abort(403, 'This application is not approved yet.');
+        }
+
+        // 1. Fetch Dynamic Signatories from Settings
+        $signatories = [
+            'assessed_by' => Setting::where('key', 'signatory_social_worker')->value('value') ?? 'BIVIEN B. DELA CRUZ, RSW',
+            'approved_by' => Setting::where('key', 'signatory_cswdo_head')->value('value') ?? 'PERSEUS L. CORDOVA',
+        ];
+
+        // 2. Pass them to the View
+        $pdf = Pdf::loadView('pdf.claim_stub', [
+            'application' => $application,
+            'signatories' => $signatories
+        ]);
+
+        $pdf->setPaper([0, 0, 612, 936], 'portrait');
+
+        return $pdf->stream('Certificate_Eligibility_' . $application->id . '.pdf');
     }
-
-    // 1. Fetch Dynamic Signatories from Settings
-    $signatories = [
-        'assessed_by' => Setting::where('key', 'signatory_social_worker')->value('value') ?? 'BIVIEN B. DELA CRUZ, RSW',
-        'approved_by' => Setting::where('key', 'signatory_cswdo_head')->value('value') ?? 'PERSEUS L. CORDOVA',
-    ];
-
-    // 2. Pass them to the View
-    $pdf = Pdf::loadView('pdf.claim_stub', [
-        'application' => $application,
-        'signatories' => $signatories // <--- Passing the data here
-    ]);
-
-    $pdf->setPaper([0, 0, 612, 936], 'portrait');
-
-    return $pdf->stream('Certificate_Eligibility_' . $application->id . '.pdf');
-}
 }

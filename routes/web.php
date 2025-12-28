@@ -166,16 +166,26 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         $request->validate([ 'amount' => 'required|numeric|min:0' ]);
         $now = \Carbon\Carbon::now();
 
+        // 1. Update the Budget
         \App\Models\MonthlyBudget::updateOrCreate(
             ['month' => $now->month, 'year' => $now->year],
             ['amount' => $request->amount]
         );
 
+        // 2. Log to Budget History (for the graph)
         \App\Models\BudgetLog::create([
             'user_id' => Auth::id(),
             'action' => 'Budget Update',
             'amount' => $request->amount,
             'balance_after' => $request->amount,
+        ]);
+
+        // 3. (NEW) Log to Main Audit Trails (for Accountability)
+        // This makes it appear in your "Audit Logs" page!
+        \App\Models\AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Updated Monthly Budget',
+            'details' => "Updated budget for " . $now->format('F Y') . " to ₱" . number_format($request->amount, 2),
         ]);
 
         return redirect()->back()->with('message', 'Budget updated successfully.');

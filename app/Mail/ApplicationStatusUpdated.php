@@ -8,18 +8,16 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use App\Models\Application; // <-- Import the Application model
+use App\Models\Application;
 
 class ApplicationStatusUpdated extends Mailable
 {
     use Queueable, SerializesModels;
 
-    // Make the application data available to the email template
-    public Application $application;
+    public $application;
 
     /**
      * Create a new message instance.
-     * We now accept the Application model here.
      */
     public function __construct(Application $application)
     {
@@ -28,26 +26,21 @@ class ApplicationStatusUpdated extends Mailable
 
     /**
      * Get the message envelope.
-     * Make the subject line dynamic based on the status.
      */
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your Assista Application Status has been Updated to: ' . $this->application->status,
+            subject: 'Update on your Assista Application Status',
         );
     }
 
     /**
      * Get the message content definition.
-     * Pass the application data to the view.
      */
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.application-status',
-            with: [
-                'application' => $this->application, // Make $application available in the template
-            ],
+            view: 'emails.application_status', // We will create this view next
         );
     }
 
