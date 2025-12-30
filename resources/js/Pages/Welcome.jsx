@@ -32,7 +32,7 @@ export default function Welcome({ auth, news = [], programs = [], settings = {} 
             <Head title="Welcome to Assista" />
             <div className="min-h-screen bg-gray-50 text-gray-800 font-sans scroll-smooth">
 
-                {/* --- FIXED NAVIGATION WRAPPER (Fixes the Gap Bug) --- */}
+                {/* --- FIXED NAVIGATION WRAPPER --- */}
                 <div className="fixed top-0 w-full z-50">
 
                     {/* Announcement Banner */}
@@ -92,7 +92,7 @@ export default function Welcome({ auth, news = [], programs = [], settings = {} 
                     </div>
                 )}
 
-                {/* HERO SECTION (Added Extra Padding to Compensate for Fixed Header) */}
+                {/* HERO SECTION */}
                 <section id="home" className="relative pt-40 pb-20 md:pt-56 md:pb-32 overflow-hidden bg-white scroll-mt-24">
                     <div className="container mx-auto px-4 flex flex-col-reverse md:flex-row items-center gap-12">
                         <div className="md:w-1/2 text-center md:text-left z-10">
@@ -183,18 +183,54 @@ export default function Welcome({ auth, news = [], programs = [], settings = {} 
                     </div>
                 </section>
 
-                {/* ABOUT SECTION */}
+                {/* --- ABOUT & CONTACT SECTION (NEW) --- */}
                 <section id="about" className="py-24 bg-white scroll-mt-24">
                     <div className="container mx-auto px-4">
-                        <div className="max-w-4xl mx-auto bg-slate-50 rounded-2xl shadow-sm p-8 md:p-12 border border-slate-100 text-center">
-                            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-8">About Assista & AICS</h2>
-                            <p className="text-slate-600 leading-relaxed">The <strong>Assista</strong> system is a web-based platform designed to digitize and streamline the application process for the DSWD's <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> program.</p>
+                        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+
+                            {/* Left: About Text */}
+                            <div className="bg-slate-50 rounded-2xl shadow-sm p-8 border border-slate-100 h-full">
+                                <h2 className="text-3xl font-bold text-slate-900 mb-6">About Assista & CSWDO</h2>
+                                <p className="text-slate-600 leading-relaxed mb-4 text-lg">
+                                    The <strong>Assista</strong> system is a premier initiative by the Roxas City Government to digitize and streamline the application process for the DSWD's <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> program.
+                                </p>
+                                <p className="text-slate-600 leading-relaxed text-lg">
+                                    Our mission is to provide fast, accessible, and transparent financial assistance to the residents of Roxas City, ensuring that help reaches those who need it most, when they need it most.
+                                </p>
+                            </div>
+
+                            {/* Right: Contact Information */}
+                            <div className="bg-blue-900 rounded-2xl shadow-lg p-8 text-white h-full flex flex-col justify-center">
+                                <h2 className="text-3xl font-bold mb-8">Contact Us</h2>
+                                <ul className="space-y-8">
+                                    <li className="flex items-start gap-5">
+                                        <div className="bg-blue-800 p-3 rounded-xl shrink-0">
+                                            <svg className="w-6 h-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                        </div>
+                                        <div>
+                                            <p className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-1">Visit our Office</p>
+                                            <p className="text-xl font-bold leading-snug">Inzo Arnaldo Village,<br/>Roxas City, 5800</p>
+                                        </div>
+                                    </li>
+                                    <li className="flex items-start gap-5">
+                                        <div className="bg-blue-800 p-3 rounded-xl shrink-0">
+                                            <svg className="w-6 h-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                                        </div>
+                                        <div>
+                                            <p className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-1">Call Hotline</p>
+                                            <p className="text-2xl font-bold tracking-tight">(036) 5206-83</p>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+
                         </div>
                     </div>
                 </section>
 
-                <footer className="bg-slate-900 text-slate-400 py-12 text-center text-sm">
-                    &copy; 2025 City Social Welfare and Development Office. All rights reserved.
+                <footer className="bg-slate-900 text-slate-400 py-12 text-center text-sm border-t border-slate-800">
+                    <p className="mb-2">&copy; 2025 City Social Welfare and Development Office (CSWDO). All rights reserved.</p>
+                    <p>Roxas City Government • Western Visayas, Philippines</p>
                 </footer>
             </div>
         </>
