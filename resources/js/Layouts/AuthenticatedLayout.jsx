@@ -12,7 +12,6 @@ export default function AuthenticatedLayout({ user, header, children }) {
 
     // FIX: Safely check for admin type
     const isAdmin = currentUser?.type === 'admin';
-    const isStaff = currentUser?.type === 'staff';
 
     useEffect(() => {
         if (props.flash?.message) {
@@ -26,11 +25,16 @@ export default function AuthenticatedLayout({ user, header, children }) {
             ? 'inline-flex items-center px-1 pt-1 border-b-2 border-yellow-400 text-sm font-medium text-white focus:outline-none transition duration-150 ease-in-out'
             : 'inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-300 hover:text-white hover:border-gray-300 focus:outline-none focus:text-white focus:border-gray-300 transition duration-150 ease-in-out';
 
+    const mobileNavLinkClasses = (isActive) =>
+        isActive
+            ? 'block pl-3 pr-4 py-2 border-l-4 border-yellow-400 text-base font-medium text-white bg-blue-900 focus:outline-none focus:text-white focus:bg-blue-900 transition duration-150 ease-in-out'
+            : 'block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-300 hover:text-white hover:bg-blue-700 hover:border-gray-300 focus:outline-none focus:text-white focus:bg-blue-700 transition duration-150 ease-in-out';
+
     return (
         <div className="min-h-screen bg-gray-100">
             <Toaster position="top-right" />
 
-            <nav className="bg-blue-800 border-b border-blue-900">
+            <nav className="bg-blue-800 border-b border-blue-900 sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
                         <div className="flex">
@@ -52,7 +56,6 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                         <Link href={route('admin.dashboard')} className={navLinkClasses(route().current('admin.dashboard'))}>
                                             Admin Dashboard
                                         </Link>
-                                        {/* Use wildcard check for active state on sub-pages */}
                                         <Link href={route('admin.applications.index')} className={navLinkClasses(route().current('admin.applications.*'))}>
                                             All Applications
                                         </Link>
@@ -63,14 +66,14 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                             News
                                         </Link>
                                         <Link href={route('admin.programs.index')} className={navLinkClasses(route().current('admin.programs.*'))}>
-    Programs
-</Link>
+                                            Programs
+                                        </Link>
                                         <Link href={route('admin.audit-logs')} className={navLinkClasses(route().current('admin.audit-logs'))}>
                                             Audit Logs
                                         </Link>
                                         <Link href={route('admin.settings.index')} className={navLinkClasses(route().current('admin.settings.*'))}>
-    Settings
-</Link>
+                                            Settings
+                                        </Link>
                                     </>
                                 )}
                             </div>
@@ -102,7 +105,7 @@ export default function AuthenticatedLayout({ user, header, children }) {
                         <div className="-mr-2 flex items-center sm:hidden">
                             <button
                                 onClick={() => setShowingNavigationDropdown((previousState) => !previousState)}
-                                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out"
+                                className="inline-flex items-center justify-center p-2 rounded-md text-gray-200 hover:text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 focus:text-white transition duration-150 ease-in-out"
                             >
                                 <svg className="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                                     <path className={!showingNavigationDropdown ? 'inline-flex' : 'hidden'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -113,38 +116,66 @@ export default function AuthenticatedLayout({ user, header, children }) {
                     </div>
                 </div>
 
-                {/* --- MOBILE MENU --- */}
-                <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden'}>
+                {/* --- MOBILE MENU (Now expands properly) --- */}
+                <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden bg-blue-800 border-t border-blue-900'}>
                     <div className="pt-2 pb-3 space-y-1">
-                        <Link href={route('dashboard')} className="block w-full pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700 hover:border-gray-300 transition duration-150 ease-in-out">
+                        <Link href={route('dashboard')} className={mobileNavLinkClasses(route().current('dashboard'))}>
                             My Dashboard
                         </Link>
                         {isAdmin && (
                             <>
-                                <Link href={route('admin.dashboard')} className="block w-full pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700 transition">
+                                <Link href={route('admin.dashboard')} className={mobileNavLinkClasses(route().current('admin.dashboard'))}>
                                     Admin Dashboard
                                 </Link>
-                                <Link href={route('admin.audit-logs')} className="block w-full pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700 transition">
+                                <Link href={route('admin.applications.index')} className={mobileNavLinkClasses(route().current('admin.applications.*'))}>
+                                    All Applications
+                                </Link>
+                                <Link href={route('admin.reports.index')} className={mobileNavLinkClasses(route().current('admin.reports.*'))}>
+                                    Reports
+                                </Link>
+                                <Link href={route('admin.news.index')} className={mobileNavLinkClasses(route().current('admin.news.*'))}>
+                                    News
+                                </Link>
+                                <Link href={route('admin.programs.index')} className={mobileNavLinkClasses(route().current('admin.programs.*'))}>
+                                    Programs
+                                </Link>
+                                <Link href={route('admin.audit-logs')} className={mobileNavLinkClasses(route().current('admin.audit-logs'))}>
                                     Audit Logs
+                                </Link>
+                                <Link href={route('admin.settings.index')} className={mobileNavLinkClasses(route().current('admin.settings.*'))}>
+                                    Settings
                                 </Link>
                             </>
                         )}
                     </div>
-                    <div className="pt-4 pb-1 border-t border-gray-700">
-                        <div className="px-4">
-                            <div className="font-medium text-base text-gray-200">{currentUser.name}</div>
-                            <div className="font-medium text-sm text-gray-400">{currentUser.email}</div>
+
+                    {/* Mobile User Options */}
+                    <div className="pt-4 pb-4 border-t border-blue-700">
+                        <div className="px-4 flex items-center">
+                            <div className="shrink-0">
+                                <div className="h-10 w-10 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-bold text-lg">
+                                    {currentUser.name ? currentUser.name.charAt(0) : 'U'}
+                                </div>
+                            </div>
+                            <div className="ml-3">
+                                <div className="font-medium text-base text-white">{currentUser.name}</div>
+                                <div className="font-medium text-sm text-blue-200">{currentUser.email}</div>
+                            </div>
                         </div>
                         <div className="mt-3 space-y-1">
-                            <Link href={route('profile.edit')} className="block w-full pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700 transition">Profile</Link>
-                            <Link href={route('logout')} method="post" as="button" className="block w-full pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700 transition">Log Out</Link>
+                            <Link href={route('profile.edit')} className="block w-full pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-blue-200 hover:text-white hover:bg-blue-700 transition">
+                                Profile
+                            </Link>
+                            <Link href={route('logout')} method="post" as="button" className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-blue-200 hover:text-white hover:bg-blue-700 transition">
+                                Log Out
+                            </Link>
                         </div>
                     </div>
                 </div>
             </nav>
 
             {header && (
-                <header className="bg-white shadow">
+                <header className="bg-white shadow relative z-10">
                     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                         {header}
                     </div>
