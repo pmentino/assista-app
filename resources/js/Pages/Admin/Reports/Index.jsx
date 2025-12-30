@@ -2,7 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, usePage, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { pickBy } from 'lodash';
-import Pagination from '@/Components/Pagination'; // Ensure you have this component!
+import Pagination from '@/Components/Pagination';
 
 export default function ReportsIndex({ applications, filters: initialFilters, stats }) {
     const { auth } = usePage().props;
@@ -87,8 +87,9 @@ export default function ReportsIndex({ applications, filters: initialFilters, st
 
     const queryParams = new URLSearchParams(pickBy(filters)).toString();
     const exportPdfUrl = `${route('admin.reports.export-pdf')}?${queryParams}`;
+    // NEW: Excel URL with filters
+    const exportExcelUrl = `${route('admin.reports.export-excel')}?${queryParams}`;
 
-    // Safety check for array
     const appList = applications?.data || [];
 
     return (
@@ -115,10 +116,25 @@ export default function ReportsIndex({ applications, filters: initialFilters, st
                                 <h3 className="text-lg font-bold text-gray-800">Application Status Report</h3>
                                 <p className="text-sm text-gray-500">View and export applications based on specific criteria.</p>
                             </div>
-                            <a href={exportPdfUrl} target="_blank" rel="noreferrer" className="inline-flex items-center px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium text-sm rounded-lg shadow transition-colors">
-                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                Export PDF
-                            </a>
+
+                            {/* --- ACTION BUTTONS --- */}
+                            <div className="flex gap-3">
+                                {/* Excel Button */}
+                                <a href={exportExcelUrl} target="_blank" rel="noreferrer" className="inline-flex items-center px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-lg shadow transition-colors">
+                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    Export Excel
+                                </a>
+
+                                {/* PDF Button */}
+                                <a href={exportPdfUrl} target="_blank" rel="noreferrer" className="inline-flex items-center px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium text-sm rounded-lg shadow transition-colors">
+                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                    </svg>
+                                    Export PDF
+                                </a>
+                            </div>
                         </div>
 
                         {/* Filters */}
@@ -154,8 +170,6 @@ export default function ReportsIndex({ applications, filters: initialFilters, st
                                     <option value="Rejected">Rejected</option>
                                 </select>
                             </div>
-
-                            {/* --- CORRECTED PROGRAM LIST (7 TYPES) --- */}
                             <div className="col-span-1">
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Program</label>
                                 <select name="program" value={filters.program} onChange={handleFilterChange} className="block w-full border-gray-300 rounded-md shadow-sm text-sm cursor-pointer">

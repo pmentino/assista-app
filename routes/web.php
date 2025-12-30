@@ -20,14 +20,21 @@ use App\Http\Controllers\Admin\SettingController;
 
 Route::get('/', function () {
     $news = [];
-    $programs = []; // New variable for dynamic programs
+    $programs = [];
+    $settings = [];
 
     try {
+        // 1. Fetch Latest News
         if (\Illuminate\Support\Facades\Schema::hasTable('news')) {
              $news = News::latest()->take(3)->get();
         }
+        // 2. Fetch Active Programs
         if (\Illuminate\Support\Facades\Schema::hasTable('assistance_programs')) {
-             $programs = AssistanceProgram::where('is_active', true)->get();
+            $programs = AssistanceProgram::where('is_active', true)->get();
+        }
+        // 3. Fetch System Settings (Announcement & Toggle)
+        if (\Illuminate\Support\Facades\Schema::hasTable('settings')) {
+            $settings = \App\Models\Setting::all()->pluck('value', 'key');
         }
     } catch (\Exception $e) { }
 
@@ -37,7 +44,8 @@ Route::get('/', function () {
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
         'news' => $news,
-        'programs' => $programs, // Pass programs to the view
+        'programs' => $programs,
+        'settings' => $settings, // <--- Passing settings here
         'auth' => ['user' => Auth::user()],
     ]);
 });
@@ -207,8 +215,9 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
 
     // 5. REPORTS ROUTES
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
     Route::get('/reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
+    // FIX: Removed 'admin.' from the name() because the group already adds it
+    Route::get('/reports/export-excel', [ReportController::class, 'exportExcel'])->name('reports.export-excel');
 
     // 6. ADMIN NEWS ROUTES
     Route::resource('news', NewsController::class);

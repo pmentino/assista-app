@@ -59,7 +59,6 @@ class ReportController extends Controller
 
     public function exportPdf(Request $request)
     {
-        // --- FIX START: Define the query and apply filters again ---
         $query = Application::query();
 
         if ($request->filled('status')) {
@@ -74,7 +73,6 @@ class ReportController extends Controller
         if ($request->filled('end_date')) {
             $query->whereDate('created_at', '<=', $request->end_date);
         }
-        // --- FIX END ---
 
         $applications = $query->orderBy('created_at', 'desc')->get();
 
@@ -92,5 +90,80 @@ class ReportController extends Controller
         ]);
 
         return $pdf->download('Assista_Report_' . date('Y-m-d') . '.pdf');
+    }
+
+    // --- NEW: EXPORT TO EXCEL (CSV) ---
+    public function exportExcel(Request $request)
+    {
+        $fileName = 'Assista_Report_' . date('Y-m-d_H-i') . '.csv';
+
+        // 1. Re-apply the same filters so Excel matches the PDF
+        $query = Application::query();
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('program')) {
+            $query->where('program', $request->program);
+        }
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        $applications = $query->orderBy('created_at', 'desc')->get();
+
+        // 2. Set Headers for Download
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        // 3. Define Columns
+        $columns = [
+            'Application ID',
+            'Applicant Name',
+            'Program Type',
+            'Status',
+            'Amount Released',
+            'Date Submitted',
+            'Date Approved',
+            'Contact Number',
+            'Barangay'
+        ];
+
+        // 4. Stream the File (Efficient for large data)
+        $callback = function() use($applications, $columns) {
+            $file = fopen('php://output', 'w');
+
+            // Add BOM so Excel reads symbols (like ₱/Ñ) correctly
+            fputs($file, "\xEF\xBB\xBF");
+
+            fputcsv($file, $columns);
+
+            foreach ($applications as $app) {
+                fputcsv($file, [
+                    $app->id,
+                    $app->first_name . ' ' . $app->last_name,
+                    $app->program,
+                    $app->status,
+                    $app->amount_released,
+                    $app->created_at->format('Y-m-d'),
+                    $app->approved_date ? date('Y-m-d', strtotime($app->approved_date)) : 'N/A',
+                    // Adding a single quote forces Excel to treat this as text (keeps the 09...)
+                    "'" . $app->contact_number,
+                    $app->barangay
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }
