@@ -9,6 +9,7 @@ class Application extends Model
 {
     use HasFactory;
 
+    // We explicitly list every field to prevent "Mass Assignment" errors
     protected $fillable = [
         'user_id',
         'program',
@@ -17,7 +18,7 @@ class Application extends Model
         'middle_name',
         'last_name',
         'suffix_name',
-        'sex',
+        'sex',              // <--- Ensure these are here
         'civil_status',
         'birth_date',
         'house_no',
@@ -26,18 +27,20 @@ class Application extends Model
         'contact_number',
         'email',
         'facebook_link',
+        'valid_id',
+        'indigency_cert',
         'attachments',
         'status',
         'remarks',
         'amount_released',
-        'approved_date',
+        'approved_date'
     ];
 
-    // CRITICAL: This tells Laravel to treat the JSON 'attachments' column as a PHP Array
     protected $casts = [
         'attachments' => 'array',
-        'date_of_incident' => 'date',
+        'approved_date' => 'datetime',
         'birth_date' => 'date',
+        'date_of_incident' => 'date',
     ];
 
     public function user()

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon; // <--- IMPORTANT: Needed for date calculations
+use Carbon\Carbon;
 
 class ApplicationController extends Controller
 {
@@ -26,73 +26,91 @@ class ApplicationController extends Controller
 
     // Submit new application
     public function store(Request $request)
-    {
-        $user = Auth::user();
+{
+    // DEBUG: Stop here and show me what data is coming from the form
+    // dd($request->all());
 
-        // --- 1. DUPLICATE CHECK (Prevent spamming) ---
-        // If they have ANY application that is currently 'Pending', block them.
-        $hasPending = Application::where('user_id', $user->id)
-            ->where('status', 'Pending')
-            ->exists();
+    $user = Auth::user();
 
-        if ($hasPending) {
-            return redirect()->back()->withErrors([
-                'program' => 'You already have a pending application. Please wait for the result before applying again.'
-            ]);
-        }
+    // 1. Check for Pending Apps
+    $hasPending = Application::where('user_id', $user->id)->where('status', 'Pending')->exists();
+    if ($hasPending) {
+        return redirect()->back()->withErrors(['program' => 'You already have a pending application.']);
+    }
 
-        // --- 2. COOLDOWN SYSTEM (3 Months Rule) ---
-        // Check the last time they were APPROVED.
-        $lastApproved = Application::where('user_id', $user->id)
-            ->where('status', 'Approved')
-            ->orderBy('approved_date', 'desc') // Get the most recent one
-            ->first();
-
-        if ($lastApproved && $lastApproved->approved_date) {
-            $lastDate = Carbon::parse($lastApproved->approved_date);
-            $nextEligibleDate = $lastDate->copy()->addMonths(3); // 3 Month Cooldown
-
-            // If today is BEFORE the next eligible date, block them.
-            if (Carbon::now()->lt($nextEligibleDate)) {
-                return redirect()->back()->withErrors([
-                    'program' => 'You have received assistance recently. Per guidelines, you can apply again on ' . $nextEligibleDate->format('F d, Y') . '.'
-                ]);
-            }
-        }
-
-        // --- 3. STANDARD VALIDATION ---
+    // 2. Validate Data
+    try {
         $validated = $request->validate([
-            'program' => 'required',
-            'first_name' => 'required',
-            'last_name' => 'required',
-            'contact_number' => 'required',
-            // Add other specific validations if needed
-        ]);
+            'program' => 'required|string',
+            'date_of_incident' => 'required|date',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'contact_number' => 'required|string|max:20',
+            'email' => 'required|email',
+            'sex' => 'required|string',
+            'civil_status' => 'required|string',
+            'birth_date' => 'required|date',
+            'barangay' => 'required|string',
+            'house_no' => 'required|string',
 
-        // Handle File Uploads
-        $paths = [];
-        if ($request->hasFile('valid_id')) {
-            $paths['valid_id'] = $request->file('valid_id')->store('documents', 'public');
-        }
-        if ($request->hasFile('indigency_cert')) {
-            $paths['indigency_cert'] = $request->file('indigency_cert')->store('documents', 'public');
-        }
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $index => $file) {
+            // Files
+            'valid_id' => 'required|file|max:10240', // Increased limit to 10MB just in case
+            'indigency_cert' => 'required|file|max:10240',
+        ]);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        // DEBUG: If validation fails, dump the errors so we can see them
+        dd($e->errors());
+    }
+
+    // 3. File Uploads
+    $paths = [];
+    if ($request->hasFile('valid_id')) {
+        $paths['valid_id'] = $request->file('valid_id')->store('documents', 'public');
+    }
+    if ($request->hasFile('indigency_cert')) {
+        $paths['indigency_cert'] = $request->file('indigency_cert')->store('documents', 'public');
+    }
+
+    // Dynamic Attachments
+    if ($request->hasFile('attachments')) {
+        foreach ($request->file('attachments') as $index => $file) {
+            if($file) {
                 $paths[$index] = $file->store('documents', 'public');
             }
         }
-
-        // Create Application
-        $app = new Application();
-        $app->user_id = Auth::id();
-        $app->fill($request->except(['valid_id', 'indigency_cert', 'attachments']));
-        $app->attachments = $paths;
-        $app->status = 'Pending';
-        $app->save();
-
-        return redirect()->route('dashboard')->with('message', 'Application submitted successfully.');
     }
+
+    // 4. Create Record
+    try {
+        Application::create([
+            'user_id' => Auth::id(),
+            'program' => $request->program,
+            'date_of_incident' => $request->date_of_incident,
+            'first_name' => $request->first_name,
+            'middle_name' => $request->middle_name,
+            'last_name' => $request->last_name,
+            'suffix_name' => $request->suffix_name,
+            'sex' => $request->sex,
+            'civil_status' => $request->civil_status,
+            'birth_date' => $request->birth_date,
+            'house_no' => $request->house_no,
+            'barangay' => $request->barangay,
+            'city' => $request->city ?? 'Roxas City', // Default if null
+            'contact_number' => $request->contact_number,
+            'email' => $request->email,
+            'facebook_link' => $request->facebook_link,
+            'valid_id' => $paths['valid_id'] ?? null,
+            'indigency_cert' => $paths['indigency_cert'] ?? null,
+            'attachments' => $paths,
+            'status' => 'Pending',
+        ]);
+    } catch (\Exception $e) {
+        // DEBUG: If Database fails (e.g. missing column), show the exact SQL error
+        dd($e->getMessage());
+    }
+
+    return redirect()->route('dashboard')->with('message', 'Application submitted successfully.');
+}
 
     // Show details
     public function edit(Application $application)
@@ -110,36 +128,35 @@ class ApplicationController extends Controller
         return redirect()->route('dashboard');
     }
 
-    // --- ADMIN ACTIONS (With Logging) ---
+    // --- ADMIN ACTIONS (With Logging & Email) ---
 
-   public function approve(Request $request, Application $application)
-{
-    $request->validate([
-        'amount' => 'required|numeric|min:0',
-    ]);
+    public function approve(Request $request, Application $application)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:0',
+        ]);
 
-    $application->update([
-        'status' => 'Approved',
-        'amount_released' => $request->amount,
-        'remarks' => null,
-        'approved_date' => now(),
-    ]);
+        $application->update([
+            'status' => 'Approved',
+            'amount_released' => $request->amount,
+            'remarks' => null,
+            'approved_date' => now(),
+        ]);
 
-    // --- NEW: Send Email ---
-    // Ensure the application has a user loaded to get the email
-    if ($application->user && $application->user->email) {
-        Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
+        // Send Email
+        if ($application->user && $application->user->email) {
+            Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
+        }
+
+        // Audit Log
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Approved Application',
+            'details' => "Approved App #{$application->id} for {$application->first_name}. Amount: ₱" . number_format($request->amount, 2)
+        ]);
+
+        return redirect()->back()->with('message', 'Application approved and notification sent.');
     }
-
-    // Audit Log
-    AuditLog::create([
-        'user_id' => Auth::id(),
-        'action' => 'Approved Application',
-        'details' => "Approved App #{$application->id} for {$application->first_name}. Amount: ₱" . number_format($request->amount, 2)
-    ]);
-
-    return redirect()->back()->with('message', 'Application approved and notification sent.');
-}
 
     public function reject(Request $request, Application $application)
     {
@@ -155,29 +172,29 @@ class ApplicationController extends Controller
     }
 
     public function addRemark(Request $request, Application $application)
-{
-    $request->validate([
-        'remarks' => 'required|string|max:1000',
-    ]);
+    {
+        $request->validate([
+            'remarks' => 'required|string|max:1000',
+        ]);
 
-    $application->update([
-        'status' => 'Rejected',
-        'remarks' => $request->remarks,
-    ]);
+        $application->update([
+            'status' => 'Rejected',
+            'remarks' => $request->remarks,
+        ]);
 
-    // --- NEW: Send Email ---
-    if ($application->user && $application->user->email) {
-        Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
+        // Send Email
+        if ($application->user && $application->user->email) {
+            Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
+        }
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Rejected Application',
+            'details' => "Rejected App #{$application->id} - Reason: {$request->remarks}"
+        ]);
+
+        return redirect()->back()->with('message', 'Application rejected and notification sent.');
     }
-
-    AuditLog::create([
-        'user_id' => Auth::id(),
-        'action' => 'Rejected Application',
-        'details' => "Rejected App #{$application->id} - Reason: {$request->remarks}"
-    ]);
-
-    return redirect()->back()->with('message', 'Application rejected and notification sent.');
-}
 
     // --- CLAIM STUB GENERATION ---
     public function generateClaimStub(Application $application)

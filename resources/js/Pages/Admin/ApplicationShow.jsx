@@ -4,13 +4,43 @@ import { useState } from 'react';
 
 // --- CONFIGURATION ---
 const REQUIREMENTS_MAP = {
-    'Hospitalization': ['Personal Letter to Mayor', 'Final Hospital Bill', 'Medical Abstract / Certificate', 'Promissory Note'],
-    'Laboratory Tests': ['Personal Letter to Mayor', 'Laboratory Request', 'Medical Certificate'],
-    'Anti-Rabies Vaccine Treatment': ['Personal Letter to Mayor', 'Rabies Vaccination Card', 'Medical Certificate'],
-    'Medicine Assistance': ['Personal Letter to Mayor', 'Prescription', 'Medical Certificate'],
-    'Funeral Assistance': ['Personal Letter to Mayor', 'Death Certificate', 'Burial Contract'],
-    'Chemotherapy': ['Personal Letter to Mayor', 'Chemotherapy Protocol', 'Medical Certificate', 'Quotation of Medicine'],
-    'Diagnostic Blood Tests': ['Personal Letter to Mayor', 'Diagnostic Request', 'Medical Certificate']
+    'Hospitalization': [
+        'Personal Letter to Mayor',
+        'Final Hospital Bill',
+        'Medical Abstract / Certificate',
+        'Promissory Note'
+    ],
+    'Laboratory Tests': [
+        'Personal Letter to Mayor',
+        'Laboratory Request',
+        'Medical Certificate'
+    ],
+    'Anti-Rabies Vaccine Treatment': [
+        'Personal Letter to Mayor',
+        'Rabies Vaccination Card',
+        'Medical Certificate'
+    ],
+    'Medicine Assistance': [
+        'Personal Letter to Mayor',
+        'Prescription',
+        'Medical Certificate'
+    ],
+    'Funeral Assistance': [
+        'Personal Letter to Mayor',
+        'Death Certificate',
+        'Burial Contract'
+    ],
+    'Chemotherapy': [
+        'Personal Letter to Mayor',
+        'Chemotherapy Protocol',
+        'Medical Certificate',
+        'Quotation of Medicine'
+    ],
+    'Diagnostic Blood Tests': [
+        'Personal Letter to Mayor',
+        'Diagnostic Request',
+        'Medical Certificate'
+    ]
 };
 
 export default function ApplicationShow({ application }) {
@@ -30,7 +60,10 @@ export default function ApplicationShow({ application }) {
         e.preventDefault();
         post(route('admin.applications.remarks.store', application.id), {
             preserveScroll: true,
-            onSuccess: () => { setShowRejectModal(false); window.location.reload(); },
+            onSuccess: () => {
+                setShowRejectModal(false);
+                window.location.reload();
+            },
         });
     };
 
@@ -38,19 +71,29 @@ export default function ApplicationShow({ application }) {
         e.preventDefault();
         approveForm.post(route('admin.applications.approve', application.id), {
             preserveScroll: true,
-            onSuccess: () => { setShowApproveModal(false); window.location.reload(); }
+            onSuccess: () => {
+                setShowApproveModal(false);
+                window.location.reload();
+            }
         });
     };
 
     const getAttachmentLabel = (key) => {
-        const labels = { valid_id: 'Valid Government ID', indigency_cert: 'Certificate of Indigency' };
+        const labels = {
+            valid_id: 'Valid Government ID',
+            indigency_cert: 'Certificate of Indigency'
+        };
         if (labels[key]) return labels[key];
 
         // Dynamic Requirement Labeling
         if (!application.program) return `Attachment ${key}`;
+
         const programReqs = REQUIREMENTS_MAP[application.program];
         const index = parseInt(key);
-        return (programReqs && programReqs[index]) ? programReqs[index] : `Supporting Document #${index + 1}`;
+
+        return (programReqs && programReqs[index])
+            ? programReqs[index]
+            : `Supporting Document #${index + 1}`;
     };
 
     const statusColors = {
@@ -78,10 +121,16 @@ export default function ApplicationShow({ application }) {
                     {/* Action Buttons (Only for Pending) */}
                     {application.status === 'Pending' && (
                         <div className="flex gap-2">
-                            <button onClick={() => setShowRejectModal(true)} className="px-4 py-2 bg-white border border-red-300 text-red-700 font-bold rounded-lg shadow-sm hover:bg-red-50 transition">
+                            <button
+                                onClick={() => setShowRejectModal(true)}
+                                className="px-4 py-2 bg-white border border-red-300 text-red-700 font-bold rounded-lg shadow-sm hover:bg-red-50 transition"
+                            >
                                 Reject
                             </button>
-                            <button onClick={() => setShowApproveModal(true)} className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700 transition">
+                            <button
+                                onClick={() => setShowApproveModal(true)}
+                                className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700 transition"
+                            >
                                 Approve Application
                             </button>
                         </div>
@@ -160,7 +209,9 @@ export default function ApplicationShow({ application }) {
                                                 className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition group"
                                             >
                                                 <div className="bg-blue-100 p-3 rounded-md text-blue-600 mr-4 group-hover:bg-blue-200">
-                                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-bold text-gray-800 group-hover:text-blue-800">{getAttachmentLabel(key)}</p>
@@ -218,21 +269,6 @@ export default function ApplicationShow({ application }) {
                                         <label className="text-xs font-bold text-gray-500 uppercase">Email Address</label>
                                         <p className="text-gray-900">{application.email}</p>
                                     </div>
-
-                                    {/* --- ADDED FACEBOOK LINK --- */}
-                                    {application.facebook_link && (
-                                        <div>
-                                            <label className="text-xs font-bold text-gray-500 uppercase">Facebook Profile</label>
-                                            <a
-                                                href={application.facebook_link}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="block mt-1 text-blue-600 hover:text-blue-800 hover:underline truncate"
-                                            >
-                                                {application.facebook_link}
-                                            </a>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         </div>

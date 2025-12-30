@@ -3,9 +3,11 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
+import Modal from '@/Components/Modal'; // Ensure this component exists in your project
+import SecondaryButton from '@/Components/SecondaryButton';
 import { Head, Link, useForm } from '@inertiajs/react';
 
-// A simple eye icon component
+// Eye Icon
 const EyeIcon = ({ closed }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-500 hover:text-blue-600 transition-colors">
         {closed ? (
@@ -30,6 +32,8 @@ export default function Register() {
     });
 
     const [showPassword, setShowPassword] = useState(false);
+    const [showConsentModal, setShowConsentModal] = useState(false);
+    const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
 
     useEffect(() => {
         return () => {
@@ -39,6 +43,10 @@ export default function Register() {
 
     const submit = (e) => {
         e.preventDefault();
+        if (!agreedToPrivacy) {
+            alert("You must agree to the Data Privacy Statement to register.");
+            return;
+        }
         post(route('register'));
     };
 
@@ -168,8 +176,31 @@ export default function Register() {
                             </div>
                         </div>
 
+                        {/* --- DATA PRIVACY CONSENT --- */}
+                        <div className="pt-2">
+                            <div className="flex items-start">
+                                <div className="flex items-center h-5">
+                                    <input
+                                        id="privacy_agreement"
+                                        name="privacy_agreement"
+                                        type="checkbox"
+                                        checked={agreedToPrivacy}
+                                        onChange={(e) => setAgreedToPrivacy(e.target.checked)}
+                                        className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded cursor-pointer"
+                                        required
+                                    />
+                                </div>
+                                <div className="ml-3 text-sm">
+                                    <label htmlFor="privacy_agreement" className="font-medium text-gray-700">
+                                        I agree to the <button type="button" onClick={() => setShowConsentModal(true)} className="text-blue-600 hover:underline font-bold">Data Privacy Consent</button> statement.
+                                    </label>
+                                    <p className="text-gray-500 text-xs">By checking this, you consent to the collection and processing of your personal data.</p>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="pt-4">
-                            <PrimaryButton className="w-full justify-center py-3 bg-blue-800 hover:bg-blue-900 shadow-lg hover:shadow-xl transition-all text-base font-bold tracking-wide" disabled={processing}>
+                            <PrimaryButton className="w-full justify-center py-3 bg-blue-800 hover:bg-blue-900 shadow-lg hover:shadow-xl transition-all text-base font-bold tracking-wide" disabled={processing || !agreedToPrivacy}>
                                 REGISTER ACCOUNT
                             </PrimaryButton>
                         </div>
@@ -182,6 +213,41 @@ export default function Register() {
                     </p>
                 </div>
             </div>
+
+            {/* --- DATA PRIVACY MODAL --- */}
+            <Modal show={showConsentModal} onClose={() => setShowConsentModal(false)}>
+                <div className="p-6">
+                    <h2 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2">
+                        Data Privacy Consent
+                    </h2>
+                    <div className="text-sm text-gray-600 space-y-3 h-64 overflow-y-auto pr-2">
+                        <p>
+                            In compliance with the <strong>Data Privacy Act of 2012 (R.A. 10173)</strong>, the City Social Welfare and Development Office (CSWDO) of Roxas City is committed to protecting your personal information.
+                        </p>
+                        <p>
+                            <strong>Collection of Data:</strong> We collect your personal data (Name, Age, Address, Contact Info) and sensitive personal data (Health records, Indigency status) solely for the purpose of processing your application for the Assistance to Individuals in Crisis Situation (AICS) program.
+                        </p>
+                        <p>
+                            <strong>Use of Data:</strong> Your data will be used to verify eligibility, process financial assistance, and generate reports for government auditing. It will not be shared with third parties without your consent, except as required by law.
+                        </p>
+                        <p>
+                            <strong>Retention:</strong> Your records will be securely stored in the Assista System database and physical archives in accordance with the National Archives of the Philippines Act.
+                        </p>
+                        <p>
+                            By clicking "I Agree", you certify that the information provided is true and correct, and you consent to the collection and processing of your data.
+                        </p>
+                    </div>
+                    <div className="mt-6 flex justify-end">
+                        <SecondaryButton onClick={() => setShowConsentModal(false)} className="mr-3">
+                            Close
+                        </SecondaryButton>
+                        <PrimaryButton onClick={() => { setAgreedToPrivacy(true); setShowConsentModal(false); }}>
+                            I Agree
+                        </PrimaryButton>
+                    </div>
+                </div>
+            </Modal>
+
         </div>
     );
 }
