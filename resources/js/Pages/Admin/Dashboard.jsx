@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, Link } from '@inertiajs/react';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler,
 } from 'chart.js';
@@ -13,7 +13,7 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
 
     // --- STATE MANAGEMENT ---
     const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
-    const [isBarangayModalOpen, setIsBarangayModalOpen] = useState(false); // <--- NEW MODAL STATE
+    const [isBarangayModalOpen, setIsBarangayModalOpen] = useState(false);
 
     const budgetForm = useForm({
         amount: budgetStats?.total_budget || '',
@@ -171,7 +171,7 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                         <div className="flex flex-col xl:flex-row justify-between items-center mb-6 gap-4">
                             <h3 className="text-lg font-bold text-gray-800">Financial Release Trends</h3>
                             <div className="flex flex-wrap gap-2 items-center bg-gray-50 p-2 rounded-md border">
-                                {/* Filters (Date/Barangay) */}
+                                {/* Filters */}
                                 <div className="flex items-center gap-1">
                                     <span className="text-xs font-bold text-gray-500 uppercase">From:</span>
                                     <input type="date" value={filterValues.start_date} onChange={(e) => handleFilterChange('start_date', e.target.value)} className="border-gray-300 rounded text-sm py-1 px-2" />
@@ -202,7 +202,6 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                         <div className="lg:col-span-2 bg-white overflow-hidden shadow-sm sm:rounded-lg">
                             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
                                 <h3 className="text-lg font-bold text-gray-800">Top Barangays by Allocation</h3>
-                                {/* NEW VIEW ALL BUTTON */}
                                 <button
                                     onClick={() => setIsBarangayModalOpen(true)}
                                     className="text-sm text-blue-600 hover:text-blue-800 font-bold hover:underline"
@@ -272,7 +271,7 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                         </div>
                     )}
 
-                    {/* --- MODAL 2: VIEW ALL BARANGAYS (NEW) --- */}
+                    {/* --- MODAL 2: VIEW ALL BARANGAYS (DRILL-DOWN) --- */}
                     {isBarangayModalOpen && (
                         <div className="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 px-4">
                             <div className="bg-white p-0 rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -288,7 +287,6 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                                 </div>
 
                                 {/* Modal Body (Scrollable Table) */}
-                                {/* FIX: Removed 'p-6' here so header sticks to the very top edge */}
                                 <div className="flex-1 overflow-y-auto">
                                     <table className="min-w-full divide-y divide-gray-200">
                                         <thead className="bg-gray-100">
@@ -312,8 +310,15 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                                                 <tr key={index} className="hover:bg-gray-50 transition">
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">#{index + 1}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.barangay}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                                        <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-bold">{item.total}</span>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                        {/* --- DRILL DOWN LINK --- */}
+                                                        <Link
+                                                            href={route('admin.applications.index', { barangay: item.barangay })}
+                                                            className="inline-flex items-center justify-center px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full hover:bg-blue-200 hover:text-blue-900 transition cursor-pointer"
+                                                            title={`View all applicants from ${item.barangay}`}
+                                                        >
+                                                            {item.total}
+                                                        </Link>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-bold">{formatCurrency(item.amount)}</td>
                                                 </tr>

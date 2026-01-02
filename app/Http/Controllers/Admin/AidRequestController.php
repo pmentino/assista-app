@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Application;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Auth; // <--- Added this
 
 class AidRequestController extends Controller
 {
@@ -14,46 +14,46 @@ class AidRequestController extends Controller
     {
         $query = Application::query();
 
-        // Search Logic
-        if ($request->search) {
-            $query->where(function($q) use ($request) {
-                $q->where('id', 'like', "%{$request->search}%")
-                  ->orWhere('first_name', 'like', "%{$request->search}%")
-                  ->orWhere('last_name', 'like', "%{$request->search}%");
+        // 1. Search Filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('id', $search);
             });
         }
 
-        // Status Filter
-        if ($request->status) {
+        // 2. Status Filter
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        // Program Filter
-        if ($request->program) {
+        // 3. Program Filter
+        if ($request->filled('program')) {
             $query->where('program', $request->program);
         }
 
-        // --- SORTING FIX ---
-        // 1. Set a default field if 'sort_by' is empty
-        $sortField = $request->input('sort_by') ?: 'created_at';
-
-        // 2. Set a default direction if 'sort_direction' is empty or invalid
-        $sortDirection = $request->input('sort_direction');
-        if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
-            $sortDirection = 'desc'; // Default fallback
+        // 4. Barangay Filter (Drill-Down)
+        if ($request->filled('barangay')) {
+            $query->where('barangay', $request->barangay);
         }
 
-        // Apply sorting
-        $applications = $query->orderBy($sortField, $sortDirection)
-            ->paginate(10)
-            ->withQueryString();
+        // Sorting
+        $sortDirection = $request->input('sort_direction', 'desc');
+        $sortBy = $request->input('sort_by', 'created_at');
 
-        return Inertia::render('Admin/AidRequests/Index', [
+        $applications = $query->orderBy($sortBy, $sortDirection)
+                              ->paginate(10)
+                              ->withQueryString();
+
+        // --- THE FIX ---
+        // 1. Point to 'Admin/ApplicationsIndex' (matching your screenshot)
+        // 2. Pass 'auth' so the layout knows you are an Admin
+        return Inertia::render('Admin/ApplicationsIndex', [
             'applications' => $applications,
-            'filters' => $request->only(['search', 'status', 'program']),
-            'sort_by' => $sortField,
-            'sort_direction' => $sortDirection,
-            'auth' => ['user' => Auth::user()]
+            'filters' => $request->only(['search', 'status', 'program', 'barangay']),
+            'auth' => ['user' => Auth::user()],
         ]);
     }
 }
