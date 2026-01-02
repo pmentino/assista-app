@@ -6,14 +6,24 @@ import { Transition } from '@headlessui/react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { useState, useRef } from 'react';
 
+// --- ROXAS CITY BARANGAY LIST ---
+const BARANGAYS = [
+    'Adlawan', 'Bago', 'Balijuagan', 'Banica', 'Barra', 'Bato', 'Baybay', 'Bolo',
+    'Cabugao', 'Cagay', 'Cogon', 'Culajao', 'Culasi', 'Dayao', 'Dinginan', 'Dumolog',
+    'Gabuan', 'Inzo Arnaldo Village', 'Jumaguicjic', 'Lanot', 'Lawaan', 'Libas',
+    'Liongs', 'Li-ong', 'Loctugan', 'Lonoy', 'Milibili', 'Molo', 'Mongpong', 'Oloyan',
+    'Punta Cogon', 'Punta Tabuc', 'Rizal', 'Saloque', 'San Jose', 'Sibaguan', 'Talon',
+    'Tanque', 'Tanza', 'Tiza', 'Poblacion I', 'Poblacion II', 'Poblacion III',
+    'Poblacion IV', 'Poblacion V', 'Poblacion VI', 'Poblacion VII', 'Poblacion VIII',
+    'Poblacion IX', 'Poblacion X', 'Poblacion XI'
+];
+
 export default function UpdateProfileInformation({ mustVerifyEmail, status, className = '' }) {
-    // --- FIX: Safely access user with '?.' and provide fallback '{}' ---
     const user = usePage().props.auth?.user || {};
 
     const photoInput = useRef(null);
     const [photoPreview, setPhotoPreview] = useState(null);
 
-    // Initialize form with safe defaults
     const { data, setData, post, errors, processing, recentlySuccessful } = useForm({
         _method: 'PATCH',
         name: user.name || '',
@@ -42,7 +52,6 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
         });
     };
 
-    // Default Avatar Logic
     const currentPhotoUrl = user.profile_photo_path
         ? `/storage/${user.profile_photo_path}`
         : `https://ui-avatars.com/api/?name=${user.name || 'User'}&color=7F9CF5&background=EBF4FF`;
@@ -89,7 +98,7 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
                             />
                             <div className="text-center">
                                 <p className="text-sm font-bold text-gray-700">Profile Photo</p>
-                                <p className="text-xs text-gray-500 mt-1">Allowed: JPG, PNG (Max 2MB)</p>
+                                <p className="text-xs text-gray-500 mt-1">Allowed: JPG, PNG (Max 5MB)</p>
                                 <InputError className="mt-2" message={errors.photo} />
                             </div>
                         </div>
@@ -159,7 +168,18 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
 
                             <div>
                                 <InputLabel htmlFor="barangay" value="Barangay" />
-                                <TextInput id="barangay" className="mt-1 block w-full" value={data.barangay} onChange={(e) => setData('barangay', e.target.value)} placeholder="e.g. Culasi" />
+                                {/* REPLACED TEXTINPUT WITH DROPDOWN */}
+                                <select
+                                    id="barangay"
+                                    className="mt-1 block w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
+                                    value={data.barangay}
+                                    onChange={(e) => setData('barangay', e.target.value)}
+                                >
+                                    <option value="">Select Barangay</option>
+                                    {BARANGAYS.map((brgy) => (
+                                        <option key={brgy} value={brgy}>{brgy}</option>
+                                    ))}
+                                </select>
                                 <InputError className="mt-2" message={errors.barangay} />
                             </div>
 
@@ -172,7 +192,6 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
                         </div>
                     </div>
 
-                    {/* Action Bar */}
                     <div className="flex items-center gap-4 mt-8 pt-6 border-t border-gray-100 justify-end">
                         <Transition show={recentlySuccessful} enter="transition ease-in-out" enterFrom="opacity-0" leave="transition ease-in-out" leaveTo="opacity-0">
                             <p className="text-sm text-green-600 font-bold flex items-center">

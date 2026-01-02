@@ -21,14 +21,14 @@ class User extends Authenticatable
     'name',
     'email',
     'password',
-    'profile_photo_path', // <--- Added
-    'contact_number',     // <--- Added
-    'civil_status',       // <--- Added
-    'sex',                // <--- Added
-    'birth_date',         // <--- Added
-    'barangay',           // <--- Added
-    'city',               // <--- Added
-    'house_no',           // <--- Added
+    'profile_photo_path', // Don't forget this!
+    'contact_number',     // <--- NEW
+    'civil_status',       // <--- NEW
+    'sex',                // <--- NEW
+    'birth_date',         // <--- NEW
+    'barangay',           // <--- NEW
+    'house_no',           // <--- NEW
+    'type',               // For admin/user distinction
 ];
 
     /**
