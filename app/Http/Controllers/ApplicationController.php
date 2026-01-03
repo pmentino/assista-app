@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Validation\ValidationException; // <--- CRITICAL IMPORT
 
 class ApplicationController extends Controller
 {
@@ -116,13 +117,11 @@ class ApplicationController extends Controller
         ]);
     }
 
-    // Update application (FIXED: RESUBMISSION LOGIC)
+    // Update application
     public function update(Request $request, Application $application)
     {
-        // 1. Basic update of text fields
         $application->fill($request->except(['valid_id', 'indigency_cert', 'attachments']));
 
-        // 2. Handle File Replacements if any
         if ($request->hasFile('valid_id')) {
             if ($application->valid_id) Storage::disk('public')->delete($application->valid_id);
             $application->valid_id = $request->file('valid_id')->store('documents', 'public');
@@ -132,24 +131,20 @@ class ApplicationController extends Controller
             $application->indigency_cert = $request->file('indigency_cert')->store('documents', 'public');
         }
 
-        // 3. Handle Dynamic Attachments
         $currentAttachments = $application->attachments ?? [];
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $index => $file) {
                 if ($file) {
-                    // Overwrite existing file at this index
                     $currentAttachments[$index] = $file->store('documents', 'public');
                 }
             }
             $application->attachments = $currentAttachments;
         }
 
-        // 4. CRITICAL FIX: Reset Status if it was Rejected
         if ($application->status === 'Rejected') {
             $application->status = 'Pending';
-            $application->remarks = null; // Clear rejection reason
+            $application->remarks = null;
 
-            // Optional: Add audit log
             AuditLog::create([
                 'user_id' => Auth::id(),
                 'action' => 'Resubmitted Application',
@@ -162,13 +157,39 @@ class ApplicationController extends Controller
         return redirect()->route('dashboard')->with('message', 'Application updated successfully.');
     }
 
-    // --- ADMIN ACTIONS (With Logging & Email) ---
+    // --- ADMIN ACTIONS ---
 
     public function approve(Request $request, Application $application)
     {
         $request->validate([
             'amount' => 'required|numeric|min:0',
         ]);
+
+        // --- 1. BUDGET GUARD ---
+        $now = \Carbon\Carbon::now();
+
+        $monthlyBudget = \App\Models\MonthlyBudget::where('month', $now->month)
+            ->where('year', $now->year)
+            ->first();
+
+        if (!$monthlyBudget) {
+            return redirect()->back()->with('budget_error', 'Approval Failed: No budget has been allocated for this month yet.');
+        }
+
+        // Calculate used budget
+        $totalReleased = Application::where('status', 'Approved')
+            ->whereMonth('approved_date', $now->month)
+            ->whereYear('approved_date', $now->year)
+            ->sum('amount_released');
+
+        $remainingBalance = $monthlyBudget->amount - $totalReleased;
+
+        // CHECK OVERDRAFT
+        if ($request->amount > $remainingBalance) {
+            // FIX: Use a custom flash key 'budget_error' that we can easily catch on frontend
+            return redirect()->back()->with('budget_error', "Insufficient Funds. You only have ₱" . number_format($remainingBalance, 2) . " remaining this month.");
+        }
+        // -----------------------
 
         $application->update([
             'status' => 'Approved',
@@ -177,12 +198,10 @@ class ApplicationController extends Controller
             'approved_date' => now(),
         ]);
 
-        // Send Email
         if ($application->user && $application->user->email) {
             Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
         }
 
-        // Audit Log
         AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Approved Application',
@@ -191,7 +210,6 @@ class ApplicationController extends Controller
 
         return redirect()->back()->with('message', 'Application approved and notification sent.');
     }
-
     public function reject(Request $request, Application $application)
     {
         $application->update(['status' => 'Rejected']);
@@ -216,7 +234,6 @@ class ApplicationController extends Controller
             'remarks' => $request->remarks,
         ]);
 
-        // Send Email
         if ($application->user && $application->user->email) {
             Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
         }
@@ -230,20 +247,17 @@ class ApplicationController extends Controller
         return redirect()->back()->with('message', 'Application rejected and notification sent.');
     }
 
-    // --- CLAIM STUB GENERATION ---
     public function generateClaimStub(Application $application)
     {
         if ($application->status !== 'Approved') {
             abort(403, 'This application is not approved yet.');
         }
 
-        // 1. Fetch Dynamic Signatories from Settings
         $signatories = [
             'assessed_by' => Setting::where('key', 'signatory_social_worker')->value('value') ?? 'BIVIEN B. DELA CRUZ, RSW',
             'approved_by' => Setting::where('key', 'signatory_cswdo_head')->value('value') ?? 'PERSEUS L. CORDOVA',
         ];
 
-        // 2. Pass them to the View
         $pdf = Pdf::loadView('pdf.claim_stub', [
             'application' => $application,
             'signatories' => $signatories

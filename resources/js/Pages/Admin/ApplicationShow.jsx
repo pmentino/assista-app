@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, usePage, Link } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // --- CONFIGURATION ---
 const REQUIREMENTS_MAP = {
@@ -44,7 +44,8 @@ const REQUIREMENTS_MAP = {
 };
 
 export default function ApplicationShow({ application }) {
-    const { auth } = usePage().props;
+    // FIX: Access flash messages from props
+    const { auth, flash } = usePage().props;
     const user = auth?.user || { name: 'Admin' };
 
     // Forms
@@ -54,6 +55,17 @@ export default function ApplicationShow({ application }) {
     // Modals
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [showApproveModal, setShowApproveModal] = useState(false);
+
+    // FIX: Local state for budget error
+    const [budgetError, setBudgetError] = useState(null);
+
+    // FIX: Watch for flash.budget_error and re-open modal if needed
+    useEffect(() => {
+        if (flash?.budget_error) {
+            setBudgetError(flash.budget_error);
+            setShowApproveModal(true);
+        }
+    }, [flash]);
 
     // Handlers
     const submitRemark = (e) => {
@@ -69,11 +81,18 @@ export default function ApplicationShow({ application }) {
 
     const submitApprove = (e) => {
         e.preventDefault();
+        setBudgetError(null); // Clear old errors
+
         approveForm.post(route('admin.applications.approve', application.id), {
             preserveScroll: true,
             onSuccess: () => {
-                setShowApproveModal(false);
-                window.location.reload();
+                // Only close if there is NO budget error coming back
+                // (Note: useEffect handles re-opening, but we check here to be safe)
+                if (!flash?.budget_error) {
+                    setShowApproveModal(false);
+                    approveForm.reset();
+                    window.location.reload();
+                }
             }
         });
     };
@@ -108,7 +127,6 @@ export default function ApplicationShow({ application }) {
                 <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                     {/* Top Row: Back, ID, Status */}
                     <div className="flex flex-wrap items-center gap-3">
-                        {/* FIX: Corrected route name here */}
                         <Link href={route('admin.applications.index')} className="text-gray-500 hover:text-gray-700 flex items-center pr-3 border-r border-gray-300">
                             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                             Back
@@ -121,7 +139,7 @@ export default function ApplicationShow({ application }) {
                         </span>
                     </div>
 
-                    {/* Bottom Row: Buttons (STACKED VERTICALLY on Mobile to prevent overflow) */}
+                    {/* Bottom Row: Buttons */}
                     {application.status === 'Pending' && (
                         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                             <button
@@ -131,7 +149,10 @@ export default function ApplicationShow({ application }) {
                                 Reject
                             </button>
                             <button
-                                onClick={() => setShowApproveModal(true)}
+                                onClick={() => {
+                                    setBudgetError(null);
+                                    setShowApproveModal(true);
+                                }}
                                 className="w-full sm:w-auto justify-center px-4 py-3 bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700 transition flex items-center"
                             >
                                 Approve
@@ -270,11 +291,9 @@ export default function ApplicationShow({ application }) {
                                         <p className="text-gray-900 break-all">{application.email}</p>
                                     </div>
 
-                                    {/* ADDED FACEBOOK LINK HERE */}
                                     {application.facebook_link && (
                                         <div>
                                             <label className="text-xs font-bold text-gray-500 uppercase">Facebook Profile</label>
-                                            {/* ADDED 'block' and 'mt-1' classes here */}
                                             <a
                                                 href={application.facebook_link}
                                                 target="_blank"
@@ -321,6 +340,15 @@ export default function ApplicationShow({ application }) {
                             <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
                                 <h3 className="text-lg font-bold mb-2 text-green-700">Approve Application</h3>
                                 <p className="text-sm text-gray-500 mb-4">Enter amount to release.</p>
+
+                                {/* FIX: Display the Budget Error here */}
+                                {budgetError && (
+                                    <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative text-sm font-bold animate-pulse">
+                                        <svg className="w-5 h-5 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                        {budgetError}
+                                    </div>
+                                )}
+
                                 <form onSubmit={submitApprove}>
                                     <div className="mb-4">
                                         <label className="block text-sm font-bold text-gray-700 mb-2">Amount (PHP)</label>
@@ -328,7 +356,7 @@ export default function ApplicationShow({ application }) {
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><span className="text-gray-500 sm:text-sm font-bold">₱</span></div>
                                             <input
                                                 type="number"
-                                                className="focus:ring-green-500 focus:border-green-500 block w-full pl-7 sm:text-lg font-bold border-gray-300 rounded-lg py-3"
+                                                className="block w-full pl-7 sm:text-lg font-bold border rounded-lg py-3 border-gray-300 focus:ring-green-500 focus:border-green-500"
                                                 placeholder="0.00"
                                                 value={approveForm.data.amount}
                                                 onChange={(e) => approveForm.setData('amount', e.target.value)}
@@ -337,7 +365,6 @@ export default function ApplicationShow({ application }) {
                                                 step="0.01"
                                             />
                                         </div>
-                                        {approveForm.errors.amount && <p className="text-red-500 text-xs mt-1">{approveForm.errors.amount}</p>}
                                     </div>
                                     <div className="flex justify-end gap-2">
                                         <button type="button" onClick={() => setShowApproveModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200">Cancel</button>
