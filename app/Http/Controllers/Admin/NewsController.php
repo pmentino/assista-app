@@ -108,17 +108,19 @@ class NewsController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+   // Find your destroy method in NewsController.php
     public function destroy(News $news)
     {
-        // 1. Delete the image file if it exists
-        if ($news->image_path && Storage::disk('public')->exists($news->image_path)) {
-            Storage::disk('public')->delete($news->image_path);
+        // Delete the image file if it exists
+        if ($news->image_path) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($news->image_path);
         }
 
-        // 2. Delete the record from database
         $news->delete();
 
-        // 3. Redirect back
-        return redirect()->route('admin.news.index')->with('message', 'News item deleted successfully.');
+        // FIX: Force 303 Redirect
+        return to_route('admin.news.index')
+            ->with('message', 'News article deleted.')
+            ->setStatusCode(303);
     }
 }

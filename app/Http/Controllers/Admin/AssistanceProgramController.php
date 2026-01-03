@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AssistanceProgram;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Auth; // <--- Import Auth
+use Illuminate\Support\Facades\Auth;
 
 class AssistanceProgramController extends Controller
 {
@@ -14,7 +14,7 @@ class AssistanceProgramController extends Controller
     {
         return Inertia::render('Admin/Programs/Index', [
             'programs' => AssistanceProgram::latest()->get(),
-            'auth' => ['user' => Auth::user()] // <--- THIS WAS MISSING
+            'auth' => ['user' => Auth::user()]
         ]);
     }
 
@@ -28,7 +28,7 @@ class AssistanceProgramController extends Controller
 
         AssistanceProgram::create($validated);
 
-        return redirect()->back()->with('message', 'Program added successfully.');
+        return redirect()->route('admin.programs.index')->with('message', 'Program added successfully.');
     }
 
     public function update(Request $request, AssistanceProgram $program)
@@ -42,12 +42,16 @@ class AssistanceProgramController extends Controller
 
         $program->update($validated);
 
-        return redirect()->back()->with('message', 'Program updated successfully.');
+        return redirect()->route('admin.programs.index')->with('message', 'Program updated successfully.');
     }
 
     public function destroy(AssistanceProgram $program)
     {
         $program->delete();
-        return redirect()->back()->with('message', 'Program deleted.');
+
+        // We force a 303 Response code so the browser switches from DELETE to GET
+        return to_route('admin.programs.index')
+            ->with('message', 'Program deleted.')
+            ->setStatusCode(303);
     }
 }

@@ -14,29 +14,33 @@ export default function ProgramsIndex({ auth, programs }) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editId, setEditId] = useState(null);
-    const [deleteId, setDeleteId] = useState(null);
 
-    // Form for Create/Edit ONLY
-    const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
+    // State to hold the ID we want to delete
+    const [programToDeleteId, setProgramToDeleteId] = useState(null);
+
+    // Form for Create/Edit
+    const form = useForm({
         title: '',
         description: '',
         icon_path: '',
     });
 
+    // --- MODAL HANDLERS ---
+
     const openCreateModal = () => {
         setIsEditing(false);
         setEditId(null);
-        reset();
-        clearErrors();
-        setData('icon_path', 'M13 10V3L4 14h7v7l9-11h-7z');
+        form.reset();
+        form.clearErrors();
+        form.setData('icon_path', 'M13 10V3L4 14h7v7l9-11h-7z');
         setIsModalOpen(true);
     };
 
     const openEditModal = (program) => {
         setIsEditing(true);
         setEditId(program.id);
-        clearErrors();
-        setData({
+        form.clearErrors();
+        form.setData({
             title: program.title,
             description: program.description,
             icon_path: program.icon_path || '',
@@ -45,20 +49,18 @@ export default function ProgramsIndex({ auth, programs }) {
     };
 
     const openDeleteModal = (id) => {
-        setDeleteId(id);
+        console.log("Selected ID for deletion:", id); // DEBUG LOG
+        setProgramToDeleteId(id);
         setIsDeleteModalOpen(true);
     };
 
     const closeModal = () => {
         setIsModalOpen(false);
         setIsDeleteModalOpen(false);
-        reset();
-        // Delay clearing IDs to prevent state jumps during close animation
-        setTimeout(() => {
-            setEditId(null);
-            setDeleteId(null);
-        }, 200);
+        form.reset();
     };
+
+    // --- SUBMIT HANDLERS ---
 
     const handleIconChange = (e) => {
         let value = e.target.value;
@@ -66,33 +68,39 @@ export default function ProgramsIndex({ auth, programs }) {
             const match = value.match(/d="([^"]+)"/);
             if (match && match[1]) value = match[1];
         }
-        setData('icon_path', value);
+        form.setData('icon_path', value);
     };
 
     const submit = (e) => {
         e.preventDefault();
         if (isEditing && editId) {
-            put(route('admin.programs.update', editId), {
+            form.put(route('admin.programs.update', editId), {
                 onSuccess: () => closeModal(),
             });
         } else {
-            post(route('admin.programs.store'), {
+            form.post(route('admin.programs.store'), {
                 onSuccess: () => closeModal(),
             });
         }
     };
 
-    // --- FIX: Using router.delete explicitly with the ID ---
-    const handleDelete = (e) => {
-        e.preventDefault(); // Stop any form submission events
-
-        if (!deleteId) {
-            alert("Error: No program selected for deletion.");
+    // --- DELETE LOGIC ---
+    const handleDeleteProgram = () => {
+        if (!programToDeleteId) {
+            alert("Error: No ID found. Please refresh and try again.");
             return;
         }
 
-        router.delete(route('admin.programs.destroy', deleteId), {
-            onSuccess: () => closeModal(),
+        // Construct URL manually to be 100% sure the ID is attached
+        const url = `/admin/programs/${programToDeleteId}`;
+        console.log("Deleting URL:", url); // DEBUG LOG
+
+        router.delete(url, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsDeleteModalOpen(false);
+                setProgramToDeleteId(null);
+            },
             onError: () => alert("Failed to delete the program."),
         });
     };
@@ -174,33 +182,33 @@ export default function ProgramsIndex({ auth, programs }) {
                         <InputLabel htmlFor="title" value="Program Title" />
                         <TextInput
                             id="title"
-                            value={data.title}
-                            onChange={(e) => setData('title', e.target.value)}
+                            value={form.data.title}
+                            onChange={(e) => form.setData('title', e.target.value)}
                             className="mt-1 block w-full"
                             placeholder="e.g. Fire Victim Assistance"
                             required
                         />
-                        <InputError message={errors.title} className="mt-2" />
+                        <InputError message={form.errors.title} className="mt-2" />
                     </div>
 
                     <div className="mb-4">
                         <InputLabel htmlFor="description" value="Description" />
                         <TextInput
                             id="description"
-                            value={data.description}
-                            onChange={(e) => setData('description', e.target.value)}
+                            value={form.data.description}
+                            onChange={(e) => form.setData('description', e.target.value)}
                             className="mt-1 block w-full"
                             placeholder="Brief details about the assistance..."
                             required
                         />
-                        <InputError message={errors.description} className="mt-2" />
+                        <InputError message={form.errors.description} className="mt-2" />
                     </div>
 
                     <div className="mb-6">
                         <InputLabel htmlFor="icon_path" value="SVG Icon" />
                         <TextInput
                             id="icon_path"
-                            value={data.icon_path}
+                            value={form.data.icon_path}
                             onChange={handleIconChange}
                             className="mt-1 block w-full font-mono text-xs text-gray-600"
                             placeholder="Paste SVG code here..."
@@ -208,12 +216,12 @@ export default function ProgramsIndex({ auth, programs }) {
                         <p className="text-xs text-gray-500 mt-1">
                             Paste the SVG code from Heroicons and we'll extract the path.
                         </p>
-                        <InputError message={errors.icon_path} className="mt-2" />
+                        <InputError message={form.errors.icon_path} className="mt-2" />
                     </div>
 
                     <div className="flex justify-end">
                         <SecondaryButton onClick={closeModal} className="mr-3">Cancel</SecondaryButton>
-                        <PrimaryButton disabled={processing}>
+                        <PrimaryButton disabled={form.processing}>
                             {isEditing ? 'Save Changes' : 'Create Program'}
                         </PrimaryButton>
                     </div>
@@ -229,8 +237,7 @@ export default function ProgramsIndex({ auth, programs }) {
                     </p>
                     <div className="mt-6 flex justify-end">
                         <SecondaryButton onClick={closeModal} className="mr-3">Cancel</SecondaryButton>
-                        {/* FIX: Using standard onClick + type="button" to prevent 405 error */}
-                        <DangerButton type="button" onClick={handleDelete}>
+                        <DangerButton onClick={handleDeleteProgram}>
                             Delete Program
                         </DangerButton>
                     </div>

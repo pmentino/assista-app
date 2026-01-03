@@ -6,14 +6,14 @@ use App\Http\Controllers\Admin\AidRequestController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\NewsController;
 use App\Http\Controllers\Admin\AuditLogController;
-use App\Http\Controllers\Admin\AssistanceProgramController; // Ensure this exists
+use App\Http\Controllers\Admin\AssistanceProgramController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Models\Application as ApplicationModel;
 use App\Models\News;
-use App\Models\AssistanceProgram; // Ensure this exists
+use App\Models\AssistanceProgram;
 use App\Http\Controllers\Admin\SettingController;
 
 // --- PUBLIC ROUTES ---
@@ -24,15 +24,12 @@ Route::get('/', function () {
     $settings = [];
 
     try {
-        // 1. Fetch Latest News
         if (\Illuminate\Support\Facades\Schema::hasTable('news')) {
              $news = News::latest()->take(3)->get();
         }
-        // 2. Fetch Active Programs
         if (\Illuminate\Support\Facades\Schema::hasTable('assistance_programs')) {
             $programs = AssistanceProgram::where('is_active', true)->get();
         }
-        // 3. Fetch System Settings (Announcement & Toggle)
         if (\Illuminate\Support\Facades\Schema::hasTable('settings')) {
             $settings = \App\Models\Setting::all()->pluck('value', 'key');
         }
@@ -45,12 +42,11 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
         'news' => $news,
         'programs' => $programs,
-        'settings' => $settings, // <--- Passing settings here
+        'settings' => $settings,
         'auth' => ['user' => Auth::user()],
     ]);
 });
 
-// Public News Route
 Route::get('/news', function () {
     return Inertia::render('News/Index', [
         'news' => \App\Models\News::latest()->get(),
@@ -58,7 +54,6 @@ Route::get('/news', function () {
     ]);
 })->name('news.index');
 
-// Individual News Article
 Route::get('/news/{news}', function (\App\Models\News $news) {
     return Inertia::render('News/Show', [
         'news' => $news,
@@ -102,19 +97,16 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
     Route::get('/dashboard', function (Illuminate\Http\Request $request) {
         $now = \Carbon\Carbon::now();
 
-        // Fetch Budget
         $currentBudget = \App\Models\MonthlyBudget::where('month', $now->month)
             ->where('year', $now->year)
             ->first();
         $budgetAmount = $currentBudget ? $currentBudget->amount : 0;
 
-        // Released Calculation
         $releasedMonth = ApplicationModel::where('status', 'Approved')
             ->whereMonth('updated_at', $now->month)
             ->whereYear('updated_at', $now->year)
             ->sum('amount_released');
 
-        // Budget Stats
         $budgetStats = [
             'total_budget' => $budgetAmount,
             'total_used' => $releasedMonth,
@@ -122,7 +114,6 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
             'percentage' => $budgetAmount > 0 ? ($releasedMonth / $budgetAmount) * 100 : 0,
         ];
 
-        // Stats Array
         $stats = [
             'total' => ApplicationModel::count(),
             'pending' => ApplicationModel::where('status', 'Pending')->count(),
@@ -134,7 +125,6 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
             'released_month' => $releasedMonth,
         ];
 
-        // Chart Data
         $chartQuery = ApplicationModel::where('status', 'Approved');
         if ($request->has('start_date') && $request->start_date) { $chartQuery->whereDate('updated_at', '>=', $request->start_date); }
         else { $chartQuery->whereDate('updated_at', '>=', $now->copy()->subDays(30)); }
@@ -144,7 +134,6 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         $dailyData = $chartQuery->selectRaw('DATE(updated_at) as date, SUM(amount_released) as total')->groupBy('date')->orderBy('date')->get();
         $chartData = ['labels' => $dailyData->pluck('date'), 'values' => $dailyData->pluck('total')];
 
-        // Barangay Stats
         $barangayStats = ApplicationModel::where('status', 'Approved')
             ->select('barangay', \Illuminate\Support\Facades\DB::raw('count(*) as total'), \Illuminate\Support\Facades\DB::raw('sum(amount_released) as amount'))
             ->groupBy('barangay')
@@ -174,13 +163,11 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         $request->validate([ 'amount' => 'required|numeric|min:0' ]);
         $now = \Carbon\Carbon::now();
 
-        // 1. Update the Budget
         \App\Models\MonthlyBudget::updateOrCreate(
             ['month' => $now->month, 'year' => $now->year],
             ['amount' => $request->amount]
         );
 
-        // 2. Log to Budget History (for the graph)
         \App\Models\BudgetLog::create([
             'user_id' => Auth::id(),
             'action' => 'Budget Update',
@@ -188,8 +175,6 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
             'balance_after' => $request->amount,
         ]);
 
-        // 3. (NEW) Log to Main Audit Trails (for Accountability)
-        // This makes it appear in your "Audit Logs" page!
         \App\Models\AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Updated Monthly Budget',
@@ -216,18 +201,23 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
     // 5. REPORTS ROUTES
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
-    // FIX: Removed 'admin.' from the name() because the group already adds it
     Route::get('/reports/export-excel', [ReportController::class, 'exportExcel'])->name('reports.export-excel');
 
     // 6. ADMIN NEWS ROUTES
+    // You mentioned this has a bug too. Using resource here, but we fixed the controller return.
     Route::resource('news', NewsController::class);
 
-    // 7. ASSISTANCE PROGRAMS MANAGEMENT (NEW)
-    Route::resource('programs', AssistanceProgramController::class);
+    // 7. ASSISTANCE PROGRAMS MANAGEMENT
+    // --- MANUAL ROUTES TO FIX 405 ERROR ---
+    Route::get('/programs', [AssistanceProgramController::class, 'index'])->name('programs.index');
+    Route::post('/programs', [AssistanceProgramController::class, 'store'])->name('programs.store');
+    Route::put('/programs/{program}', [AssistanceProgramController::class, 'update'])->name('programs.update');
+    // The Explicit Delete:
+    Route::delete('/programs/{program}', [AssistanceProgramController::class, 'destroy'])->name('programs.destroy');
 
     // 8. SYSTEM SETTINGS
-Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
-Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+    Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
 
 });
 
