@@ -16,6 +16,9 @@ use App\Models\News;
 use App\Models\AssistanceProgram;
 use App\Http\Controllers\Admin\SettingController;
 
+// Import Staff Controllers
+use App\Http\Controllers\Staff\StaffController;
+
 // --- PUBLIC ROUTES ---
 
 Route::get('/', function () {
@@ -66,6 +69,10 @@ Route::get('/news/{news}', function (\App\Models\News $news) {
 
 Route::get('/dashboard', function () {
     $user = Auth::user();
+
+    // FIX: REMOVED REDIRECTION LOGIC.
+    // Now, Admin and Staff can access this page to apply for assistance.
+
     $applications = $user ? $user->applications()->latest()->get() : [];
 
     return Inertia::render('Dashboard', [
@@ -204,21 +211,26 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
     Route::get('/reports/export-excel', [ReportController::class, 'exportExcel'])->name('reports.export-excel');
 
     // 6. ADMIN NEWS ROUTES
-    // You mentioned this has a bug too. Using resource here, but we fixed the controller return.
     Route::resource('news', NewsController::class);
 
     // 7. ASSISTANCE PROGRAMS MANAGEMENT
-    // --- MANUAL ROUTES TO FIX 405 ERROR ---
     Route::get('/programs', [AssistanceProgramController::class, 'index'])->name('programs.index');
     Route::post('/programs', [AssistanceProgramController::class, 'store'])->name('programs.store');
     Route::put('/programs/{program}', [AssistanceProgramController::class, 'update'])->name('programs.update');
-    // The Explicit Delete:
     Route::delete('/programs/{program}', [AssistanceProgramController::class, 'destroy'])->name('programs.destroy');
 
     // 8. SYSTEM SETTINGS
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
 
+});
+
+// --- STAFF ROUTES ---
+Route::middleware(['auth', 'verified', 'is_staff'])->prefix('staff')->name('staff.')->group(function () {
+    Route::get('/dashboard', [StaffController::class, 'dashboard'])->name('dashboard');
+    Route::get('/applications', [StaffController::class, 'applicationsIndex'])->name('applications.index');
+    Route::get('/applications/{application}', [StaffController::class, 'applicationsShow'])->name('applications.show');
+    Route::post('/applications/{application}/remarks', [StaffController::class, 'storeRemark'])->name('applications.remarks.store');
 });
 
 require __DIR__.'/auth.php';

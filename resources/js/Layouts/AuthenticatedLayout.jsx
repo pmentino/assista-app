@@ -7,11 +7,12 @@ export default function AuthenticatedLayout({ user, header, children }) {
     const { props } = usePage();
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
 
-    // FIX: Safely access user from props or direct prop
+    // Safely access user
     const currentUser = user || props.auth?.user || {};
 
-    // FIX: Safely check for admin type
-    const isAdmin = currentUser?.type === 'admin';
+    // Check Roles
+    const isAdmin = currentUser?.role === 'admin' || currentUser?.type === 'admin';
+    const isStaff = currentUser?.role === 'staff' || currentUser?.type === 'staff';
 
     useEffect(() => {
         if (props.flash?.message) {
@@ -19,7 +20,6 @@ export default function AuthenticatedLayout({ user, header, children }) {
         }
     }, [props.flash]);
 
-    // Helper for active link styles
     const navLinkClasses = (isActive) =>
         isActive
             ? 'inline-flex items-center px-1 pt-1 border-b-2 border-yellow-400 text-sm font-medium text-white focus:outline-none transition duration-150 ease-in-out'
@@ -47,10 +47,25 @@ export default function AuthenticatedLayout({ user, header, children }) {
 
                             {/* --- DESKTOP NAVIGATION --- */}
                             <div className="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
+
+                                {/* 1. COMMON LINK: Available to EVERYONE */}
                                 <Link href={route('dashboard')} className={navLinkClasses(route().current('dashboard'))}>
                                     My Dashboard
                                 </Link>
 
+                                {/* 2. STAFF LINKS (Removed 'New Application') */}
+                                {isStaff && (
+                                    <>
+                                        <Link href={route('staff.dashboard')} className={navLinkClasses(route().current('staff.dashboard'))}>
+                                            Staff Dashboard
+                                        </Link>
+                                        <Link href={route('staff.applications.index')} className={navLinkClasses(route().current('staff.applications.index'))}>
+                                            All Applications
+                                        </Link>
+                                    </>
+                                )}
+
+                                {/* 3. ADMIN LINKS */}
                                 {isAdmin && (
                                     <>
                                         <Link href={route('admin.dashboard')} className={navLinkClasses(route().current('admin.dashboard'))}>
@@ -116,12 +131,28 @@ export default function AuthenticatedLayout({ user, header, children }) {
                     </div>
                 </div>
 
-                {/* --- MOBILE MENU (Now expands properly) --- */}
+                {/* --- MOBILE MENU --- */}
                 <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden bg-blue-800 border-t border-blue-900'}>
                     <div className="pt-2 pb-3 space-y-1">
+
+                        {/* 1. Common Mobile Link */}
                         <Link href={route('dashboard')} className={mobileNavLinkClasses(route().current('dashboard'))}>
                             My Dashboard
                         </Link>
+
+                        {/* 2. Staff Mobile Links */}
+                        {isStaff && (
+                            <>
+                                <Link href={route('staff.dashboard')} className={mobileNavLinkClasses(route().current('staff.dashboard'))}>
+                                    Staff Dashboard
+                                </Link>
+                                <Link href={route('staff.applications.index')} className={mobileNavLinkClasses(route().current('staff.applications.index'))}>
+                                    All Applications
+                                </Link>
+                            </>
+                        )}
+
+                        {/* 3. Admin Mobile Links */}
                         {isAdmin && (
                             <>
                                 <Link href={route('admin.dashboard')} className={mobileNavLinkClasses(route().current('admin.dashboard'))}>

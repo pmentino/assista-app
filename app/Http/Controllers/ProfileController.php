@@ -97,6 +97,7 @@ class ProfileController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return Redirect::to('/');
+        // FIX: Force a 303 Redirect so the browser switches from DELETE to GET
+        return Redirect::to('/')->setStatusCode(303);
     }
 }
