@@ -165,7 +165,6 @@ class ApplicationController extends Controller
             'amount' => 'required|numeric|min:0',
         ]);
 
-        // --- 1. BUDGET GUARD ---
         $now = \Carbon\Carbon::now();
 
         $monthlyBudget = \App\Models\MonthlyBudget::where('month', $now->month)
@@ -173,10 +172,11 @@ class ApplicationController extends Controller
             ->first();
 
         if (!$monthlyBudget) {
-            return redirect()->back()->with('budget_error', 'Approval Failed: No budget has been allocated for this month yet.');
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'amount' => 'Approval Failed: No budget has been allocated for this month yet.'
+            ]);
         }
 
-        // Calculate used budget
         $totalReleased = Application::where('status', 'Approved')
             ->whereMonth('approved_date', $now->month)
             ->whereYear('approved_date', $now->year)
@@ -186,10 +186,11 @@ class ApplicationController extends Controller
 
         // CHECK OVERDRAFT
         if ($request->amount > $remainingBalance) {
-            // FIX: Use a custom flash key 'budget_error' that we can easily catch on frontend
-            return redirect()->back()->with('budget_error', "Insufficient Funds. You only have ₱" . number_format($remainingBalance, 2) . " remaining this month.");
+            // Throwing this exception populates the global 'errors' prop on the frontend
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'amount' => "Insufficient Funds. You only have ₱" . number_format($remainingBalance, 2) . " remaining this month."
+            ]);
         }
-        // -----------------------
 
         $application->update([
             'status' => 'Approved',
