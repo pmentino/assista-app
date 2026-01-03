@@ -85,7 +85,6 @@ export default function ApplicationShow({ application }) {
         };
         if (labels[key]) return labels[key];
 
-        // Dynamic Requirement Labeling
         if (!application.program) return `Attachment ${key}`;
 
         const programReqs = REQUIREMENTS_MAP[application.program];
@@ -106,32 +105,36 @@ export default function ApplicationShow({ application }) {
         <AuthenticatedLayout
             user={user}
             header={
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                        <Link href={route('admin.applications.index')} className="text-gray-500 hover:text-gray-700">
-                            &larr; Back
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                    {/* Top Row: Back, ID, Status */}
+                    <div className="flex flex-wrap items-center gap-3">
+                        {/* FIX: Corrected route name here */}
+                        <Link href={route('admin.applications.index')} className="text-gray-500 hover:text-gray-700 flex items-center pr-3 border-r border-gray-300">
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                            Back
                         </Link>
-                        <h2 className="font-bold text-2xl text-gray-800 leading-tight">
-                            Application #{String(application.id).padStart(5, '0')}
+                        <h2 className="font-bold text-xl text-gray-800 leading-tight">
+                            #{String(application.id).padStart(5, '0')}
                         </h2>
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${statusColors[application.status] || 'bg-gray-100'}`}>
+                        <span className={`px-2 py-1 rounded text-xs font-bold uppercase tracking-wider border ${statusColors[application.status] || 'bg-gray-100'}`}>
                             {application.status}
                         </span>
                     </div>
-                    {/* Action Buttons (Only for Pending) */}
+
+                    {/* Bottom Row: Buttons (STACKED VERTICALLY on Mobile to prevent overflow) */}
                     {application.status === 'Pending' && (
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                             <button
                                 onClick={() => setShowRejectModal(true)}
-                                className="px-4 py-2 bg-white border border-red-300 text-red-700 font-bold rounded-lg shadow-sm hover:bg-red-50 transition"
+                                className="w-full sm:w-auto justify-center px-4 py-3 bg-white border border-red-300 text-red-700 font-bold rounded-lg shadow-sm hover:bg-red-50 transition flex items-center"
                             >
                                 Reject
                             </button>
                             <button
                                 onClick={() => setShowApproveModal(true)}
-                                className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700 transition"
+                                className="w-full sm:w-auto justify-center px-4 py-3 bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700 transition flex items-center"
                             >
-                                Approve Application
+                                Approve
                             </button>
                         </div>
                     )}
@@ -140,13 +143,12 @@ export default function ApplicationShow({ application }) {
         >
             <Head title={`Application #${application.id}`} />
 
-            <div className="py-10 bg-gray-50 min-h-screen">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div className="py-6 md:py-10 bg-gray-50 min-h-screen">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-                    {/* --- MAIN CONTENT GRID --- */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                        {/* LEFT COLUMN: Applicant Details */}
+                        {/* LEFT COLUMN */}
                         <div className="lg:col-span-2 space-y-6">
 
                             {/* Card 1: Request Info */}
@@ -157,21 +159,20 @@ export default function ApplicationShow({ application }) {
                                 <div className="p-6">
                                     <div className="flex justify-between items-start mb-4">
                                         <div>
-                                            <p className="text-sm text-gray-500 uppercase font-bold tracking-wide">Program Type</p>
-                                            <p className="text-xl font-bold text-blue-900 mt-1">{application.program}</p>
+                                            <p className="text-xs text-gray-500 uppercase font-bold tracking-wide">Program Type</p>
+                                            <p className="text-lg font-bold text-blue-900 mt-1">{application.program}</p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-sm text-gray-500 uppercase font-bold tracking-wide">Date Submitted</p>
+                                            <p className="text-xs text-gray-500 uppercase font-bold tracking-wide">Submitted</p>
                                             <p className="text-gray-900 mt-1">{new Date(application.created_at).toLocaleDateString()}</p>
                                         </div>
                                     </div>
 
-                                    {/* Approved Details */}
                                     {application.status === 'Approved' && (
                                         <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-100 flex justify-between items-center">
                                             <div>
-                                                <p className="text-xs font-bold text-green-800 uppercase">Amount Released</p>
-                                                <p className="text-2xl font-bold text-green-700">₱{new Intl.NumberFormat('en-PH').format(application.amount_released)}</p>
+                                                <p className="text-xs font-bold text-green-800 uppercase">Amount</p>
+                                                <p className="text-xl font-bold text-green-700">₱{new Intl.NumberFormat('en-PH').format(application.amount_released)}</p>
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-xs font-bold text-green-800 uppercase">Date Approved</p>
@@ -182,7 +183,6 @@ export default function ApplicationShow({ application }) {
                                         </div>
                                     )}
 
-                                    {/* Rejected Details */}
                                     {application.status === 'Rejected' && application.remarks && (
                                         <div className="mt-6 p-4 bg-red-50 rounded-lg border border-red-100">
                                             <p className="text-xs font-bold text-red-800 uppercase mb-1">Reason for Rejection</p>
@@ -197,7 +197,7 @@ export default function ApplicationShow({ application }) {
                                 <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
                                     <h3 className="font-bold text-gray-800">Submitted Documents</h3>
                                 </div>
-                                <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="p-6 grid grid-cols-1 gap-4">
                                     {application.attachments && Object.entries(application.attachments).map(([key, path]) => {
                                         if (typeof path !== 'string') return null;
                                         return (
@@ -206,16 +206,16 @@ export default function ApplicationShow({ application }) {
                                                 href={`/storage/${path}`}
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition group"
+                                                className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition group"
                                             >
-                                                <div className="bg-blue-100 p-3 rounded-md text-blue-600 mr-4 group-hover:bg-blue-200">
-                                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
+                                                <div className="bg-blue-100 p-2 rounded-md text-blue-600 mr-3 shrink-0">
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                                 </div>
-                                                <div>
-                                                    <p className="text-sm font-bold text-gray-800 group-hover:text-blue-800">{getAttachmentLabel(key)}</p>
-                                                    <p className="text-xs text-gray-500">Click to view file</p>
+                                                <div className="overflow-hidden">
+                                                    <p className="text-sm font-bold text-gray-800 group-hover:text-blue-800 truncate">
+                                                        {getAttachmentLabel(key)}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">Click to view</p>
                                                 </div>
                                             </a>
                                         );
@@ -224,7 +224,7 @@ export default function ApplicationShow({ application }) {
                             </div>
                         </div>
 
-                        {/* RIGHT COLUMN: Profile Info */}
+                        {/* RIGHT COLUMN */}
                         <div className="space-y-6">
                             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                                 <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
@@ -267,44 +267,60 @@ export default function ApplicationShow({ application }) {
                                     </div>
                                     <div>
                                         <label className="text-xs font-bold text-gray-500 uppercase">Email Address</label>
-                                        <p className="text-gray-900">{application.email}</p>
+                                        <p className="text-gray-900 break-all">{application.email}</p>
                                     </div>
+
+                                    {/* ADDED FACEBOOK LINK HERE */}
+                                    {application.facebook_link && (
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Facebook Profile</label>
+                                            {/* ADDED 'block' and 'mt-1' classes here */}
+                                            <a
+                                                href={application.facebook_link}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="block mt-1 text-blue-600 hover:underline break-all font-medium"
+                                            >
+                                                {application.facebook_link}
+                                            </a>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
                     </div>
 
-                    {/* --- REJECTION MODAL --- */}
+                    {/* REJECTION MODAL */}
                     {showRejectModal && (
-                        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 backdrop-blur-sm">
-                            <div className="bg-white p-6 rounded-xl shadow-2xl w-96 transform transition-all scale-100">
+                        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 backdrop-blur-sm p-4">
+                            <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
                                 <h3 className="text-lg font-bold mb-2 text-red-700">Reject Application</h3>
-                                <p className="text-sm text-gray-500 mb-4">Please provide a reason for rejection. This will be visible to the applicant.</p>
+                                <p className="text-sm text-gray-500 mb-4">Please provide a reason for rejection.</p>
                                 <form onSubmit={submitRemark}>
                                     <textarea
                                         className="w-full border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-red-500 mb-4"
                                         rows="4"
                                         value={data.remarks}
                                         onChange={(e) => setData('remarks', e.target.value)}
-                                        placeholder="Enter reason here..."
+                                        placeholder="Reason..."
                                         required
                                     ></textarea>
                                     <div className="flex justify-end gap-2">
                                         <button type="button" onClick={() => setShowRejectModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200">Cancel</button>
-                                        <button type="submit" disabled={processing} className="px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 shadow">Confirm Rejection</button>
+                                        <button type="submit" disabled={processing} className="px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 shadow">Confirm</button>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     )}
 
-                    {/* --- APPROVAL MODAL --- */}
+                    {/* APPROVAL MODAL */}
                     {showApproveModal && (
-                        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 backdrop-blur-sm">
-                            <div className="bg-white p-6 rounded-xl shadow-2xl w-96 transform transition-all scale-100">
+                        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 backdrop-blur-sm p-4">
+                            <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
                                 <h3 className="text-lg font-bold mb-2 text-green-700">Approve Application</h3>
-                                <p className="text-sm text-gray-500 mb-4">Enter the approved assistance amount to release.</p>
+                                <p className="text-sm text-gray-500 mb-4">Enter amount to release.</p>
                                 <form onSubmit={submitApprove}>
                                     <div className="mb-4">
                                         <label className="block text-sm font-bold text-gray-700 mb-2">Amount (PHP)</label>
@@ -325,7 +341,7 @@ export default function ApplicationShow({ application }) {
                                     </div>
                                     <div className="flex justify-end gap-2">
                                         <button type="button" onClick={() => setShowApproveModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200">Cancel</button>
-                                        <button type="submit" disabled={approveForm.processing} className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 shadow">Confirm Approval</button>
+                                        <button type="submit" disabled={approveForm.processing} className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 shadow">Confirm</button>
                                     </div>
                                 </form>
                             </div>
