@@ -56,4 +56,23 @@ class AidRequestController extends Controller
             'auth' => ['user' => Auth::user()],
         ]);
     }
+
+   public function destroy(\App\Models\Application $application)
+    {
+        // Optional: Capture name for logs before deleting
+        $applicantName = $application->first_name . ' ' . $application->last_name;
+
+        $application->delete();
+
+        \App\Models\AuditLog::create([
+            'user_id' => \Illuminate\Support\Facades\Auth::id(),
+            'action' => 'Deleted Application',
+            'details' => "Permanently deleted App #{$application->id} for {$applicantName}",
+        ]);
+
+        // FIX: Force 303 status to prevent 405 Method Not Allowed error
+        return redirect()->back()
+            ->with('message', 'Application deleted successfully.')
+            ->setStatusCode(303);
+    }
 }

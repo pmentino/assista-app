@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, usePage, router } from '@inertiajs/react';
+import { Head, Link, usePage, router, useForm } from '@inertiajs/react';
 import { useState, useEffect, useRef } from 'react';
 import { pickBy } from 'lodash';
 import Pagination from '@/Components/Pagination';
@@ -39,11 +39,74 @@ const SortableHeader = ({ label, columnName, sortBy, sortDirection }) => {
     );
 };
 
+// --- ROW COMPONENT WITH DELETE LOGIC ---
+const Row = ({ app, getStatusColor }) => {
+    const { delete: destroy } = useForm();
+
+    const handleDelete = () => {
+        if (confirm(`CRITICAL: Are you sure you want to permanently delete Application #${app.id}? This cannot be undone.`)) {
+            destroy(route('admin.applications.destroy', app.id), {
+                preserveScroll: true,
+            });
+        }
+    };
+
+    return (
+        <tr className="hover:bg-blue-50 transition-colors duration-150">
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                #{String(app.id).padStart(5, '0')}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="flex items-center">
+                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs mr-3 shrink-0">
+                        {app.first_name?.[0]}{app.last_name?.[0]}
+                    </div>
+                    <div>
+                        <div className="text-sm font-bold text-gray-900">{app.first_name} {app.last_name}</div>
+                        <div className="text-xs text-gray-500">{app.email || 'No email'}</div>
+                    </div>
+                </div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                {app.program}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                {app.barangay}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded-full border ${getStatusColor(app.status)}`}>
+                    {app.status}
+                </span>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {new Date(app.created_at).toLocaleDateString()}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
+                <Link
+                    href={route('admin.applications.show', app.id)}
+                    className="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 hover:text-blue-600 focus:outline-none transition ease-in-out duration-150"
+                >
+                    Review
+                </Link>
+
+                {/* DELETE BUTTON */}
+                <button
+                    onClick={handleDelete}
+                    className="inline-flex items-center p-1.5 bg-white border border-red-200 rounded-md text-red-600 hover:bg-red-50 hover:border-red-400 transition"
+                    title="Delete Application"
+                >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+            </td>
+        </tr>
+    );
+};
+
 // --- MAIN COMPONENT ---
 
 export default function ApplicationsIndex({ auth, applications, filters: initialFilters = {}, sort_by: initialSortBy, sort_direction: initialSortDirection }) {
-
-    // We used 'auth' from props above ^^^
 
     const [filters, setFilters] = useState({
         status: initialFilters.status || '',
@@ -54,7 +117,6 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
 
     const isFirstRun = useRef(true);
 
-    // Debounced Search Logic
     useEffect(() => {
         if (isFirstRun.current) {
             isFirstRun.current = false;
@@ -67,7 +129,6 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
             const sortBy = currentParams.get('sort_by') || initialSortBy;
             const sortDirection = currentParams.get('sort_direction') || initialSortDirection;
 
-            // Route name matches your web.php
             router.get(route('admin.applications.index'), { ...query, sort_by: sortBy, sort_direction: sortDirection }, {
                 preserveState: true,
                 preserveScroll: true,
@@ -83,9 +144,17 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
         setFilters(prev => ({ ...prev, [name]: value }));
     };
 
+    // Helper for badge colors
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'Approved': return 'bg-green-100 text-green-800 border-green-200';
+            case 'Rejected': return 'bg-red-100 text-red-800 border-red-200';
+            default: return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        }
+    };
+
     return (
         <AuthenticatedLayout
-            // FIX: Pass the user explicitly so the Layout sees 'type: admin'
             user={auth?.user}
             header={
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -101,7 +170,6 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
             <div className="py-6 md:py-10 bg-gray-50 min-h-screen">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-                    {/* --- MAIN CARD --- */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
 
                         {/* --- DRILL-DOWN BANNER --- */}
@@ -123,8 +191,6 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
 
                         {/* --- TOOLBAR SECTION --- */}
                         <div className="p-5 border-b border-gray-100 bg-white grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-
-                            {/* Search Bar */}
                             <div className="col-span-1 md:col-span-5 relative">
                                 <input
                                     type="text"
@@ -135,8 +201,6 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                                     className="block w-full pl-4 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm transition h-10"
                                 />
                             </div>
-
-                            {/* Status Filter */}
                             <div className="col-span-1 md:col-span-3">
                                 <select
                                     name="status"
@@ -150,8 +214,6 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                                     <option value="Rejected">Rejected</option>
                                 </select>
                             </div>
-
-                            {/* Program Filter */}
                             <div className="col-span-1 md:col-span-3">
                                 <select
                                     name="program"
@@ -169,8 +231,6 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                                     <option value="Diagnostic Blood Tests">Diagnostic Blood Tests</option>
                                 </select>
                             </div>
-
-                            {/* Reset Button */}
                             <div className="col-span-1 text-right md:text-center">
                                 {(filters.search || filters.status || filters.program || filters.barangay) && (
                                     <button
@@ -200,48 +260,7 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {applications.data.length > 0 ? (
                                         applications.data.map((app) => (
-                                            <tr key={app.id} className="hover:bg-blue-50 transition-colors duration-150">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                                                    #{String(app.id).padStart(5, '0')}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="flex items-center">
-                                                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs mr-3 shrink-0">
-                                                            {app.first_name[0]}{app.last_name[0]}
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-sm font-bold text-gray-900">{app.first_name} {app.last_name}</div>
-                                                            <div className="text-xs text-gray-500">{app.email || 'No email'}</div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                                    {app.program}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                    {app.barangay}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full border ${
-                                                        app.status === 'Approved' ? 'bg-green-100 text-green-800 border-green-200' :
-                                                        app.status === 'Rejected' ? 'bg-red-100 text-red-800 border-red-200' :
-                                                        'bg-yellow-100 text-yellow-800 border-yellow-200'
-                                                    }`}>
-                                                        {app.status}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {new Date(app.created_at).toLocaleDateString()}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <Link
-                                                        href={route('admin.applications.show', app.id)}
-                                                        className="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 hover:text-blue-600 focus:outline-none transition ease-in-out duration-150"
-                                                    >
-                                                        Review
-                                                    </Link>
-                                                </td>
-                                            </tr>
+                                            <Row key={app.id} app={app} getStatusColor={getStatusColor} />
                                         ))
                                     ) : (
                                         <tr>

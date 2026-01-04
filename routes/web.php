@@ -201,9 +201,11 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         ]);
     })->name('applications.show');
 
+    Route::delete('/applications/{application}', [AidRequestController::class, 'destroy'])->name('applications.destroy');
     Route::post('/applications/{application}/approve', [App\Http\Controllers\ApplicationController::class, 'approve'])->name('applications.approve');
     Route::get('/applications/{application}/reject', [App\Http\Controllers\ApplicationController::class, 'reject'])->name('applications.reject');
     Route::post('/applications/{application}/remarks', [App\Http\Controllers\ApplicationController::class, 'addRemark'])->name('applications.remarks.store');
+    Route::post('/applications/{application}/note', [App\Http\Controllers\ApplicationController::class, 'saveNote'])->name('applications.note.store');
 
     // 5. REPORTS ROUTES
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');

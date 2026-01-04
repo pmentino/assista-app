@@ -30,7 +30,9 @@ export default function ApplicationShow({ application: initialApplication }) {
 
     const submitRemark = (e) => {
         e.preventDefault();
-        post(route('staff.applications.remarks.store', application.id), {
+
+        // FIX: Change 'staff.applications.remarks.store' to 'admin.applications.note.store'
+        post(route('admin.applications.note.store', application.id), {
             preserveScroll: true,
         });
     };

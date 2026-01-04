@@ -268,4 +268,18 @@ class ApplicationController extends Controller
 
         return $pdf->stream('Certificate_Eligibility_' . $application->id . '.pdf');
     }
+
+    public function saveNote(Request $request, Application $application)
+    {
+        $request->validate([
+            'remarks' => 'required|string|max:1000',
+        ]);
+
+        // Update the remarks ONLY (do not change status)
+        $application->update([
+            'remarks' => $request->remarks,
+        ]);
+
+        return redirect()->back()->with('message', 'Verification note saved successfully.');
+    }
 }
