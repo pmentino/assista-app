@@ -1,44 +1,77 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { Head, useForm, usePage, Link } from '@inertiajs/react';
+import { useState } from 'react';
 import PrimaryButton from '@/Components/PrimaryButton';
 import InputError from '@/Components/InputError';
 
-// Reuse the Requirements Map for labels if needed, or keep it simple
+// --- CONFIGURATION ---
 const REQUIREMENTS_MAP = {
-    'Hospitalization': [ 'Personal Letter to Mayor', 'Final Hospital Bill', 'Medical Abstract / Certificate', 'Promissory Note' ],
-    'Laboratory Tests': [ 'Personal Letter to Mayor', 'Laboratory Request', 'Medical Certificate' ],
-    'Anti-Rabies Vaccine Treatment': [ 'Personal Letter to Mayor', 'Rabies Vaccination Card', 'Medical Certificate' ],
-    'Medicine Assistance': [ 'Personal Letter to Mayor', 'Prescription', 'Medical Certificate' ],
-    'Funeral Assistance': [ 'Personal Letter to Mayor', 'Death Certificate', 'Burial Contract' ],
-    'Chemotherapy': [ 'Personal Letter to Mayor', 'Chemotherapy Protocol', 'Medical Certificate', 'Quotation of Medicine' ],
-    'Diagnostic Blood Tests': [ 'Personal Letter to Mayor', 'Diagnostic Request', 'Medical Certificate' ]
+    'Hospitalization': ['Personal Letter to Mayor', 'Final Hospital Bill', 'Medical Abstract / Certificate', 'Promissory Note'],
+    'Laboratory Tests': ['Personal Letter to Mayor', 'Laboratory Request', 'Medical Certificate'],
+    'Anti-Rabies Vaccine Treatment': ['Personal Letter to Mayor', 'Rabies Vaccination Card', 'Medical Certificate'],
+    'Medicine Assistance': ['Personal Letter to Mayor', 'Prescription', 'Medical Certificate'],
+    'Funeral Assistance': ['Personal Letter to Mayor', 'Death Certificate', 'Burial Contract'],
+    'Chemotherapy': ['Personal Letter to Mayor', 'Chemotherapy Protocol', 'Medical Certificate', 'Quotation of Medicine'],
+    'Diagnostic Blood Tests': ['Personal Letter to Mayor', 'Diagnostic Request', 'Medical Certificate']
 };
 
-export default function ApplicationShow({ application: initialApplication }) {
-    const { auth } = usePage().props;
-    const [application, setApplication] = useState(initialApplication);
+export default function ApplicationShow({ application }) {
+    // FIX: Destructure 'errors' from global props safely
+    const { auth, errors = {} } = usePage().props;
+    const user = auth?.user || { name: 'Admin' };
 
-    const { data, setData, post, processing, errors, recentlySuccessful } = useForm({
-        remarks: application.remarks || '',
-    });
+    // Form for Remarks (Rejection / Staff Note)
+const { data, setData, post, processing, recentlySuccessful } = useForm({ remarks: application.remarks || '' });
 
-    useEffect(() => {
-        setApplication(initialApplication);
-        setData('remarks', initialApplication.remarks || '');
-    }, [initialApplication]);
+    // Form for Approval (Amount)
+    const approveForm = useForm({ amount: '' });
 
-    const submitRemark = (e) => {
+    // Modals State
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [showApproveModal, setShowApproveModal] = useState(false);
+
+    // --- HANDLERS ---
+
+    // 1. Submit Rejection (Changes status to Rejected)
+    const submitReject = (e) => {
         e.preventDefault();
+        post(route('admin.applications.remarks.store', application.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowRejectModal(false);
+                window.location.reload();
+            },
+        });
+    };
 
-        // FIX: Change 'staff.applications.remarks.store' to 'admin.applications.note.store'
+    // 2. Submit Approval (Changes status to Approved)
+    const submitApprove = (e) => {
+        e.preventDefault();
+        approveForm.post(route('admin.applications.approve', application.id), {
+            preserveScroll: true,
+            preserveState: true, // Keep modal open on error
+            onSuccess: () => {
+                setShowApproveModal(false);
+                approveForm.reset();
+                window.location.reload();
+            },
+        });
+    };
+
+    // 3. Submit Staff Verification Note (Does NOT change status) - FIX APPLIED HERE
+    const submitNote = (e) => {
+        e.preventDefault();
+        // Uses the new safe Admin route
         post(route('admin.applications.note.store', application.id), {
             preserveScroll: true,
         });
     };
 
     const getAttachmentLabel = (key) => {
-        const labels = { valid_id: 'Valid Government ID', indigency_cert: 'Certificate of Indigency' };
+        const labels = {
+            valid_id: 'Valid Government ID',
+            indigency_cert: 'Certificate of Indigency'
+        };
         if (labels[key]) return labels[key];
         if (!application.program) return `Attachment ${key}`;
         const programReqs = REQUIREMENTS_MAP[application.program];
@@ -54,11 +87,12 @@ export default function ApplicationShow({ application: initialApplication }) {
 
     return (
         <AuthenticatedLayout
-            user={auth?.user}
+            user={user}
             header={
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                        <Link href={route('staff.applications.index')} className="text-gray-500 hover:text-gray-700 flex items-center pr-3 border-r border-gray-300">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                    {/* Top Row: Back, ID, Status */}
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Link href={route('admin.applications.index')} className="text-gray-500 hover:text-gray-700 flex items-center pr-3 border-r border-gray-300">
                             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                             Back
                         </Link>
@@ -69,6 +103,27 @@ export default function ApplicationShow({ application: initialApplication }) {
                             {application.status}
                         </span>
                     </div>
+
+                    {/* RESTORED: Approve / Reject Buttons */}
+                    {application.status === 'Pending' && (
+                        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                            <button
+                                onClick={() => setShowRejectModal(true)}
+                                className="w-full sm:w-auto justify-center px-4 py-3 bg-white border border-red-300 text-red-700 font-bold rounded-lg shadow-sm hover:bg-red-50 transition flex items-center"
+                            >
+                                Reject
+                            </button>
+                            <button
+                                onClick={() => {
+                                    approveForm.clearErrors();
+                                    setShowApproveModal(true);
+                                }}
+                                className="w-full sm:w-auto justify-center px-4 py-3 bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700 transition flex items-center"
+                            >
+                                Approve
+                            </button>
+                        </div>
+                    )}
                 </div>
             }
         >
@@ -102,7 +157,7 @@ export default function ApplicationShow({ application: initialApplication }) {
                                     {application.status === 'Approved' && (
                                         <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-100 flex justify-between items-center">
                                             <div>
-                                                <p className="text-xs font-bold text-green-800 uppercase">Amount Released</p>
+                                                <p className="text-xs font-bold text-green-800 uppercase">Amount</p>
                                                 <p className="text-xl font-bold text-green-700">₱{new Intl.NumberFormat('en-PH').format(application.amount_released)}</p>
                                             </div>
                                             <div className="text-right">
@@ -157,7 +212,7 @@ export default function ApplicationShow({ application: initialApplication }) {
 
                         {/* RIGHT COLUMN */}
                         <div className="space-y-6">
-                            {/* Applicant Profile */}
+                            {/* Profile Card */}
                             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                                 <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
                                     <h3 className="font-bold text-gray-800">Applicant Profile</h3>
@@ -165,7 +220,7 @@ export default function ApplicationShow({ application: initialApplication }) {
                                 <div className="p-6 space-y-4">
                                     <div>
                                         <label className="text-xs font-bold text-gray-500 uppercase">Full Name</label>
-                                        <p className="text-gray-900 font-medium">{application.user?.name || 'N/A'}</p>
+                                        <p className="text-gray-900 font-medium">{application.first_name} {application.middle_name} {application.last_name} {application.suffix_name}</p>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
@@ -184,7 +239,7 @@ export default function ApplicationShow({ application: initialApplication }) {
                                 </div>
                             </div>
 
-                            {/* Contact Details */}
+                            {/* Contact Card */}
                             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                                 <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
                                     <h3 className="font-bold text-gray-800">Contact Details</h3>
@@ -218,7 +273,7 @@ export default function ApplicationShow({ application: initialApplication }) {
                                 </div>
                             </div>
 
-                            {/* Staff Actions */}
+                            {/* ADMIN/STAFF NOTE BOX (FIXED) */}
                             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                                 <div className="bg-blue-50 px-6 py-4 border-b border-blue-100">
                                     <h3 className="font-bold text-blue-800">Staff Verification</h3>
@@ -227,7 +282,7 @@ export default function ApplicationShow({ application: initialApplication }) {
                                     <p className="text-sm text-gray-500 mb-4">
                                         Review the application and add notes for the admin.
                                     </p>
-                                    <form onSubmit={submitRemark}>
+                                    <form onSubmit={submitNote}>
                                         <label htmlFor="remarks" className="block text-sm font-bold text-gray-700 mb-2">Remarks / Notes</label>
                                         <textarea
                                             id="remarks"
@@ -235,13 +290,21 @@ export default function ApplicationShow({ application: initialApplication }) {
                                             onChange={(e) => setData('remarks', e.target.value)}
                                             className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg shadow-sm"
                                             rows="4"
-                                            placeholder="e.g., Documents verified. Ready for approval."
+                                            placeholder="e.g., Documents verified."
                                         ></textarea>
-                                        <InputError message={errors.remarks} className="mt-2" />
                                         <div className="flex items-center justify-between mt-4">
-                                            {recentlySuccessful && <span className="text-sm text-green-600 font-bold">Saved!</span>}
-                                            <PrimaryButton disabled={processing}>Save Remark</PrimaryButton>
-                                        </div>
+    {/* Success Message */}
+    {recentlySuccessful && (
+        <span className="text-sm text-green-600 font-bold animate-pulse">
+            ✓ Note Saved
+        </span>
+    )}
+    {!recentlySuccessful && <span></span>} {/* Spacer to keep button on right */}
+
+    <PrimaryButton disabled={processing} className="bg-blue-800">
+        Save Remark
+    </PrimaryButton>
+</div>
                                     </form>
                                 </div>
                             </div>
@@ -249,6 +312,76 @@ export default function ApplicationShow({ application: initialApplication }) {
                         </div>
 
                     </div>
+
+                    {/* --- REJECTION MODAL --- */}
+                    {showRejectModal && (
+                        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 backdrop-blur-sm p-4">
+                            <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
+                                <h3 className="text-lg font-bold mb-2 text-red-700">Reject Application</h3>
+                                <p className="text-sm text-gray-500 mb-4">Please provide a reason for rejection.</p>
+                                <form onSubmit={submitReject}>
+                                    <textarea
+                                        className="w-full border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-red-500 mb-4"
+                                        rows="4"
+                                        value={data.remarks}
+                                        onChange={(e) => setData('remarks', e.target.value)}
+                                        placeholder="Reason for rejection..."
+                                        required
+                                    ></textarea>
+                                    <div className="flex justify-end gap-2">
+                                        <button type="button" onClick={() => setShowRejectModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200">Cancel</button>
+                                        <button type="submit" disabled={processing} className="px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 shadow">Confirm Rejection</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* --- APPROVAL MODAL --- */}
+                    {showApproveModal && (
+                        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 backdrop-blur-sm p-4">
+                            <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
+                                <h3 className="text-lg font-bold mb-2 text-green-700">Approve Application</h3>
+                                <p className="text-sm text-gray-500 mb-4">Enter amount to release.</p>
+                                <form onSubmit={submitApprove}>
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Amount (PHP)</label>
+                                        <div className="relative rounded-md shadow-sm">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><span className="text-gray-500 sm:text-sm font-bold">₱</span></div>
+                                            <input
+                                                type="number"
+                                                className={`block w-full pl-7 sm:text-lg font-bold border rounded-lg py-3 ${(approveForm.errors.amount || errors?.amount) ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-green-500 focus:border-green-500'}`}
+                                                placeholder="0.00"
+                                                value={approveForm.data.amount}
+                                                onChange={(e) => approveForm.setData('amount', e.target.value)}
+                                                required
+                                                min="0"
+                                                step="0.01"
+                                            />
+                                        </div>
+
+                                        {/* ERROR MESSAGE DISPLAY */}
+                                        {(approveForm.errors.amount || errors?.amount) && (
+                                            <div className="mt-3 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative text-sm font-bold animate-pulse shadow-sm">
+                                                <div className="flex items-center">
+                                                    <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    {approveForm.errors.amount || errors?.amount}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                        <button type="button" onClick={() => setShowApproveModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200">Cancel</button>
+                                        <button type="submit" disabled={approveForm.processing} className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 shadow">Confirm Approval</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
                 </div>
             </div>
         </AuthenticatedLayout>
