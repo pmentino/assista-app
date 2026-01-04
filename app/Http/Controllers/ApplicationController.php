@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
-// Removed unused ValidationException import to avoid confusion
 
 class ApplicationController extends Controller
 {
@@ -33,8 +32,8 @@ class ApplicationController extends Controller
         // 1. Check for Pending Apps
         $hasPending = Application::where('user_id', $user->id)->where('status', 'Pending')->exists();
         if ($hasPending) {
-            return redirect()->back()->withErrors(['program' => 'You already have a pending application.']);
-        }
+        return redirect()->route('dashboard')->with('error', '⚠️ STOP: You already have a pending application.');
+    }
 
         // 2. Validate Data
         $request->validate([
@@ -49,8 +48,6 @@ class ApplicationController extends Controller
             'birth_date' => 'required|date',
             'barangay' => 'required|string',
             'house_no' => 'required|string',
-
-            // Files
             'valid_id' => 'required|file|max:10240',
             'indigency_cert' => 'required|file|max:10240',
         ]);
@@ -88,7 +85,7 @@ class ApplicationController extends Controller
                 'birth_date' => $request->birth_date,
                 'house_no' => $request->house_no,
                 'barangay' => $request->barangay,
-                'city' => $request->city ?? 'Roxas City', // Default if null
+                'city' => $request->city ?? 'Roxas City',
                 'contact_number' => $request->contact_number,
                 'email' => $request->email,
                 'facebook_link' => $request->facebook_link,
@@ -98,7 +95,6 @@ class ApplicationController extends Controller
                 'status' => 'Pending',
             ]);
         } catch (\Exception $e) {
-            // Log error instead of dd() in production
             return redirect()->back()->with('error', 'Error creating application: ' . $e->getMessage());
         }
 
@@ -160,11 +156,11 @@ class ApplicationController extends Controller
     {
         $request->validate(['amount' => 'required|numeric|min:0']);
 
-        $now = Carbon::now();
+        $now = \Carbon\Carbon::now();
         $monthlyBudget = \App\Models\MonthlyBudget::where('month', $now->month)->where('year', $now->year)->first();
 
         if (!$monthlyBudget) {
-            return redirect()->back()->withErrors(['amount' => 'No budget set for this month.']);
+            return redirect()->back()->with('error', 'Approval Failed: No budget allocated for this month.');
         }
 
         $totalReleased = Application::where('status', 'Approved')
@@ -173,23 +169,35 @@ class ApplicationController extends Controller
             ->sum('amount_released');
 
         $remainingBalance = $monthlyBudget->amount - $totalReleased;
-        $requestedAmount = (float) $request->amount;
 
-        // BUDGET GUARD: Explicitly return error bag if insufficient
-        if ($requestedAmount > $remainingBalance) {
-            return redirect()->back()->withErrors([
-                'amount' => "Insufficient Funds. Remaining Balance: ₱" . number_format($remainingBalance, 2)
-            ]);
-        }
+        // BUDGET GUARD
+        if ($request->amount > $remainingBalance) {
+        return redirect()->back()->withErrors([
+            'amount' => "INSUFFICIENT FUNDS: Balance is ₱" . number_format($remainingBalance, 2)
+        ]);
+    }
 
         $application->update([
             'status' => 'Approved',
-            'amount_released' => $requestedAmount,
+            'amount_released' => $request->amount,
             'remarks' => null,
             'approved_date' => now(),
         ]);
 
         return redirect()->back()->with('message', 'Application approved successfully.');
+    }
+
+    public function reject(Request $request, Application $application)
+    {
+        $application->update(['status' => 'Rejected']);
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Rejected Application',
+            'details' => "Rejected App #{$application->id}"
+        ]);
+
+        return redirect()->back();
     }
 
     public function addRemark(Request $request, Application $application)
@@ -243,7 +251,6 @@ class ApplicationController extends Controller
             'remarks' => 'required|string|max:1000',
         ]);
 
-        // Update the remarks ONLY (do not change status)
         $application->update([
             'remarks' => $request->remarks,
         ]);

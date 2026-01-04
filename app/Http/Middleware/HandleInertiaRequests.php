@@ -30,20 +30,17 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        return array_merge(parent::share($request), [
-
+        return [
+            ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
             ],
-            'ziggy' => function () use ($request) {
-                return array_merge((new Ziggy)->toArray(), [
-                    'location' => $request->url(),
-                ]);
-            },
-            
+            // THIS IS THE CRITICAL PART FOR NOTIFICATIONS
             'flash' => [
                 'message' => fn () => $request->session()->get('message'),
+                'success' => fn () => $request->session()->get('success'),
+                'error'   => fn () => $request->session()->get('error'), // <--- Make sure this line exists!
             ],
-        ]);
+        ];
     }
 }

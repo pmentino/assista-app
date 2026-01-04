@@ -15,8 +15,26 @@ export default function AuthenticatedLayout({ user, header, children }) {
     const isStaff = currentUser?.role === 'staff' || currentUser?.type === 'staff';
 
     useEffect(() => {
+        // 1. Success Message (Green)
         if (props.flash?.message) {
             toast.success(props.flash.message);
+        }
+
+        // 2. ALSO Check for 'success' key if you use that sometimes
+        if (props.flash?.success) {
+            toast.success(props.flash.success);
+        }
+
+        // 3. Error Message (Red) - Attempt toast
+        if (props.flash?.error) {
+            toast.error(props.flash.error, {
+                duration: 5000,
+                style: {
+                    border: '1px solid #EF4444',
+                    color: '#B91C1C',
+                    background: '#FEF2F2',
+                },
+            });
         }
     }, [props.flash]);
 
@@ -32,7 +50,19 @@ export default function AuthenticatedLayout({ user, header, children }) {
 
     return (
         <div className="min-h-screen bg-gray-100">
+            {/* The Toaster component makes the popups visible */}
             <Toaster position="top-right" />
+
+            {/* --- FAIL-SAFE ERROR BANNER (Added Here) --- */}
+            {/* If the toast fails, this raw HTML box WILL show up. */}
+            {props.flash?.error && (
+                <div className="bg-red-600 text-white px-6 py-4 text-center font-bold text-lg sticky top-0 z-[100] shadow-xl animate-pulse flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>{props.flash.error}</span>
+                </div>
+            )}
 
             <nav className="bg-blue-800 border-b border-blue-900 sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -53,7 +83,7 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                     My Dashboard
                                 </Link>
 
-                                {/* 2. STAFF LINKS (Removed 'New Application') */}
+                                {/* 2. STAFF LINKS */}
                                 {isStaff && (
                                     <>
                                         <Link href={route('staff.dashboard')} className={navLinkClasses(route().current('staff.dashboard'))}>
@@ -134,13 +164,9 @@ export default function AuthenticatedLayout({ user, header, children }) {
                 {/* --- MOBILE MENU --- */}
                 <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden bg-blue-800 border-t border-blue-900'}>
                     <div className="pt-2 pb-3 space-y-1">
-
-                        {/* 1. Common Mobile Link */}
                         <Link href={route('dashboard')} className={mobileNavLinkClasses(route().current('dashboard'))}>
                             My Dashboard
                         </Link>
-
-                        {/* 2. Staff Mobile Links */}
                         {isStaff && (
                             <>
                                 <Link href={route('staff.dashboard')} className={mobileNavLinkClasses(route().current('staff.dashboard'))}>
@@ -151,8 +177,6 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                 </Link>
                             </>
                         )}
-
-                        {/* 3. Admin Mobile Links */}
                         {isAdmin && (
                             <>
                                 <Link href={route('admin.dashboard')} className={mobileNavLinkClasses(route().current('admin.dashboard'))}>
@@ -180,7 +204,6 @@ export default function AuthenticatedLayout({ user, header, children }) {
                         )}
                     </div>
 
-                    {/* Mobile User Options */}
                     <div className="pt-4 pb-4 border-t border-blue-700">
                         <div className="px-4 flex items-center">
                             <div className="shrink-0">

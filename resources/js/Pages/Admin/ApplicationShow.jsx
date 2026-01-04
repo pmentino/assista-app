@@ -2,7 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, usePage, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import PrimaryButton from '@/Components/PrimaryButton';
-import InputError from '@/Components/InputError'; // Keeping import if you need it later
+import InputError from '@/Components/InputError'; // <--- We need this
 
 // --- CONFIGURATION ---
 const REQUIREMENTS_MAP = {
@@ -16,14 +16,14 @@ const REQUIREMENTS_MAP = {
 };
 
 export default function ApplicationShow({ application }) {
-    const { auth } = usePage().props;
+    // FIX: Destructure 'errors' from global props safely
+    const { auth, errors = {} } = usePage().props;
     const user = auth?.user || { name: 'Admin' };
 
     // Form for Remarks (Rejection / Staff Note)
     const { data, setData, post, processing, recentlySuccessful } = useForm({ remarks: application.remarks || '' });
 
     // Form for Approval (Amount)
-    // Inertia useForm handles errors automatically in 'approveForm.errors'
     const approveForm = useForm({ amount: '' });
 
     // Modals State
@@ -39,6 +39,7 @@ export default function ApplicationShow({ application }) {
             preserveScroll: true,
             onSuccess: () => {
                 setShowRejectModal(false);
+                window.location.reload();
             },
         });
     };
@@ -53,12 +54,8 @@ export default function ApplicationShow({ application }) {
             onSuccess: () => {
                 setShowApproveModal(false);
                 approveForm.reset();
-                // No need for window.location.reload(), Inertia updates props automatically
             },
-            onError: () => {
-                // If errors occur (like Budget Exceeded), this runs.
-                // preserveState: true keeps the modal open, and approveForm.errors will populate.
-            }
+            // Logic: Inertia automatically populates approveForm.errors on 422 response
         });
     };
 
@@ -345,40 +342,38 @@ export default function ApplicationShow({ application }) {
                                 <h3 className="text-lg font-bold mb-2 text-green-700">Approve Application</h3>
                                 <p className="text-sm text-gray-500 mb-4">Enter amount to release.</p>
                                 <form onSubmit={submitApprove}>
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Amount (PHP)</label>
-                                        <div className="relative rounded-md shadow-sm">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><span className="text-gray-500 sm:text-sm font-bold">₱</span></div>
-                                            <input
-                                                type="number"
-                                                className={`block w-full pl-7 sm:text-lg font-bold border rounded-lg py-3 ${approveForm.errors.amount ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-green-500 focus:border-green-500'}`}
-                                                placeholder="0.00"
-                                                value={approveForm.data.amount}
-                                                onChange={(e) => approveForm.setData('amount', e.target.value)}
-                                                required
-                                                min="0"
-                                                step="0.01"
-                                            />
-                                        </div>
+    <div className="mb-4">
+        <label className="block text-sm font-bold text-gray-700 mb-2">Amount (PHP)</label>
 
-                                        {/* ERROR MESSAGE DISPLAY */}
-                                        {approveForm.errors.amount && (
-                                            <div className="mt-3 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative text-sm font-bold animate-pulse shadow-sm">
-                                                <div className="flex items-center">
-                                                    <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                    {approveForm.errors.amount}
-                                                </div>
-                                            </div>
-                                        )}
+        {/* MANUAL RED ERROR BOX - CANNOT BE HIDDEN */}
+        {approveForm.errors.amount && (
+            <div className="mb-2 p-3 bg-red-100 border border-red-400 text-red-700 rounded font-bold">
+                ⚠️ {approveForm.errors.amount}
+            </div>
+        )}
 
-                                    </div>
-                                    <div className="flex justify-end gap-2">
-                                        <button type="button" onClick={() => setShowApproveModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200">Cancel</button>
-                                        <button type="submit" disabled={approveForm.processing} className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 shadow">Confirm Approval</button>
-                                    </div>
-                                </form>
+        <div className="relative rounded-md shadow-sm">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span className="text-gray-500 sm:text-sm font-bold">₱</span>
+            </div>
+            <input
+                type="number"
+                // Force red border if error exists
+                className={`block w-full pl-7 sm:text-lg font-bold border rounded-lg py-3 ${approveForm.errors.amount ? 'border-red-600 focus:border-red-600 focus:ring-red-600' : 'border-gray-300'}`}
+                placeholder="0.00"
+                value={approveForm.data.amount}
+                onChange={(e) => approveForm.setData('amount', e.target.value)}
+                required
+                min="0"
+                step="0.01"
+            />
+        </div>
+    </div>
+    <div className="flex justify-end gap-2">
+        <button type="button" onClick={() => setShowApproveModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-lg">Cancel</button>
+        <button type="submit" disabled={approveForm.processing} className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg shadow">Confirm Approval</button>
+    </div>
+</form>
                             </div>
                         </div>
                     )}
