@@ -117,7 +117,17 @@ export default function Register() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div className="sm:col-span-1">
                                     <InputLabel htmlFor="contact_number" value="Mobile Number *" />
-                                    <TextInput id="contact_number" name="contact_number" value={data.contact_number} className="mt-1 block w-full" placeholder="0912 345 6789" onChange={(e) => setData('contact_number', e.target.value)} required />
+                                    {/* FIX: Applied validation for 11 digits only */}
+                                    <TextInput
+                                        id="contact_number"
+                                        name="contact_number"
+                                        value={data.contact_number}
+                                        className="mt-1 block w-full"
+                                        placeholder="09123456789"
+                                        maxLength={11}
+                                        onChange={(e) => setData('contact_number', e.target.value.replace(/\D/g, '').slice(0, 11))}
+                                        required
+                                    />
                                     <InputError message={errors.contact_number} className="mt-2" />
                                 </div>
                                 <div className="sm:col-span-1">

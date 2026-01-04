@@ -54,7 +54,7 @@ export default function Create() {
     });
 
     const [requiredDocs, setRequiredDocs] = useState([]);
-    const [agreedToPrivacy, setAgreedToPrivacy] = useState(false); // <--- NEW STATE
+    const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
 
     useEffect(() => {
         if (data.program && REQUIREMENTS_MAP[data.program]) {
@@ -118,10 +118,6 @@ export default function Create() {
                     <div className="bg-white shadow-xl rounded-b-2xl border border-t-0 border-gray-200">
                         <form onSubmit={submit} className="p-8 space-y-12" encType="multipart/form-data">
 
-                            {/* ... (SECTIONS 1, 2, 3, 4 ARE IDENTICAL TO BEFORE - HIDDEN FOR BREVITY) ... */}
-                            {/* NOTE: Keep your existing sections 1-4 here exactly as they were. I am adding the consent block below Section 4. */}
-
-                            {/* RE-INSERTING SECTIONS 1-4 FOR CLARITY SO YOU CAN COPY PASTE FULL FILE */}
                             {/* --- SECTION 1: ASSISTANCE TYPE --- */}
                             <div className="bg-blue-50/50 p-6 rounded-xl border border-blue-100">
                                 <div className="flex items-center mb-6">
@@ -172,7 +168,22 @@ export default function Create() {
                                     <div className="space-y-1"> <InputLabel htmlFor="house_no" value="House No. / Street *" /> <TextInput id="house_no" className="block w-full" value={data.house_no} onChange={(e) => setData('house_no', e.target.value)} required /> <InputError message={errors.house_no} /> </div>
                                     <div className="space-y-1"> <InputLabel htmlFor="barangay" value="Barangay *" /> <select id="barangay" value={data.barangay} onChange={(e) => setData('barangay', e.target.value)} className="block w-full border-gray-300 rounded-md shadow-sm" required> <option value="">Select Barangay</option> {BARANGAYS.map(brgy => <option key={brgy} value={brgy}>{brgy}</option>)} </select> <InputError message={errors.barangay} /> </div>
                                     <div className="space-y-1"> <InputLabel htmlFor="city" value="City" /> <TextInput id="city" value="Roxas City" disabled className="block w-full bg-gray-100 text-gray-600" /> </div>
-                                    <div className="space-y-1"> <InputLabel htmlFor="contact_number" value="Mobile Number *" /> <TextInput id="contact_number" className="block w-full" value={data.contact_number} onChange={(e) => setData('contact_number', e.target.value)} required /> <InputError message={errors.contact_number} /> </div>
+
+                                    <div className="space-y-1">
+                                        <InputLabel htmlFor="contact_number" value="Mobile Number *" />
+                                        {/* FIX: Applied validation for 11 digits only */}
+                                        <TextInput
+                                            id="contact_number"
+                                            className="block w-full"
+                                            value={data.contact_number}
+                                            placeholder="09123456789"
+                                            maxLength={11}
+                                            onChange={(e) => setData('contact_number', e.target.value.replace(/\D/g, '').slice(0, 11))}
+                                            required
+                                        />
+                                        <InputError message={errors.contact_number} />
+                                    </div>
+
                                     <div className="space-y-1"> <InputLabel htmlFor="email" value="Email Address *" /> <TextInput id="email" type="email" className="block w-full" value={data.email} onChange={(e) => setData('email', e.target.value)} required /> </div>
                                     <div className="space-y-1"> <InputLabel htmlFor="facebook_link" value="Facebook Link (Optional)" /> <TextInput id="facebook_link" className="block w-full" value={data.facebook_link} onChange={(e) => setData('facebook_link', e.target.value)} placeholder="https://facebook.com/..." /> </div>
                                 </div>
@@ -208,7 +219,7 @@ export default function Create() {
                                 </div>
                             </div>
 
-                            {/* --- DATA PRIVACY CONSENT (NEW) --- */}
+                            {/* --- DATA PRIVACY CONSENT --- */}
                             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
                                 <h4 className="text-sm font-bold text-yellow-800 uppercase mb-2">Data Privacy & Consent</h4>
                                 <div className="flex items-start">
