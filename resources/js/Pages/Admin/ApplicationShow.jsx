@@ -2,7 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, usePage, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import PrimaryButton from '@/Components/PrimaryButton';
-import InputError from '@/Components/InputError';
+import InputError from '@/Components/InputError'; // Keeping import if you need it later
 
 // --- CONFIGURATION ---
 const REQUIREMENTS_MAP = {
@@ -16,14 +16,14 @@ const REQUIREMENTS_MAP = {
 };
 
 export default function ApplicationShow({ application }) {
-    // FIX: Destructure 'errors' from global props safely
-    const { auth, errors = {} } = usePage().props;
+    const { auth } = usePage().props;
     const user = auth?.user || { name: 'Admin' };
 
     // Form for Remarks (Rejection / Staff Note)
-const { data, setData, post, processing, recentlySuccessful } = useForm({ remarks: application.remarks || '' });
+    const { data, setData, post, processing, recentlySuccessful } = useForm({ remarks: application.remarks || '' });
 
     // Form for Approval (Amount)
+    // Inertia useForm handles errors automatically in 'approveForm.errors'
     const approveForm = useForm({ amount: '' });
 
     // Modals State
@@ -32,36 +32,39 @@ const { data, setData, post, processing, recentlySuccessful } = useForm({ remark
 
     // --- HANDLERS ---
 
-    // 1. Submit Rejection (Changes status to Rejected)
+    // 1. Submit Rejection
     const submitReject = (e) => {
         e.preventDefault();
         post(route('admin.applications.remarks.store', application.id), {
             preserveScroll: true,
             onSuccess: () => {
                 setShowRejectModal(false);
-                window.location.reload();
             },
         });
     };
 
-    // 2. Submit Approval (Changes status to Approved)
+    // 2. Submit Approval (Budget Guard Logic)
     const submitApprove = (e) => {
         e.preventDefault();
+
         approveForm.post(route('admin.applications.approve', application.id), {
             preserveScroll: true,
-            preserveState: true, // Keep modal open on error
+            preserveState: true, // Vital to keep modal open on error
             onSuccess: () => {
                 setShowApproveModal(false);
                 approveForm.reset();
-                window.location.reload();
+                // No need for window.location.reload(), Inertia updates props automatically
             },
+            onError: () => {
+                // If errors occur (like Budget Exceeded), this runs.
+                // preserveState: true keeps the modal open, and approveForm.errors will populate.
+            }
         });
     };
 
-    // 3. Submit Staff Verification Note (Does NOT change status) - FIX APPLIED HERE
+    // 3. Submit Staff Verification Note
     const submitNote = (e) => {
         e.preventDefault();
-        // Uses the new safe Admin route
         post(route('admin.applications.note.store', application.id), {
             preserveScroll: true,
         });
@@ -104,7 +107,7 @@ const { data, setData, post, processing, recentlySuccessful } = useForm({ remark
                         </span>
                     </div>
 
-                    {/* RESTORED: Approve / Reject Buttons */}
+                    {/* Approve / Reject Buttons */}
                     {application.status === 'Pending' && (
                         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                             <button
@@ -273,7 +276,7 @@ const { data, setData, post, processing, recentlySuccessful } = useForm({ remark
                                 </div>
                             </div>
 
-                            {/* ADMIN/STAFF NOTE BOX (FIXED) */}
+                            {/* STAFF VERIFICATION / ADMIN NOTE BOX */}
                             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                                 <div className="bg-blue-50 px-6 py-4 border-b border-blue-100">
                                     <h3 className="font-bold text-blue-800">Staff Verification</h3>
@@ -293,18 +296,16 @@ const { data, setData, post, processing, recentlySuccessful } = useForm({ remark
                                             placeholder="e.g., Documents verified."
                                         ></textarea>
                                         <div className="flex items-center justify-between mt-4">
-    {/* Success Message */}
-    {recentlySuccessful && (
-        <span className="text-sm text-green-600 font-bold animate-pulse">
-            ✓ Note Saved
-        </span>
-    )}
-    {!recentlySuccessful && <span></span>} {/* Spacer to keep button on right */}
-
-    <PrimaryButton disabled={processing} className="bg-blue-800">
-        Save Remark
-    </PrimaryButton>
-</div>
+                                            {recentlySuccessful && (
+                                                <span className="text-sm text-green-600 font-bold animate-pulse">
+                                                    ✓ Note Saved
+                                                </span>
+                                            )}
+                                            {!recentlySuccessful && <span></span>}
+                                            <PrimaryButton disabled={processing} className="bg-blue-800">
+                                                Save Remark
+                                            </PrimaryButton>
+                                        </div>
                                     </form>
                                 </div>
                             </div>
@@ -350,7 +351,7 @@ const { data, setData, post, processing, recentlySuccessful } = useForm({ remark
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><span className="text-gray-500 sm:text-sm font-bold">₱</span></div>
                                             <input
                                                 type="number"
-                                                className={`block w-full pl-7 sm:text-lg font-bold border rounded-lg py-3 ${(approveForm.errors.amount || errors?.amount) ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-green-500 focus:border-green-500'}`}
+                                                className={`block w-full pl-7 sm:text-lg font-bold border rounded-lg py-3 ${approveForm.errors.amount ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-green-500 focus:border-green-500'}`}
                                                 placeholder="0.00"
                                                 value={approveForm.data.amount}
                                                 onChange={(e) => approveForm.setData('amount', e.target.value)}
@@ -361,13 +362,13 @@ const { data, setData, post, processing, recentlySuccessful } = useForm({ remark
                                         </div>
 
                                         {/* ERROR MESSAGE DISPLAY */}
-                                        {(approveForm.errors.amount || errors?.amount) && (
+                                        {approveForm.errors.amount && (
                                             <div className="mt-3 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative text-sm font-bold animate-pulse shadow-sm">
                                                 <div className="flex items-center">
                                                     <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                     </svg>
-                                                    {approveForm.errors.amount || errors?.amount}
+                                                    {approveForm.errors.amount}
                                                 </div>
                                             </div>
                                         )}

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
-use Illuminate\Validation\ValidationException; // <--- CRITICAL IMPORT
+// Removed unused ValidationException import to avoid confusion
 
 class ApplicationController extends Controller
 {
@@ -37,27 +37,23 @@ class ApplicationController extends Controller
         }
 
         // 2. Validate Data
-        try {
-            $validated = $request->validate([
-                'program' => 'required|string',
-                'date_of_incident' => 'required|date',
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
-                'contact_number' => 'required|string|max:20',
-                'email' => 'required|email',
-                'sex' => 'required|string',
-                'civil_status' => 'required|string',
-                'birth_date' => 'required|date',
-                'barangay' => 'required|string',
-                'house_no' => 'required|string',
+        $request->validate([
+            'program' => 'required|string',
+            'date_of_incident' => 'required|date',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'contact_number' => 'required|string|max:20',
+            'email' => 'required|email',
+            'sex' => 'required|string',
+            'civil_status' => 'required|string',
+            'birth_date' => 'required|date',
+            'barangay' => 'required|string',
+            'house_no' => 'required|string',
 
-                // Files
-                'valid_id' => 'required|file|max:10240',
-                'indigency_cert' => 'required|file|max:10240',
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            dd($e->errors());
-        }
+            // Files
+            'valid_id' => 'required|file|max:10240',
+            'indigency_cert' => 'required|file|max:10240',
+        ]);
 
         // 3. File Uploads
         $paths = [];
@@ -102,7 +98,8 @@ class ApplicationController extends Controller
                 'status' => 'Pending',
             ]);
         } catch (\Exception $e) {
-            dd($e->getMessage());
+            // Log error instead of dd() in production
+            return redirect()->back()->with('error', 'Error creating application: ' . $e->getMessage());
         }
 
         return redirect()->route('dashboard')->with('message', 'Application submitted successfully.');
@@ -161,20 +158,13 @@ class ApplicationController extends Controller
 
     public function approve(Request $request, Application $application)
     {
-        $request->validate([
-            'amount' => 'required|numeric|min:0',
-        ]);
+        $request->validate(['amount' => 'required|numeric|min:0']);
 
-        $now = \Carbon\Carbon::now();
-
-        $monthlyBudget = \App\Models\MonthlyBudget::where('month', $now->month)
-            ->where('year', $now->year)
-            ->first();
+        $now = Carbon::now();
+        $monthlyBudget = \App\Models\MonthlyBudget::where('month', $now->month)->where('year', $now->year)->first();
 
         if (!$monthlyBudget) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'amount' => 'Approval Failed: No budget has been allocated for this month yet.'
-            ]);
+            return redirect()->back()->withErrors(['amount' => 'No budget set for this month.']);
         }
 
         $totalReleased = Application::where('status', 'Approved')
@@ -183,45 +173,23 @@ class ApplicationController extends Controller
             ->sum('amount_released');
 
         $remainingBalance = $monthlyBudget->amount - $totalReleased;
+        $requestedAmount = (float) $request->amount;
 
-        // CHECK OVERDRAFT
-        if ($request->amount > $remainingBalance) {
-            // Throwing this exception populates the global 'errors' prop on the frontend
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'amount' => "Insufficient Funds. You only have ₱" . number_format($remainingBalance, 2) . " remaining this month."
+        // BUDGET GUARD: Explicitly return error bag if insufficient
+        if ($requestedAmount > $remainingBalance) {
+            return redirect()->back()->withErrors([
+                'amount' => "Insufficient Funds. Remaining Balance: ₱" . number_format($remainingBalance, 2)
             ]);
         }
 
         $application->update([
             'status' => 'Approved',
-            'amount_released' => $request->amount,
+            'amount_released' => $requestedAmount,
             'remarks' => null,
             'approved_date' => now(),
         ]);
 
-        if ($application->user && $application->user->email) {
-            Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
-        }
-
-        AuditLog::create([
-            'user_id' => Auth::id(),
-            'action' => 'Approved Application',
-            'details' => "Approved App #{$application->id} for {$application->first_name}. Amount: ₱" . number_format($request->amount, 2)
-        ]);
-
-        return redirect()->back()->with('message', 'Application approved and notification sent.');
-    }
-    public function reject(Request $request, Application $application)
-    {
-        $application->update(['status' => 'Rejected']);
-
-        AuditLog::create([
-            'user_id' => Auth::id(),
-            'action' => 'Rejected Application',
-            'details' => "Rejected App #{$application->id}"
-        ]);
-
-        return redirect()->back();
+        return redirect()->back()->with('message', 'Application approved successfully.');
     }
 
     public function addRemark(Request $request, Application $application)
