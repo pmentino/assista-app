@@ -7,7 +7,7 @@ const CloseIcon = () => (<svg className="h-6 w-6" fill="none" viewBox="0 0 24 24
 
 // Fallback Data
 const defaultPrograms = [
-    { title: 'Laboratory Tests', desc: 'Financial support for required medical laboratory examinations and workups.', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
+    { title: 'Laboratory Tests', desc: 'Financial support for required medical laboratory examinations and workups.', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 00-2-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
     { title: 'Anti-Rabies Vaccine', desc: 'Assistance for animal bite treatment and vaccination courses.', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' },
     { title: 'Funeral Assistance', desc: 'Support for burial and funeral expenses for indigent families.', icon: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
     { title: 'Medicine Assistance', desc: 'Provision for prescription medicines and maintenance drugs.', icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z' },
@@ -88,85 +88,102 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                     </div>
                 )}
 
-                {/* --- 1. HERO SECTION (POLISHED) --- */}
-<section id="home" className="relative bg-blue-900 overflow-hidden pt-24 min-h-[85vh] flex items-center">
-    {/* Background Image with Overlay */}
-    <div className="absolute inset-0">
-        {/* WE ARE USING YOUR REAL UPLOADED PHOTO HERE FOR TEXTURE */}
-        <img
-            className="w-full h-full object-cover opacity-20 mix-blend-overlay blur-sm"
-            src="/images/aics-1.jpg"
-            alt="Background Texture"
-        />
-        {/* Gradient Overlay to ensure text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-900 via-blue-900/95 to-blue-800/90"></div>
-    </div>
+                {/* --- 1. HERO SECTION (THE "WOW" FACTOR UPGRADE) --- */}
+                <section id="home" className="relative bg-blue-900 overflow-hidden pt-24 min-h-[90vh] flex items-center">
+                    {/* Background Texture - Using your real uploaded photo */}
+                    <div className="absolute inset-0">
+                        <img
+                            className="w-full h-full object-cover opacity-20 mix-blend-overlay blur-sm scale-105"
+                            src="/images/aics-1.jpg" // Using your real crowd photo for texture
+                            alt="Background Texture"
+                        />
+                        {/* Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-950 via-blue-900/95 to-blue-800/90"></div>
+                    </div>
 
-    <div className="relative container mx-auto px-4 md:px-8 py-12 flex flex-col md:flex-row items-center gap-12">
-        {/* Left Content */}
-        <div className="md:w-3/5 text-center md:text-left space-y-6">
-            <div className="inline-flex items-center gap-3 bg-white/10 rounded-full px-4 py-1.5 border border-white/20 backdrop-blur-md mb-4 animate-fade-in-down shadow-sm">
-                <img src="/images/roxas-seal.png" alt="Seal" className="h-8 w-auto drop-shadow-md" />
-                <span className="text-blue-50 text-xs font-bold tracking-widest uppercase">Official Program of Roxas City</span>
-            </div>
+                    <div className="relative container mx-auto px-4 md:px-8 py-12 flex flex-col md:flex-row items-center gap-16">
+                        {/* Left Content */}
+                        <div className="md:w-3/5 text-center md:text-left space-y-7">
 
-            <h1 className="text-4xl md:text-6xl font-extrabold text-white leading-tight drop-shadow-lg">
-                Compassionate Service,<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">Accessible to All.</span>
-            </h1>
+                            {/* OFFICIAL SEALS BADGE */}
+                            <div className="inline-flex items-center gap-4 bg-white/10 rounded-full px-5 py-2 border border-white/20 backdrop-blur-md animate-fade-in-down shadow-lg">
+                                <div className="flex -space-x-2">
+                                    <img src="/images/roxas-seal.png" alt="Roxas City Seal" className="h-10 w-auto drop-shadow-md z-10" />
+                                    <img src="/images/cswdo-logo.jpg" alt="CSWDO Logo" className="h-10 w-auto drop-shadow-md rounded-full border-2 border-blue-900 z-0" />
+                                </div>
+                                <div className="h-4 w-px bg-white/30"></div>
+                                <span className="text-blue-50 text-xs md:text-sm font-bold tracking-widest uppercase">
+                                    Official CSWDO Program
+                                </span>
+                            </div>
 
-            <p className="text-lg md:text-xl text-blue-100 max-w-2xl leading-relaxed font-light">
-                The <strong>CSWDO AICS Program</strong> provides immediate financial aid for medical, burial, and crisis situations. Apply online today for faster, transparent processing.
-            </p>
+                            {/* HEADLINES */}
+                            <div className="space-y-2">
+                                <h1 className="text-4xl md:text-6xl font-extrabold text-white leading-tight drop-shadow-xl tracking-tight">
+                                    Compassionate Service,<br />
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">
+                                        Accessible to All.
+                                    </span>
+                                </h1>
+                                {/* LOCAL DIALECT SUB-HEADER */}
+                                <p className="text-xl md:text-2xl text-blue-200 font-serif italic opacity-90">
+                                    "Bulig para sa mga Roxasnon nga ara sa krisis."
+                                </p>
+                            </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start pt-4">
-                {isAccepting ? (
-                    <Link href={route('register')} className="bg-yellow-500 text-blue-900 px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:bg-yellow-400 hover:shadow-2xl transition transform hover:-translate-y-1 text-center border-b-4 border-yellow-600">
-                        Apply for Assistance
-                    </Link>
-                ) : (
-                    <button disabled className="bg-gray-400 text-gray-800 px-8 py-4 rounded-xl font-bold text-lg cursor-not-allowed border-b-4 border-gray-500">
-                        Applications Paused
-                    </button>
-                )}
-                <a href="#assistance" className="px-8 py-4 rounded-xl font-bold text-lg text-white border-2 border-white/20 hover:bg-white/10 transition text-center backdrop-blur-sm">
-                    View Programs
-                </a>
-            </div>
+                            {/* DSWD / OFFICIAL DESCRIPTION */}
+                            <p className="text-lg text-blue-100 max-w-2xl leading-relaxed font-light border-l-4 border-yellow-500 pl-4 bg-blue-800/30 p-2 rounded-r-lg">
+                                The <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> is a social welfare service providing medical, burial, hospitalization, chemotherapy, laboratory, or financial assistance for the distinct needs of a person or family.
+                            </p>
 
-            {!isAccepting && (
-                <p className="mt-4 text-red-200 font-bold bg-red-900/40 border border-red-500/30 inline-block px-4 py-2 rounded-lg text-sm backdrop-blur-sm">
-                    ⚠️ Online applications are currently paused for maintenance.
-                </p>
-            )}
-        </div>
+                            {/* ACTION BUTTONS */}
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start pt-2">
+                                {isAccepting ? (
+                                    <Link href={route('register')} className="bg-yellow-500 text-blue-900 px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:bg-yellow-400 hover:shadow-2xl transition transform hover:-translate-y-1 text-center border-b-4 border-yellow-600 ring-2 ring-yellow-300/50">
+                                        Apply for Assistance
+                                    </Link>
+                                ) : (
+                                    <button disabled className="bg-gray-400 text-gray-800 px-8 py-4 rounded-xl font-bold text-lg cursor-not-allowed border-b-4 border-gray-500">
+                                        Applications Paused
+                                    </button>
+                                )}
+                                <a href="#assistance" className="px-8 py-4 rounded-xl font-bold text-lg text-white border-2 border-white/20 hover:bg-white/10 transition text-center backdrop-blur-sm">
+                                    View Programs
+                                </a>
+                            </div>
 
-        {/* Right Content: Photo Grid (POLAROID STYLE - TWEAKED) */}
-<div className="md:w-2/5 grid grid-cols-2 gap-4 relative">
-    {/* Stronger decorative glow behind images */}
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-blue-500/30 rounded-full blur-3xl -z-10"></div>
+                            {!isAccepting && (
+                                <p className="mt-4 text-red-200 font-bold bg-red-900/40 border border-red-500/30 inline-block px-4 py-2 rounded-lg text-sm backdrop-blur-sm">
+                                    ⚠️ Online applications are currently paused for maintenance.
+                                </p>
+                            )}
+                        </div>
 
-    <img
-        src="/images/aics-2.jpg"
-        className="rounded-xl shadow-2xl shadow-black/40 transform translate-y-8 object-cover h-48 w-full border-[6px] border-white rotate-[-3deg] hover:rotate-0 transition duration-500 hover:scale-105 hover:z-20 hover:shadow-yellow-500/20"
-        alt="Distribution Activity"
-    />
-    <img
-        src="/images/aics-3.jpg"
-        className="rounded-xl shadow-2xl shadow-black/40 transform -translate-y-4 object-cover h-48 w-full border-[6px] border-white rotate-[3deg] hover:rotate-0 transition duration-500 hover:scale-105 hover:z-20 hover:shadow-yellow-500/20"
-        alt="CSWDO Staff"
-    />
-</div>
-    </div>
-</section>
+                        {/* Right Content: Photo Grid (POLAROID STYLE) */}
+                        <div className="md:w-2/5 grid grid-cols-2 gap-4 relative">
+                            {/* Decorative Glow */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] bg-blue-500/20 rounded-full blur-3xl -z-10 animate-pulse"></div>
 
-                {/* --- 2. MAYOR'S MESSAGE SECTION (NEW) --- */}
+                            <img
+                                src="/images/aics-2.jpg"
+                                className="rounded-xl shadow-2xl shadow-black/60 transform translate-y-10 object-cover h-52 w-full border-[6px] border-white rotate-[-3deg] hover:rotate-0 transition duration-500 hover:scale-105 hover:z-20 hover:shadow-yellow-500/30"
+                                alt="Distribution Activity"
+                            />
+                            <img
+                                src="/images/aics-3.jpg"
+                                className="rounded-xl shadow-2xl shadow-black/60 transform -translate-y-6 object-cover h-52 w-full border-[6px] border-white rotate-[3deg] hover:rotate-0 transition duration-500 hover:scale-105 hover:z-20 hover:shadow-yellow-500/30"
+                                alt="CSWDO Staff"
+                            />
+                        </div>
+                    </div>
+                </section>
+
+                {/* --- 2. MAYOR'S MESSAGE SECTION --- */}
                 <section className="bg-white py-20 border-b border-gray-100">
                     <div className="container mx-auto px-4">
                         <div className="max-w-5xl mx-auto bg-blue-50 rounded-3xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-10 shadow-sm border border-blue-100">
                             <div className="shrink-0 relative">
                                 <div className="absolute inset-0 bg-yellow-400 rounded-full blur-xl opacity-20 transform translate-x-2 translate-y-2"></div>
-                                {/* Make sure 'mayor.jpg' exists in public/images/ */}
                                 <img src="/images/mayor.jpg" alt="Mayor Ronnie Dadivas" className="relative w-48 h-48 md:w-56 md:h-56 object-cover rounded-full border-4 border-white shadow-xl" />
                             </div>
                             <div className="text-center md:text-left">
@@ -183,7 +200,7 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                     </div>
                 </section>
 
-                {/* --- 3. NEWS SECTION (KEPT AS IS) --- */}
+                {/* --- 3. NEWS SECTION --- */}
                 {news && news.length > 0 && (
                     <section id="news" className="py-24 bg-slate-50 scroll-mt-24">
                         <div className="container mx-auto px-4">
@@ -221,7 +238,7 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                     </section>
                 )}
 
-                {/* --- 4. ASSISTANCE PROGRAMS (KEPT AS IS) --- */}
+                {/* --- 4. ASSISTANCE PROGRAMS --- */}
                 <section id="assistance" className="py-24 bg-gray-50 scroll-mt-24">
                     <div className="container mx-auto px-4">
                         <div className="text-center mb-16">
@@ -244,7 +261,7 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                     </div>
                 </section>
 
-                {/* --- 5. ABOUT & CONTACT SECTION (KEPT AS IS) --- */}
+                {/* --- 5. ABOUT & CONTACT SECTION --- */}
                 <section id="about" className="py-24 bg-white scroll-mt-24">
                     <div className="container mx-auto px-4">
                         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
