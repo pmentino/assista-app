@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, Head } from '@inertiajs/react';
+import { Link, Head, usePage } from '@inertiajs/react';
 
 // --- ICONS ---
 const MenuIcon = () => (<svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" /></svg>);
@@ -13,7 +13,8 @@ const defaultPrograms = [
     { title: 'Medicine Assistance', desc: 'Provision for prescription medicines and maintenance drugs.', icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z' },
 ];
 
-export default function Welcome({ auth, news = [], programs = [], settings = {} }) {
+export default function Welcome({ news = [], programs = [], settings = {} }) {
+    const { auth } = usePage().props;
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
 
@@ -34,16 +35,12 @@ export default function Welcome({ auth, news = [], programs = [], settings = {} 
 
                 {/* --- FIXED NAVIGATION WRAPPER --- */}
                 <div className="fixed top-0 w-full z-50">
-
-                    {/* Announcement Banner */}
                     {announcement && (
                         <div className="bg-yellow-400 text-blue-900 text-center py-2 px-4 text-sm font-bold tracking-wide shadow-sm relative z-[60]">
                             <span className="mr-2">📢</span> {announcement}
                         </div>
                     )}
-
-                    {/* Main Header */}
-                    <header className={`w-full transition-all duration-300 ${scrolled ? 'bg-blue-900 shadow-md py-2' : 'bg-blue-800 py-4'}`}>
+                    <header className={`w-full transition-all duration-300 ${scrolled ? 'bg-blue-900 shadow-md py-2' : 'bg-blue-900/95 backdrop-blur-sm py-4'}`}>
                         <div className="container mx-auto px-4 md:px-8 flex items-center justify-between">
                             <a href="#home" className="flex items-center gap-3 group">
                                 <div className="bg-white p-1 rounded-full group-hover:scale-105 transition-transform">
@@ -51,7 +48,6 @@ export default function Welcome({ auth, news = [], programs = [], settings = {} 
                                 </div>
                                 <span className="text-xl md:text-2xl font-extrabold text-white tracking-wide">ASSISTA</span>
                             </a>
-
                             <nav className="hidden md:flex items-center space-x-8 text-sm font-bold tracking-wide">
                                 {['HOME', 'NEWS', 'ASSISTANCE', 'ABOUT'].map((item) => (
                                     <a key={item} href={`#${item.toLowerCase()}`} className="text-gray-300 hover:text-white transition-colors relative group">
@@ -92,37 +88,102 @@ export default function Welcome({ auth, news = [], programs = [], settings = {} 
                     </div>
                 )}
 
-                {/* HERO SECTION */}
-                <section id="home" className="relative pt-40 pb-20 md:pt-56 md:pb-32 overflow-hidden bg-white scroll-mt-24">
-                    <div className="container mx-auto px-4 flex flex-col-reverse md:flex-row items-center gap-12">
-                        <div className="md:w-1/2 text-center md:text-left z-10">
-                            <h1 className="text-4xl md:text-6xl font-extrabold text-slate-900 leading-tight mb-6">Assistance to Individuals in <span className="text-blue-700">Crisis Situation (AICS)</span></h1>
-                            <p className="text-lg text-slate-600 mb-8 max-w-lg mx-auto md:mx-0">Providing assistance and essential support to individuals in need. Our platform offers immediate medical, burial, and other financial assistance to families in crisis.</p>
+                {/* --- 1. HERO SECTION (POLISHED) --- */}
+<section id="home" className="relative bg-blue-900 overflow-hidden pt-24 min-h-[85vh] flex items-center">
+    {/* Background Image with Overlay */}
+    <div className="absolute inset-0">
+        {/* WE ARE USING YOUR REAL UPLOADED PHOTO HERE FOR TEXTURE */}
+        <img
+            className="w-full h-full object-cover opacity-20 mix-blend-overlay blur-sm"
+            src="/images/aics-1.jpg"
+            alt="Background Texture"
+        />
+        {/* Gradient Overlay to ensure text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-900 via-blue-900/95 to-blue-800/90"></div>
+    </div>
 
-                            <div className="flex gap-4 justify-center md:justify-start">
-                                {isAccepting ? (
-                                    <Link href={auth.user ? route('dashboard') : route('register')} className="bg-blue-700 hover:bg-blue-800 text-white px-8 py-4 rounded-xl font-bold shadow-lg transform transition hover:-translate-y-1">
-                                        APPLY NOW
-                                    </Link>
-                                ) : (
-                                    <button disabled className="bg-gray-300 text-gray-500 px-8 py-4 rounded-xl font-bold cursor-not-allowed border-2 border-gray-200">
-                                        APPLICATIONS CLOSED
-                                    </button>
-                                )}
-                                <a href="#assistance" className="bg-white text-slate-700 border border-slate-200 px-8 py-4 rounded-xl font-bold hover:bg-slate-50">VIEW PROGRAMS</a>
+    <div className="relative container mx-auto px-4 md:px-8 py-12 flex flex-col md:flex-row items-center gap-12">
+        {/* Left Content */}
+        <div className="md:w-3/5 text-center md:text-left space-y-6">
+            <div className="inline-flex items-center gap-3 bg-white/10 rounded-full px-4 py-1.5 border border-white/20 backdrop-blur-md mb-4 animate-fade-in-down shadow-sm">
+                <img src="/images/roxas-seal.png" alt="Seal" className="h-8 w-auto drop-shadow-md" />
+                <span className="text-blue-50 text-xs font-bold tracking-widest uppercase">Official Program of Roxas City</span>
+            </div>
+
+            <h1 className="text-4xl md:text-6xl font-extrabold text-white leading-tight drop-shadow-lg">
+                Compassionate Service,<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">Accessible to All.</span>
+            </h1>
+
+            <p className="text-lg md:text-xl text-blue-100 max-w-2xl leading-relaxed font-light">
+                The <strong>CSWDO AICS Program</strong> provides immediate financial aid for medical, burial, and crisis situations. Apply online today for faster, transparent processing.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start pt-4">
+                {isAccepting ? (
+                    <Link href={route('register')} className="bg-yellow-500 text-blue-900 px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:bg-yellow-400 hover:shadow-2xl transition transform hover:-translate-y-1 text-center border-b-4 border-yellow-600">
+                        Apply for Assistance
+                    </Link>
+                ) : (
+                    <button disabled className="bg-gray-400 text-gray-800 px-8 py-4 rounded-xl font-bold text-lg cursor-not-allowed border-b-4 border-gray-500">
+                        Applications Paused
+                    </button>
+                )}
+                <a href="#assistance" className="px-8 py-4 rounded-xl font-bold text-lg text-white border-2 border-white/20 hover:bg-white/10 transition text-center backdrop-blur-sm">
+                    View Programs
+                </a>
+            </div>
+
+            {!isAccepting && (
+                <p className="mt-4 text-red-200 font-bold bg-red-900/40 border border-red-500/30 inline-block px-4 py-2 rounded-lg text-sm backdrop-blur-sm">
+                    ⚠️ Online applications are currently paused for maintenance.
+                </p>
+            )}
+        </div>
+
+        {/* Right Content: Photo Grid (POLAROID STYLE - TWEAKED) */}
+<div className="md:w-2/5 grid grid-cols-2 gap-4 relative">
+    {/* Stronger decorative glow behind images */}
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-blue-500/30 rounded-full blur-3xl -z-10"></div>
+
+    <img
+        src="/images/aics-2.jpg"
+        className="rounded-xl shadow-2xl shadow-black/40 transform translate-y-8 object-cover h-48 w-full border-[6px] border-white rotate-[-3deg] hover:rotate-0 transition duration-500 hover:scale-105 hover:z-20 hover:shadow-yellow-500/20"
+        alt="Distribution Activity"
+    />
+    <img
+        src="/images/aics-3.jpg"
+        className="rounded-xl shadow-2xl shadow-black/40 transform -translate-y-4 object-cover h-48 w-full border-[6px] border-white rotate-[3deg] hover:rotate-0 transition duration-500 hover:scale-105 hover:z-20 hover:shadow-yellow-500/20"
+        alt="CSWDO Staff"
+    />
+</div>
+    </div>
+</section>
+
+                {/* --- 2. MAYOR'S MESSAGE SECTION (NEW) --- */}
+                <section className="bg-white py-20 border-b border-gray-100">
+                    <div className="container mx-auto px-4">
+                        <div className="max-w-5xl mx-auto bg-blue-50 rounded-3xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-10 shadow-sm border border-blue-100">
+                            <div className="shrink-0 relative">
+                                <div className="absolute inset-0 bg-yellow-400 rounded-full blur-xl opacity-20 transform translate-x-2 translate-y-2"></div>
+                                {/* Make sure 'mayor.jpg' exists in public/images/ */}
+                                <img src="/images/mayor.jpg" alt="Mayor Ronnie Dadivas" className="relative w-48 h-48 md:w-56 md:h-56 object-cover rounded-full border-4 border-white shadow-xl" />
                             </div>
-
-                            {!isAccepting && (
-                                <p className="mt-3 text-red-500 text-sm font-medium">
-                                    <span className="inline-block mr-1">⚠️</span> The online application portal is currently under maintenance.
+                            <div className="text-center md:text-left">
+                                <h2 className="text-2xl md:text-3xl font-bold text-blue-900 mb-4">"Serbisyo nga tinud-anay para sa pumuluyo."</h2>
+                                <p className="text-slate-600 leading-relaxed italic mb-6 text-lg">
+                                    "We are committed to bringing government services closer to the people. With the Assista system, we ensure that every Roxasnon receives the help they need efficiently, transparently, and with dignity."
                                 </p>
-                            )}
+                                <div>
+                                    <h4 className="text-xl font-bold text-slate-900">Hon. Ronnie T. Dadivas</h4>
+                                    <p className="text-blue-600 font-medium text-sm uppercase tracking-wide">City Mayor, Roxas City</p>
+                                </div>
+                            </div>
                         </div>
-                        <div className="md:w-1/2 relative"><img src="/images/assista-bg.png" alt="Hero" className="relative z-10 w-full max-w-md mx-auto drop-shadow-2xl" /></div>
                     </div>
                 </section>
 
-                {/* --- NEWS SECTION --- */}
+                {/* --- 3. NEWS SECTION (KEPT AS IS) --- */}
                 {news && news.length > 0 && (
                     <section id="news" className="py-24 bg-slate-50 scroll-mt-24">
                         <div className="container mx-auto px-4">
@@ -160,7 +221,7 @@ export default function Welcome({ auth, news = [], programs = [], settings = {} 
                     </section>
                 )}
 
-                {/* DYNAMIC ASSISTANCE PROGRAMS */}
+                {/* --- 4. ASSISTANCE PROGRAMS (KEPT AS IS) --- */}
                 <section id="assistance" className="py-24 bg-gray-50 scroll-mt-24">
                     <div className="container mx-auto px-4">
                         <div className="text-center mb-16">
@@ -183,16 +244,15 @@ export default function Welcome({ auth, news = [], programs = [], settings = {} 
                     </div>
                 </section>
 
-                {/* --- ABOUT & CONTACT SECTION (NEW) --- */}
+                {/* --- 5. ABOUT & CONTACT SECTION (KEPT AS IS) --- */}
                 <section id="about" className="py-24 bg-white scroll-mt-24">
                     <div className="container mx-auto px-4">
                         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-
                             {/* Left: About Text */}
                             <div className="bg-slate-50 rounded-2xl shadow-sm p-8 border border-slate-100 h-full">
                                 <h2 className="text-3xl font-bold text-slate-900 mb-6">About Assista & CSWDO</h2>
                                 <p className="text-slate-600 leading-relaxed mb-4 text-lg">
-                                    The <strong>Assista</strong> system is a premier initiative by the Roxas City Government to digitize and streamline the application process for the DSWD's <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> program.
+                                    The <strong>Assista</strong> system is a premier initiative by the Roxas City Government to digitize and streamline the application process for the DSWD's <strong>Assistance to Individuals in Crisis Situation (AICS) </strong> program.
                                 </p>
                                 <p className="text-slate-600 leading-relaxed text-lg">
                                     Our mission is to provide fast, accessible, and transparent financial assistance to the residents of Roxas City, ensuring that help reaches those who need it most, when they need it most.
@@ -223,7 +283,6 @@ export default function Welcome({ auth, news = [], programs = [], settings = {} 
                                     </li>
                                 </ul>
                             </div>
-
                         </div>
                     </div>
                 </section>

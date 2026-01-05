@@ -73,8 +73,15 @@ export default function ProgramsIndex({ auth, programs }) {
     const submit = (e) => {
         e.preventDefault();
         if (isEditing && editId) {
-            form.put(route('admin.programs.update', editId), {
+            // FIX: Use router.post directly with _method: 'PUT'
+            // This avoids the 'transform' chaining error AND fixes the 405 Method Not Allowed error
+            router.post(route('admin.programs.update', editId), {
+                ...form.data,
+                _method: 'PUT', // Manually spoof the PUT method
+            }, {
                 onSuccess: () => closeModal(),
+                // Ensure we clear errors on success
+                onFinish: () => form.reset(),
             });
         } else {
             form.post(route('admin.programs.store'), {
