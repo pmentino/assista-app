@@ -34,12 +34,14 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
+                // 🔔 ADDED: Share unread notifications with the frontend
+                // If user is logged in, get unread notifications; otherwise, return empty array.
+                'notifications' => $request->user() ? $request->user()->unreadNotifications : [],
             ],
-            // THIS IS THE CRITICAL PART FOR NOTIFICATIONS
             'flash' => [
                 'message' => fn () => $request->session()->get('message'),
                 'success' => fn () => $request->session()->get('success'),
-                'error'   => fn () => $request->session()->get('error'), // <--- Make sure this line exists!
+                'error'   => fn () => $request->session()->get('error'),
             ],
         ];
     }

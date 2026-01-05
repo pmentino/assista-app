@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Dropdown from '@/Components/Dropdown';
 import { Link, usePage } from '@inertiajs/react';
 import { Toaster, toast } from 'react-hot-toast';
+import NotificationBell from '@/Components/NotificationBell'; // <--- IMPORTED HERE
 
 export default function AuthenticatedLayout({ user, header, children }) {
     const { props } = usePage();
@@ -126,6 +127,10 @@ export default function AuthenticatedLayout({ user, header, children }) {
 
                         {/* Settings Dropdown */}
                         <div className="hidden sm:flex sm:items-center sm:ml-6">
+
+                            {/* --- ADDED NOTIFICATION BELL HERE --- */}
+                            <NotificationBell />
+
                             <div className="ml-3 relative">
                                 <Dropdown>
                                     <Dropdown.Trigger>
@@ -148,6 +153,12 @@ export default function AuthenticatedLayout({ user, header, children }) {
 
                         {/* Hamburger */}
                         <div className="-mr-2 flex items-center sm:hidden">
+
+                            {/* Show bell on mobile too, next to hamburger */}
+                            <div className="mr-2">
+                                <NotificationBell />
+                            </div>
+
                             <button
                                 onClick={() => setShowingNavigationDropdown((previousState) => !previousState)}
                                 className="inline-flex items-center justify-center p-2 rounded-md text-gray-200 hover:text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 focus:text-white transition duration-150 ease-in-out"

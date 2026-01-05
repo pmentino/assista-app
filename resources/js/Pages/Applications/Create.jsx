@@ -30,7 +30,7 @@ const BARANGAYS = [
 ];
 
 export default function Create() {
-    const { auth } = usePage().props;
+    const { auth, flash } = usePage().props;
 
     const { data, setData, post, processing, errors } = useForm({
         program: '',
@@ -82,7 +82,7 @@ export default function Create() {
         post(route('applications.store'), {
             forceFormData: true,
             onSuccess: () => {
-                window.location.href = route('dashboard');
+                console.log("Application submitted successfully.");
             },
             onError: (err) => {
                 console.error("Submission Errors:", err);
@@ -99,7 +99,6 @@ export default function Create() {
 
             <div className="py-12 bg-gray-50 min-h-screen font-sans">
                 <div className="max-w-5xl mx-auto sm:px-6 lg:px-8">
-
                     {/* --- HEADER BANNER --- */}
                     <div className="bg-blue-900 rounded-t-2xl p-8 shadow-lg text-white">
                         <div className="flex items-center gap-4">
@@ -111,6 +110,14 @@ export default function Create() {
                             <div>
                                 <h1 className="text-3xl font-extrabold tracking-tight">AICS Application Form</h1>
                                 <p className="text-blue-100 mt-1">Please fill out the details accurately to avoid delays in processing.</p>
+                                {errors.error && (
+                                    <div className="mt-4 p-3 bg-red-600/20 border border-red-500 rounded-lg">
+                                        <p className="text-sm text-white font-bold text-center">
+                                            {errors.error}
+                                        </p>
+                                    </div>
+                                )}
+
                             </div>
                         </div>
                     </div>

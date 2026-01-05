@@ -69,15 +69,15 @@ Route::get('/news/{news}', function (\App\Models\News $news) {
 
 Route::get('/dashboard', function () {
     $user = Auth::user();
-
-    // FIX: REMOVED REDIRECTION LOGIC.
-    // Now, Admin and Staff can access this page to apply for assistance.
-
     $applications = $user ? $user->applications()->latest()->get() : [];
 
     return Inertia::render('Dashboard', [
         'applications' => $applications,
-        'auth' => [ 'user' => $user ],
+        // BRUTE FORCE PASSING: We explicitly send the user and their notifications
+        'auth' => [
+            'user' => $user,
+            'notifications' => $user ? $user->unreadNotifications : []
+        ],
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -100,67 +100,96 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
 
-    // 1. ADMIN DASHBOARD
-    Route::get('/dashboard', function (Illuminate\Http\Request $request) {
-        $now = \Carbon\Carbon::now();
+    // 1. ADMIN DASHBOARD ROUTE
+Route::get('/dashboard', function (Illuminate\Http\Request $request) {
+    $now = \Carbon\Carbon::now();
 
-        $currentBudget = \App\Models\MonthlyBudget::where('month', $now->month)
-            ->where('year', $now->year)
-            ->first();
-        $budgetAmount = $currentBudget ? $currentBudget->amount : 0;
+    // --- BUDGET LOGIC ---
+    $currentBudget = \App\Models\MonthlyBudget::where('month', $now->month)
+        ->where('year', $now->year)
+        ->first();
+    $budgetAmount = $currentBudget ? $currentBudget->amount : 0;
 
-        $releasedMonth = ApplicationModel::where('status', 'Approved')
-            ->whereMonth('updated_at', $now->month)
-            ->whereYear('updated_at', $now->year)
-            ->sum('amount_released');
+    $releasedMonth = ApplicationModel::where('status', 'Approved')
+        ->whereMonth('updated_at', $now->month)
+        ->whereYear('updated_at', $now->year)
+        ->sum('amount_released');
 
-        $budgetStats = [
-            'total_budget' => $budgetAmount,
-            'total_used' => $releasedMonth,
-            'remaining' => $budgetAmount - $releasedMonth,
-            'percentage' => $budgetAmount > 0 ? ($releasedMonth / $budgetAmount) * 100 : 0,
-        ];
+    $budgetStats = [
+        'total_budget' => $budgetAmount,
+        'total_used' => $releasedMonth,
+        'remaining' => $budgetAmount - $releasedMonth,
+        'percentage' => $budgetAmount > 0 ? ($releasedMonth / $budgetAmount) * 100 : 0,
+    ];
 
-        $stats = [
-            'total' => ApplicationModel::count(),
-            'pending' => ApplicationModel::where('status', 'Pending')->count(),
-            'approved' => ApplicationModel::where('status', 'Approved')->count(),
-            'rejected' => ApplicationModel::where('status', 'Rejected')->count(),
-            'total_released' => ApplicationModel::where('status', 'Approved')->sum('amount_released'),
-            'released_today' => ApplicationModel::where('status', 'Approved')->whereDate('updated_at', $now->today())->sum('amount_released'),
-            'released_week' => ApplicationModel::where('status', 'Approved')->whereBetween('updated_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()])->sum('amount_released'),
-            'released_month' => $releasedMonth,
-        ];
+    // --- STATS LOGIC ---
+    $stats = [
+        'total' => ApplicationModel::count(),
+        'pending' => ApplicationModel::where('status', 'Pending')->count(),
+        'approved' => ApplicationModel::where('status', 'Approved')->count(),
+        'rejected' => ApplicationModel::where('status', 'Rejected')->count(),
+        'total_released' => ApplicationModel::where('status', 'Approved')->sum('amount_released'),
+        'released_today' => ApplicationModel::where('status', 'Approved')->whereDate('updated_at', $now->today())->sum('amount_released'),
+        'released_week' => ApplicationModel::where('status', 'Approved')->whereBetween('updated_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()])->sum('amount_released'),
+        'released_month' => $releasedMonth,
+    ];
 
-        $chartQuery = ApplicationModel::where('status', 'Approved');
-        if ($request->has('start_date') && $request->start_date) { $chartQuery->whereDate('updated_at', '>=', $request->start_date); }
-        else { $chartQuery->whereDate('updated_at', '>=', $now->copy()->subDays(30)); }
-        if ($request->has('end_date') && $request->end_date) { $chartQuery->whereDate('updated_at', '<=', $request->end_date); }
-        if ($request->has('barangay') && $request->barangay != '') { $chartQuery->where('barangay', $request->barangay); }
+    // --- CHART LOGIC ---
+    $chartQuery = ApplicationModel::where('status', 'Approved');
+    if ($request->has('start_date') && $request->start_date) { $chartQuery->whereDate('updated_at', '>=', $request->start_date); }
+    else { $chartQuery->whereDate('updated_at', '>=', $now->copy()->subDays(30)); }
+    if ($request->has('end_date') && $request->end_date) { $chartQuery->whereDate('updated_at', '<=', $request->end_date); }
+    if ($request->has('barangay') && $request->barangay != '') { $chartQuery->where('barangay', $request->barangay); }
 
-        $dailyData = $chartQuery->selectRaw('DATE(updated_at) as date, SUM(amount_released) as total')->groupBy('date')->orderBy('date')->get();
-        $chartData = ['labels' => $dailyData->pluck('date'), 'values' => $dailyData->pluck('total')];
+    $dailyData = $chartQuery->selectRaw('DATE(updated_at) as date, SUM(amount_released) as total')->groupBy('date')->orderBy('date')->get();
+    $chartData = ['labels' => $dailyData->pluck('date'), 'values' => $dailyData->pluck('total')];
 
-        $barangayStats = ApplicationModel::where('status', 'Approved')
-            ->select('barangay', \Illuminate\Support\Facades\DB::raw('count(*) as total'), \Illuminate\Support\Facades\DB::raw('sum(amount_released) as amount'))
-            ->groupBy('barangay')
-            ->orderByRaw('CAST(sum(amount_released) as DECIMAL(15,2)) DESC')
-            ->get();
+    // --- BARANGAY STATS ---
+    $barangayStats = ApplicationModel::where('status', 'Approved')
+        ->select('barangay', \Illuminate\Support\Facades\DB::raw('count(*) as total'), \Illuminate\Support\Facades\DB::raw('sum(amount_released) as amount'))
+        ->groupBy('barangay')
+        ->orderByRaw('CAST(sum(amount_released) as DECIMAL(15,2)) DESC')
+        ->get();
 
-        $allBarangays = ApplicationModel::select('barangay')->distinct()->orderBy('barangay')->pluck('barangay');
-        $currentFilters = $request->only(['barangay', 'start_date', 'end_date']);
+    $allBarangays = ApplicationModel::select('barangay')->distinct()->orderBy('barangay')->pluck('barangay');
+    $currentFilters = $request->only(['barangay', 'start_date', 'end_date']);
 
-        return Inertia::render('Admin/Dashboard', [
-            'stats' => $stats,
-            'budgetStats' => $budgetStats,
-            'budgetLogs'  => \App\Models\BudgetLog::with('user')->latest()->take(5)->get(),
-            'chartData' => $chartData,
-            'barangayStats' => $barangayStats,
-            'allBarangays' => $allBarangays,
-            'filters' => $currentFilters,
-            'auth' => [ 'user' => Auth::user() ]
-        ]);
-    })->name('dashboard');
+    // ============================================================
+    // 🔥 THE FIX: Added ->values() to force JSON Array format 🔥
+    // ============================================================
+    $pendingApplications = ApplicationModel::where('status', 'Pending')
+        ->orderBy('created_at', 'asc')
+        ->take(5)
+        ->get()
+        ->map(function ($app) {
+            return [
+                'id' => $app->id,
+                'first_name' => $app->first_name,
+                'last_name' => $app->last_name,
+                'barangay' => $app->barangay,
+                'assistance_type' => $app->program,
+                'created_at' => $app->created_at,
+            ];
+        })
+        ->values(); // <--- THIS TINY FUNCTION FIXES THE "EMPTY" LIST ISSUE
+    // ============================================================
+
+    return Inertia::render('Admin/Dashboard', [
+        'stats' => $stats,
+        'budgetStats' => $budgetStats,
+        'budgetLogs'  => \App\Models\BudgetLog::with('user')->latest()->take(5)->get(),
+        'chartData' => $chartData,
+        'barangayStats' => $barangayStats,
+        'allBarangays' => $allBarangays,
+        'filters' => $currentFilters,
+        'pendingApplications' => $pendingApplications,
+        // BRUTE FORCE PASSING FOR ADMIN TOO
+        'auth' => [
+            'user' => Auth::user(),
+            'notifications' => Auth::user() ? Auth::user()->unreadNotifications : []
+        ],
+    ]);
+})->name('dashboard');
 
     // 2. AUDIT LOGS ROUTE
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs');

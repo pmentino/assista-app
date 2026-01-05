@@ -1,8 +1,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, usePage, Link } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PrimaryButton from '@/Components/PrimaryButton';
-import InputError from '@/Components/InputError'; // <--- We need this
+import InputError from '@/Components/InputError';
 
 // --- CONFIGURATION ---
 const REQUIREMENTS_MAP = {
@@ -17,7 +17,8 @@ const REQUIREMENTS_MAP = {
 
 export default function ApplicationShow({ application }) {
     // FIX: Destructure 'errors' from global props safely
-    const { auth, errors = {} } = usePage().props;
+    const { auth, errors = {}, flash = {} } = usePage().props;
+
     const user = auth?.user || { name: 'Admin' };
 
     // Form for Remarks (Rejection / Staff Note)
@@ -44,20 +45,33 @@ export default function ApplicationShow({ application }) {
         });
     };
 
-    // 2. Submit Approval (Budget Guard Logic)
+    // 2. Submit Approval (UPDATED FIX)
     const submitApprove = (e) => {
         e.preventDefault();
 
         approveForm.post(route('admin.applications.approve', application.id), {
             preserveScroll: true,
-            preserveState: true, // Vital to keep modal open on error
-            onSuccess: () => {
+
+            onSuccess: (response) => {
+                // Only close modal if there are no errors
+                if (Object.keys(approveForm.errors).length > 0) {
+                    return;
+                }
+
+                console.log('Approval successful');
                 setShowApproveModal(false);
                 approveForm.reset();
             },
-            // Logic: Inertia automatically populates approveForm.errors on 422 response
+
+            onError: (errors) => {
+                // This will keep the modal open if there's an error
+                console.log(errors); // You can log errors to debug
+            },
         });
     };
+
+
+
 
     // 3. Submit Staff Verification Note
     const submitNote = (e) => {
@@ -130,6 +144,18 @@ export default function ApplicationShow({ application }) {
             <Head title={`Application #${application.id}`} />
 
             <div className="py-6 md:py-10 bg-gray-50 min-h-screen">
+                <div className="w-full flex justify-center items-center">
+                   {flash.message && (
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+                            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative flex justify-between items-center shadow-sm">
+                                <div className="flex items-center">
+                                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
+                                    <span className="font-bold">{flash.message}</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -342,38 +368,35 @@ export default function ApplicationShow({ application }) {
                                 <h3 className="text-lg font-bold mb-2 text-green-700">Approve Application</h3>
                                 <p className="text-sm text-gray-500 mb-4">Enter amount to release.</p>
                                 <form onSubmit={submitApprove}>
-    <div className="mb-4">
-        <label className="block text-sm font-bold text-gray-700 mb-2">Amount (PHP)</label>
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Amount (PHP)</label>
 
-        {/* MANUAL RED ERROR BOX - CANNOT BE HIDDEN */}
-        {approveForm.errors.amount && (
-            <div className="mb-2 p-3 bg-red-100 border border-red-400 text-red-700 rounded font-bold">
-                ⚠️ {approveForm.errors.amount}
-            </div>
-        )}
-
-        <div className="relative rounded-md shadow-sm">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 sm:text-sm font-bold">₱</span>
-            </div>
-            <input
-                type="number"
-                // Force red border if error exists
-                className={`block w-full pl-7 sm:text-lg font-bold border rounded-lg py-3 ${approveForm.errors.amount ? 'border-red-600 focus:border-red-600 focus:ring-red-600' : 'border-gray-300'}`}
-                placeholder="0.00"
-                value={approveForm.data.amount}
-                onChange={(e) => approveForm.setData('amount', e.target.value)}
-                required
-                min="0"
-                step="0.01"
-            />
-        </div>
-    </div>
-    <div className="flex justify-end gap-2">
-        <button type="button" onClick={() => setShowApproveModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-lg">Cancel</button>
-        <button type="submit" disabled={approveForm.processing} className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg shadow">Confirm Approval</button>
-    </div>
-</form>
+                                        <div className="relative rounded-md shadow-sm">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <span className="text-gray-500 sm:text-sm font-bold">₱</span>
+                                            </div>
+                                            <input
+                                                type="number"
+                                                className={`block w-full pl-7 sm:text-lg font-bold border rounded-lg py-3 ${approveForm.errors.amount ? 'border-red-600 focus:border-red-600 focus:ring-red-600' : 'border-gray-300'}`}
+                                                placeholder="0.00"
+                                                value={approveForm.data.amount}
+                                                onChange={(e) => approveForm.setData('amount', e.target.value)}
+                                                required
+                                                min="0"
+                                                step="0.01"
+                                            />
+                                            {approveForm.errors.amount && (
+                                                <p className="mt-2 text-sm text-red-600 font-bold">
+                                                    {approveForm.errors.amount}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                        <button type="button" onClick={() => setShowApproveModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-lg">Cancel</button>
+                                        <button type="submit" disabled={approveForm.processing} className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg shadow">Confirm Approval</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     )}

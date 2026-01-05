@@ -8,7 +8,8 @@ import { useState } from 'react';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
-export default function Dashboard({ auth, stats, budgetStats, chartData, barangayStats, allBarangays, filters }) {
+// Added 'pendingApplications' to props
+export default function Dashboard({ auth, stats, budgetStats, chartData, barangayStats, allBarangays, filters, pendingApplications = [] }) {
     const user = auth?.user || { name: 'Admin' };
 
     // --- STATE MANAGEMENT ---
@@ -28,6 +29,12 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
     // --- HELPERS ---
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount || 0);
+    };
+
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric'
+        });
     };
 
     // --- HANDLERS ---
@@ -79,10 +86,98 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
                     {/* Welcome Section */}
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-8">
-                        <div className="p-6 text-gray-900">
-                            <h3 className="text-2xl font-bold text-blue-900">Welcome back, {user.name}!</h3>
-                            <p className="text-gray-600">Here is the latest financial and operational data for the AICS Program.</p>
+                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-8 border-l-4 border-blue-900">
+                        <div className="p-6 text-gray-900 flex justify-between items-center">
+                            <div>
+                                <h3 className="text-2xl font-bold text-blue-900">Welcome back, {user.name}!</h3>
+                                <p className="text-gray-600">Here is the latest financial and operational data for the AICS Program.</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-sm text-gray-500 font-bold uppercase">Current Date</p>
+                                <p className="text-lg font-mono text-gray-800">{new Date().toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* --- NEW FEATURE: ACTION CENTER (PENDING APPLICATIONS) --- */}
+                    {/* Only show if there are pending items, or show an empty state to encourage work */}
+                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-8 border border-amber-200">
+                        <div className="bg-amber-50 px-6 py-4 border-b border-amber-200 flex justify-between items-center">
+                            <div>
+                                <h3 className="text-lg font-bold text-amber-800 flex items-center gap-2">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Action Required: Pending Applications
+                                </h3>
+                                <p className="text-sm text-amber-700">These citizens are waiting for validation. Review them promptly to maintain service standards.</p>
+                            </div>
+                            {stats.pending > 0 && (
+                                <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse">
+                                    {stats.pending} Pending
+                                </span>
+                            )}
+                        </div>
+
+                        <div className="p-0">
+                            {/* NOTE: We need to pass 'pendingApplications' prop from the controller for this to map correctly.
+                                For now, I added a fallback checking length. */}
+                            {pendingApplications && pendingApplications.length > 0 ? (
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Applicant Name</th>
+                                            <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type / Purpose</th>
+                                            <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date Submitted</th>
+                                            <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {pendingApplications.map((app, index) => (
+                                            <tr key={index} className="hover:bg-amber-50 transition">
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="flex items-center">
+                                                        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-amber-200 flex items-center justify-center text-amber-800 font-bold text-xs">
+                                                            {app.first_name ? app.first_name.charAt(0) : 'U'}
+                                                        </div>
+                                                        <div className="ml-4">
+                                                            <div className="text-sm font-medium text-gray-900">{app.first_name} {app.last_name}</div>
+                                                            <div className="text-xs text-gray-500">{app.barangay}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                        {app.assistance_type}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {formatDate(app.created_at)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    {/* Update this route to match your actual application review route */}
+                                                    <Link
+                                                        href={route('admin.applications.show', app.id)}
+                                                        className="text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded shadow-sm text-xs font-bold transition"
+                                                    >
+                                                        Review Now
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <div className="p-8 text-center text-gray-500 bg-gray-50">
+                                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <p className="mt-2 text-sm font-medium">No pending applications found. Good job!</p>
+                                </div>
+                            )}
+                            <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex justify-center">
+                                <Link href={route('admin.applications.index', { status: 'pending' })} className="text-sm text-indigo-600 font-bold hover:text-indigo-900 hover:underline">
+                                    View All Pending Applications &rarr;
+                                </Link>
+                            </div>
                         </div>
                     </div>
 
@@ -197,7 +292,6 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
 
                     {/* --- BARANGAY STATS SECTION --- */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
                         {/* LEFT COLUMN: Top Barangays Table */}
                         <div className="lg:col-span-2 bg-white overflow-hidden shadow-sm sm:rounded-lg">
                             <div className="p-6 border-b border-gray-200 flex justify-between items-center">

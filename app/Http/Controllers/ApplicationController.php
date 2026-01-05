@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Mail;
-use App\Mail\ApplicationStatusUpdated;
+use App\Mail\ApplicationStatusUpdated; // Handles Email (Mailtrap)
+use App\Notifications\ApplicationStatusAlert; // Handles Bell Icon (Database)
 use App\Models\Setting;
 use App\Models\Application;
 use App\Models\AuditLog;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use App\Models\MonthlyBudget;
+use Illuminate\Validation\ValidationException;
 
 class ApplicationController extends Controller
 {
@@ -31,9 +34,14 @@ class ApplicationController extends Controller
 
         // 1. Check for Pending Apps
         $hasPending = Application::where('user_id', $user->id)->where('status', 'Pending')->exists();
+
         if ($hasPending) {
-        return redirect()->route('dashboard')->with('error', '⚠️ STOP: You already have a pending application.');
-    }
+             return Inertia::render('Applications/Create', [
+                'errors' => [
+                    'error' => '⚠️ STOP: You already have a pending application.'
+                ]
+            ]);
+        }
 
         // 2. Validate Data
         $request->validate([
@@ -70,7 +78,6 @@ class ApplicationController extends Controller
             }
         }
 
-        // 4. Create Record
         try {
             Application::create([
                 'user_id' => Auth::id(),
@@ -94,8 +101,9 @@ class ApplicationController extends Controller
                 'attachments' => $paths,
                 'status' => 'Pending',
             ]);
+
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Error creating application: ' . $e->getMessage());
+            return redirect()->route('applications.create')->with('error', 'Error creating application: ' . $e->getMessage());
         }
 
         return redirect()->route('dashboard')->with('message', 'Application submitted successfully.');
@@ -154,13 +162,18 @@ class ApplicationController extends Controller
 
     public function approve(Request $request, Application $application)
     {
-        $request->validate(['amount' => 'required|numeric|min:0']);
+        $request->validate([
+            'amount' => 'required|numeric|min:1'
+        ]);
 
-        $now = \Carbon\Carbon::now();
-        $monthlyBudget = \App\Models\MonthlyBudget::where('month', $now->month)->where('year', $now->year)->first();
+        $now = Carbon::now();
+        $monthlyBudget = MonthlyBudget::where('month', $now->month)->where('year', $now->year)->first();
 
         if (!$monthlyBudget) {
-            return redirect()->back()->with('error', 'Approval Failed: No budget allocated for this month.');
+            return Inertia::render('Admin/ApplicationShow', [
+                'application' => $application,
+                'errors' => ['amount' => 'No budget set for this month yet.']
+            ]);
         }
 
         $totalReleased = Application::where('status', 'Approved')
@@ -168,15 +181,19 @@ class ApplicationController extends Controller
             ->whereYear('approved_date', $now->year)
             ->sum('amount_released');
 
-        $remainingBalance = $monthlyBudget->amount - $totalReleased;
+        $remainingBalance = (float)($monthlyBudget->amount ?? 0) - (float)($totalReleased ?? 0);
+        $requestedAmount = (float)$request->amount;
 
-        // BUDGET GUARD
-        if ($request->amount > $remainingBalance) {
-        return redirect()->back()->withErrors([
-            'amount' => "INSUFFICIENT FUNDS: Balance is ₱" . number_format($remainingBalance, 2)
-        ]);
-    }
+        if ($requestedAmount > $remainingBalance) {
+            return Inertia::render('Admin/ApplicationShow', [
+                'application' => $application,
+                'errors' => [
+                    'amount' => 'INSUFFICIENT FUNDS: Balance is ₱' . number_format($remainingBalance, 2)
+                ]
+            ]);
+        }
 
+        // 1. UPDATE STATUS & AMOUNT
         $application->update([
             'status' => 'Approved',
             'amount_released' => $request->amount,
@@ -184,7 +201,32 @@ class ApplicationController extends Controller
             'approved_date' => now(),
         ]);
 
-        return redirect()->back()->with('message', 'Application approved successfully.');
+        // =========================================================
+        // START NEW NOTIFICATION CODE
+        // =========================================================
+
+        // 2. TRIGGER BELL NOTIFICATION (Database)
+        // Checks if user exists before notifying to prevent errors
+        if ($application->user) {
+            $application->user->notify(new ApplicationStatusAlert($application));
+        }
+
+        // 3. TRIGGER EMAIL (Mailtrap)
+        // Wrapped in try-catch so slow internet doesn't crash the approval
+        if ($application->user && $application->user->email) {
+            try {
+                Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
+            } catch (\Exception $e) {
+                // Log the error silently, but allow approval to succeed
+                // \Log::error('Email failed: ' . $e->getMessage());
+            }
+        }
+
+        // =========================================================
+        // END NEW NOTIFICATION CODE
+        // =========================================================
+
+        return redirect()->back()->with('message', 'Application approved and applicant notified!');
     }
 
     public function reject(Request $request, Application $application)
@@ -206,13 +248,25 @@ class ApplicationController extends Controller
             'remarks' => 'required|string|max:1000',
         ]);
 
+        // 1. UPDATE STATUS TO REJECTED
         $application->update([
             'status' => 'Rejected',
             'remarks' => $request->remarks,
         ]);
 
+        // 2. TRIGGER BELL NOTIFICATION (Guaranteed to run)
+        // We do this BEFORE the email, so even if email fails, the system notif works.
+        if ($application->user) {
+            $application->user->notify(new ApplicationStatusAlert($application));
+        }
+
+        // 3. TRIGGER EMAIL (Optional / Internet Dependent)
         if ($application->user && $application->user->email) {
-            Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
+            try {
+                Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
+            } catch (\Exception $e) {
+                // Log error if needed, but don't stop the process
+            }
         }
 
         AuditLog::create([

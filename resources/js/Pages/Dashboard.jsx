@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react'; // <--- Added usePage
 import { useState } from 'react';
 
 // --- CONFIGURATION: Citizen's Charter / Requirements List ---
@@ -13,8 +13,11 @@ const REQUIREMENTS_MAP = {
     'Educational Assistance': ['Personal Letter to Mayor', 'Certificate of Enrollment / Registration', 'School ID']
 };
 
-export default function Dashboard({ auth, applications = [] }) {
-    const user = auth?.user || {};
+export default function Dashboard({ applications = [] }) { // Removed 'auth' from props here
+    // FIX: Get User from Global Page Props (More Reliable)
+    const { auth } = usePage().props;
+    const user = auth?.user || { name: 'Applicant', id: 0 };
+
     const [activeTab, setActiveTab] = useState('ongoing');
 
     // Filter Logic
