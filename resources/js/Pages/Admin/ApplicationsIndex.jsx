@@ -39,7 +39,7 @@ const SortableHeader = ({ label, columnName, sortBy, sortDirection }) => {
     );
 };
 
-// --- ROW COMPONENT WITH DELETE LOGIC ---
+// --- ROW COMPONENT WITH DISABLED DELETE LOGIC ---
 const Row = ({ app, getStatusColor }) => {
     const { delete: destroy } = useForm();
 
@@ -47,9 +47,13 @@ const Row = ({ app, getStatusColor }) => {
         if (confirm(`CRITICAL: Are you sure you want to permanently delete Application #${app.id}? This cannot be undone.`)) {
             destroy(route('admin.applications.destroy', app.id), {
                 preserveScroll: true,
+                onSuccess: () => console.log('Deleted'),
+                onError: (errors) => console.log('Delete failed', errors),
             });
         }
     };
+
+    const isApproved = app.status === 'Approved';
 
     return (
         <tr className="hover:bg-blue-50 transition-colors duration-150">
@@ -89,16 +93,30 @@ const Row = ({ app, getStatusColor }) => {
                     Review
                 </Link>
 
-                {/* DELETE BUTTON */}
-                <button
-                    onClick={handleDelete}
-                    className="inline-flex items-center p-1.5 bg-white border border-red-200 rounded-md text-red-600 hover:bg-red-50 hover:border-red-400 transition"
-                    title="Delete Application"
-                >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                </button>
+                {/* CONDITIONAL DELETE BUTTON */}
+                {isApproved ? (
+                    // DISABLED STATE (Greyed Out)
+                    <button
+                        disabled
+                        className="inline-flex items-center p-1.5 bg-gray-100 border border-gray-200 rounded-md text-gray-400 cursor-not-allowed"
+                        title="Cannot delete Approved application (Funded)"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                ) : (
+                    // ACTIVE STATE (Red)
+                    <button
+                        onClick={handleDelete}
+                        className="inline-flex items-center p-1.5 bg-white border border-red-200 rounded-md text-red-600 hover:bg-red-50 hover:border-red-400 transition"
+                        title="Delete Application"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                )}
             </td>
         </tr>
     );
@@ -107,6 +125,18 @@ const Row = ({ app, getStatusColor }) => {
 // --- MAIN COMPONENT ---
 
 export default function ApplicationsIndex({ auth, applications, filters: initialFilters = {}, sort_by: initialSortBy, sort_direction: initialSortDirection }) {
+
+    // Default empty object fallback
+    const { flash = {} } = usePage().props;
+    const [visibleSuccess, setVisibleSuccess] = useState(null);
+
+    useEffect(() => {
+        if (flash.message) {
+            setVisibleSuccess(flash.message);
+            const timer = setTimeout(() => setVisibleSuccess(null), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [flash]);
 
     const [filters, setFilters] = useState({
         status: initialFilters.status || '',
@@ -144,7 +174,6 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
         setFilters(prev => ({ ...prev, [name]: value }));
     };
 
-    // Helper for badge colors
     const getStatusColor = (status) => {
         switch (status) {
             case 'Approved': return 'bg-green-100 text-green-800 border-green-200';
@@ -167,9 +196,28 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
         >
             <Head title="Manage Applications" />
 
+            {/* --- FLOATING SUCCESS TOAST ONLY (Since error is now impossible via UI) --- */}
+            {visibleSuccess && (
+                <div className="fixed top-24 right-5 z-50 flex flex-col gap-2 w-full max-w-sm pointer-events-none">
+                    <div className="bg-white border-l-8 border-green-500 rounded-lg shadow-2xl p-4 flex items-start animate-fade-in-left pointer-events-auto ring-1 ring-black/5">
+                        <div className="flex-shrink-0 text-green-500">
+                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div className="ml-3 w-0 flex-1">
+                            <h3 className="text-sm font-bold text-green-900">Success</h3>
+                            <p className="text-sm text-green-700 mt-1">{visibleSuccess}</p>
+                        </div>
+                        <button onClick={() => setVisibleSuccess(null)} className="ml-4 text-gray-400 hover:text-gray-500">
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div className="py-6 md:py-10 bg-gray-50 min-h-screen">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
 
                         {/* --- DRILL-DOWN BANNER --- */}

@@ -71,6 +71,15 @@ export default function Create() {
         setData('attachments', newAttachments);
     };
 
+    // --- FIX: Strict Name Validation (Letters & Spaces Only) ---
+    const handleNameChange = (field, value) => {
+        // Regex: Only allows letters (a-z, A-Z) and spaces. No numbers or special symbols.
+        const regex = /^[a-zA-Z\s]*$/;
+        if (regex.test(value)) {
+            setData(field, value);
+        }
+    };
+
     const submit = (e) => {
         e.preventDefault();
 
@@ -155,10 +164,25 @@ export default function Create() {
                                     <h3 className="text-xl font-bold text-gray-800 uppercase tracking-wide">Personal Information</h3>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    <div className="space-y-1"> <InputLabel htmlFor="first_name" value="First Name *" /> <TextInput id="first_name" className="block w-full" value={data.first_name} onChange={(e) => setData('first_name', e.target.value)} required /> <InputError message={errors.first_name} /> </div>
-                                    <div className="space-y-1"> <InputLabel htmlFor="middle_name" value="Middle Name (Optional)" /> <TextInput id="middle_name" className="block w-full" value={data.middle_name} onChange={(e) => setData('middle_name', e.target.value)} /> </div>
-                                    <div className="space-y-1"> <InputLabel htmlFor="last_name" value="Last Name *" /> <TextInput id="last_name" className="block w-full" value={data.last_name} onChange={(e) => setData('last_name', e.target.value)} required /> <InputError message={errors.last_name} /> </div>
-                                    <div className="space-y-1"> <InputLabel htmlFor="suffix_name" value="Suffix" /> <TextInput id="suffix_name" className="block w-full" value={data.suffix_name} onChange={(e) => setData('suffix_name', e.target.value)} /> </div>
+                                    {/* FIX: Use handleNameChange for strict validation */}
+                                    <div className="space-y-1">
+                                        <InputLabel htmlFor="first_name" value="First Name *" />
+                                        <TextInput id="first_name" className="block w-full capitalize" value={data.first_name} onChange={(e) => handleNameChange('first_name', e.target.value)} required placeholder="e.g. Juan" />
+                                        <InputError message={errors.first_name} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <InputLabel htmlFor="middle_name" value="Middle Name (Optional)" />
+                                        <TextInput id="middle_name" className="block w-full capitalize" value={data.middle_name} onChange={(e) => handleNameChange('middle_name', e.target.value)} placeholder="e.g. Dela" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <InputLabel htmlFor="last_name" value="Last Name *" />
+                                        <TextInput id="last_name" className="block w-full capitalize" value={data.last_name} onChange={(e) => handleNameChange('last_name', e.target.value)} required placeholder="e.g. Cruz" />
+                                        <InputError message={errors.last_name} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <InputLabel htmlFor="suffix_name" value="Suffix" />
+                                        <TextInput id="suffix_name" className="block w-full" value={data.suffix_name} onChange={(e) => setData('suffix_name', e.target.value)} placeholder="e.g. Jr., III" />
+                                    </div>
                                     <div className="space-y-1"> <InputLabel htmlFor="birth_date" value="Birth Date *" /> <TextInput id="birth_date" type="date" className="block w-full" value={data.birth_date} onChange={(e) => setData('birth_date', e.target.value)} required /> <InputError message={errors.birth_date} /> </div>
                                     <div className="space-y-1"> <InputLabel htmlFor="sex" value="Sex *" /> <select id="sex" value={data.sex} onChange={(e) => setData('sex', e.target.value)} className="block w-full border-gray-300 rounded-md shadow-sm" required> <option value="">Select Sex</option> <option value="Male">Male</option> <option value="Female">Female</option> </select> <InputError message={errors.sex} /> </div>
                                     <div className="space-y-1"> <InputLabel htmlFor="civil_status" value="Civil Status *" /> <select id="civil_status" value={data.civil_status} onChange={(e) => setData('civil_status', e.target.value)} className="block w-full border-gray-300 rounded-md shadow-sm" required> <option value="">Select Status</option> <option value="Single">Single</option> <option value="Married">Married</option> <option value="Widowed">Widowed</option> <option value="Separated">Separated</option> </select> <InputError message={errors.civil_status} /> </div>
@@ -178,13 +202,13 @@ export default function Create() {
 
                                     <div className="space-y-1">
                                         <InputLabel htmlFor="contact_number" value="Mobile Number *" />
-                                        {/* FIX: Applied validation for 11 digits only */}
                                         <TextInput
                                             id="contact_number"
                                             className="block w-full"
                                             value={data.contact_number}
                                             placeholder="09123456789"
                                             maxLength={11}
+                                            // FIX: Strict Number Only Validation
                                             onChange={(e) => setData('contact_number', e.target.value.replace(/\D/g, '').slice(0, 11))}
                                             required
                                         />

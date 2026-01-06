@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Application;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Auth; // <--- Added this
+use Illuminate\Support\Facades\Auth;
 
 class AidRequestController extends Controller
 {
@@ -47,9 +47,6 @@ class AidRequestController extends Controller
                               ->paginate(10)
                               ->withQueryString();
 
-        // --- THE FIX ---
-        // 1. Point to 'Admin/ApplicationsIndex' (matching your screenshot)
-        // 2. Pass 'auth' so the layout knows you are an Admin
         return Inertia::render('Admin/ApplicationsIndex', [
             'applications' => $applications,
             'filters' => $request->only(['search', 'status', 'program', 'barangay']),
@@ -57,20 +54,27 @@ class AidRequestController extends Controller
         ]);
     }
 
-   public function destroy(\App\Models\Application $application)
+    public function destroy(Application $application)
     {
+        // --- CRITICAL FIX: PREVENT DELETION OF APPROVED RECORDS ---
+        // In a government system, you cannot delete records that have financial implications.
+        if ($application->status === 'Approved') {
+            return redirect()->back()
+                ->with('error', 'CRITICAL ERROR: Cannot delete an Approved application. This record is linked to disbursed funds.')
+                ->setStatusCode(303);
+        }
+
         // Optional: Capture name for logs before deleting
         $applicantName = $application->first_name . ' ' . $application->last_name;
 
         $application->delete();
 
         \App\Models\AuditLog::create([
-            'user_id' => \Illuminate\Support\Facades\Auth::id(),
+            'user_id' => Auth::id(),
             'action' => 'Deleted Application',
             'details' => "Permanently deleted App #{$application->id} for {$applicantName}",
         ]);
 
-        // FIX: Force 303 status to prevent 405 Method Not Allowed error
         return redirect()->back()
             ->with('message', 'Application deleted successfully.')
             ->setStatusCode(303);

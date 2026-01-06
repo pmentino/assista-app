@@ -201,32 +201,33 @@ class ApplicationController extends Controller
             'approved_date' => now(),
         ]);
 
+        // 2. CREATE AUDIT LOG (This was missing!)
+        // This ensures EVERY approval is tracked, even if Admin approves their own request.
+        AuditLog::create([
+            'user_id' => Auth::id(), // Records WHO clicked the approve button
+            'action' => 'Approved Application',
+            'details' => "Approved App #{$application->id} - Amount Released: ₱" . number_format($request->amount, 2)
+        ]);
+
         // =========================================================
-        // START NEW NOTIFICATION CODE
+        // NOTIFICATIONS
         // =========================================================
 
-        // 2. TRIGGER BELL NOTIFICATION (Database)
-        // Checks if user exists before notifying to prevent errors
+        // 3. TRIGGER BELL NOTIFICATION (Database)
         if ($application->user) {
             $application->user->notify(new ApplicationStatusAlert($application));
         }
 
-        // 3. TRIGGER EMAIL (Mailtrap)
-        // Wrapped in try-catch so slow internet doesn't crash the approval
+        // 4. TRIGGER EMAIL (Mailtrap)
         if ($application->user && $application->user->email) {
             try {
                 Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
             } catch (\Exception $e) {
-                // Log the error silently, but allow approval to succeed
-                // \Log::error('Email failed: ' . $e->getMessage());
+                // Log error silently
             }
         }
 
-        // =========================================================
-        // END NEW NOTIFICATION CODE
-        // =========================================================
-
-        return redirect()->back()->with('message', 'Application approved and applicant notified!');
+        return redirect()->back()->with('message', 'Application approved, logged, and applicant notified!');
     }
 
     public function reject(Request $request, Application $application)
