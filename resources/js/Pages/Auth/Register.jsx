@@ -3,11 +3,10 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
-import Modal from '@/Components/Modal'; // Ensure this component exists in your project
+import Modal from '@/Components/Modal';
 import SecondaryButton from '@/Components/SecondaryButton';
 import { Head, Link, useForm } from '@inertiajs/react';
 
-// Eye Icon
 const EyeIcon = ({ closed }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-500 hover:text-blue-600 transition-colors">
         {closed ? (
@@ -41,6 +40,14 @@ export default function Register() {
         };
     }, []);
 
+    // Helper to allow only letters and spaces
+    const handleNameChange = (field, value) => {
+        const regex = /^[a-zA-Z\s]*$/;
+        if (regex.test(value)) {
+            setData(field, value);
+        }
+    };
+
     const submit = (e) => {
         e.preventDefault();
         if (!agreedToPrivacy) {
@@ -55,9 +62,11 @@ export default function Register() {
             <Head title="Register" />
 
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <Link href="/" className="flex justify-center items-center gap-3 mb-6">
-                    <img src="/images/logo.png" alt="Assista Logo" className="h-14 w-auto drop-shadow-sm" />
-                    <span className="text-3xl font-extrabold text-blue-900 tracking-tight">ASSISTA</span>
+                <Link href="/" className="flex justify-center items-center gap-3 mb-6 group">
+                    <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-105 transition-transform">
+                        <img src="/images/logo.png" alt="Assista Logo" className="h-12 w-auto" />
+                    </div>
+                    <span className="text-3xl font-extrabold text-blue-900 tracking-tight group-hover:text-blue-800 transition-colors">ASSISTA</span>
                 </Link>
                 <h2 className="mt-2 text-center text-2xl font-bold tracking-tight text-gray-900">
                     Create your beneficiary account
@@ -74,6 +83,7 @@ export default function Register() {
                 <div className="bg-white py-8 px-4 shadow-xl shadow-gray-200/50 rounded-2xl sm:px-10 border border-gray-100">
 
                     <div className="mb-8 flex flex-col items-center border-b border-gray-100 pb-6">
+                         {/* Ensure dswd-logo.png exists or remove this line */}
                          <img src="/images/dswd-logo.png" alt="DSWD Logo" className="h-12 w-auto mb-2 opacity-90" />
                          <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold">Official Registration Form</p>
                     </div>
@@ -89,21 +99,47 @@ export default function Register() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div>
                                     <InputLabel htmlFor="first_name" value="First Name *" />
-                                    <TextInput id="first_name" name="first_name" value={data.first_name} className="mt-1 block w-full" isFocused={true} onChange={(e) => setData('first_name', e.target.value)} required />
+                                    <TextInput
+                                        id="first_name"
+                                        value={data.first_name}
+                                        className="mt-1 block w-full capitalize"
+                                        onChange={(e) => handleNameChange('first_name', e.target.value)}
+                                        required
+                                        placeholder="e.g. Juan"
+                                    />
                                     <InputError message={errors.first_name} className="mt-2" />
                                 </div>
                                 <div>
                                     <InputLabel htmlFor="middle_name" value="Middle Name (Optional)" />
-                                    <TextInput id="middle_name" name="middle_name" value={data.middle_name} className="mt-1 block w-full" onChange={(e) => setData('middle_name', e.target.value)} />
+                                    <TextInput
+                                        id="middle_name"
+                                        value={data.middle_name}
+                                        className="mt-1 block w-full capitalize"
+                                        onChange={(e) => handleNameChange('middle_name', e.target.value)}
+                                        placeholder="e.g. Dela"
+                                    />
                                 </div>
                                 <div>
                                     <InputLabel htmlFor="last_name" value="Last Name *" />
-                                    <TextInput id="last_name" name="last_name" value={data.last_name} className="mt-1 block w-full" onChange={(e) => setData('last_name', e.target.value)} required />
+                                    <TextInput
+                                        id="last_name"
+                                        value={data.last_name}
+                                        className="mt-1 block w-full capitalize"
+                                        onChange={(e) => handleNameChange('last_name', e.target.value)}
+                                        required
+                                        placeholder="e.g. Cruz"
+                                    />
                                     <InputError message={errors.last_name} className="mt-2" />
                                 </div>
                                 <div>
                                     <InputLabel htmlFor="suffix_name" value="Suffix (e.g. Jr., III)" />
-                                    <TextInput id="suffix_name" name="suffix_name" value={data.suffix_name} className="mt-1 block w-full" onChange={(e) => setData('suffix_name', e.target.value)} />
+                                    <TextInput
+                                        id="suffix_name"
+                                        value={data.suffix_name}
+                                        className="mt-1 block w-full"
+                                        onChange={(e) => setData('suffix_name', e.target.value)}
+                                        placeholder="Optional"
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -117,7 +153,6 @@ export default function Register() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div className="sm:col-span-1">
                                     <InputLabel htmlFor="contact_number" value="Mobile Number *" />
-                                    {/* FIX: Applied validation for 11 digits only */}
                                     <TextInput
                                         id="contact_number"
                                         name="contact_number"

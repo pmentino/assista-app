@@ -42,26 +42,27 @@ export default function Login({ status, canResetPassword }) {
             <Head title="Log in" />
 
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <Link href="/" className="flex justify-center items-center gap-3 mb-6">
-                    <img src="/images/logo.png" alt="Assista Logo" className="h-14 w-auto drop-shadow-sm" />
-                    <span className="text-3xl font-extrabold text-blue-900 tracking-tight">ASSISTA</span>
+                <Link href="/" className="flex justify-center items-center gap-3 mb-6 group">
+                    <div className="bg-white p-2 rounded-full shadow-sm group-hover:scale-105 transition-transform">
+                        <img src="/images/logo.png" alt="Assista Logo" className="h-12 w-auto" />
+                    </div>
+                    <span className="text-3xl font-extrabold text-blue-900 tracking-tight group-hover:text-blue-800 transition-colors">ASSISTA</span>
                 </Link>
                 <h2 className="mt-2 text-center text-2xl font-bold tracking-tight text-gray-900">
                     Sign in to your account
                 </h2>
-                <p className="mt-2 text-center text-sm text-gray-600">
-                    Welcome back! Please enter your details.
-                </p>
             </div>
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow-xl shadow-gray-200/50 rounded-2xl sm:px-10 border border-gray-100">
 
-                    <div className="mb-8 flex justify-center border-b border-gray-100 pb-6">
-                         <img src="/images/dswd-logo.png" alt="DSWD Logo" className="h-12 w-auto opacity-90" />
+                    {/* Official Badge */}
+                    <div className="mb-8 flex flex-col items-center border-b border-gray-100 pb-6">
+                         <img src="/images/dswd-logo.png" alt="DSWD Logo" className="h-10 w-auto mb-2 opacity-90" />
+                         <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Authorized Access Only</p>
                     </div>
 
-                    {status && <div className="mb-4 font-medium text-sm text-green-600 bg-green-50 p-3 rounded-lg border border-green-200">{status}</div>}
+                    {status && <div className="mb-4 font-medium text-sm text-green-600 bg-green-50 p-3 rounded-lg border border-green-200 text-center">{status}</div>}
 
                     <form onSubmit={submit} className="space-y-6">
 
@@ -153,7 +154,7 @@ export default function Login({ status, canResetPassword }) {
                         <div className="mt-6">
                             <Link
                                 href={route('register')}
-                                className="flex w-full justify-center rounded-md border border-transparent bg-blue-50 py-2 px-4 text-sm font-medium text-blue-700 shadow-sm hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                className="flex w-full justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none transition-colors"
                             >
                                 Register new account
                             </Link>
@@ -162,7 +163,7 @@ export default function Login({ status, canResetPassword }) {
 
                 </div>
                 <p className="mt-8 text-center text-xs text-gray-500">
-                    &copy; 2025 Assista System. All rights reserved.
+                    &copy; 2025 City Social Welfare and Development Office. All rights reserved.
                 </p>
             </div>
         </div>
