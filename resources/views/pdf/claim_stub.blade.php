@@ -68,7 +68,6 @@
     <table class="header-table">
         <tr>
             <td class="logo-left">
-                {{-- Ensure public_path works; if not, use absolute URL or base64 --}}
                 <img src="{{ public_path('images/cswdo-logo.jpg') }}" class="logo-img" alt="CSWDO Logo">
             </td>
 
@@ -77,7 +76,7 @@
                 <h3>CITY OF ROXAS</h3>
                 <h5>Province of Capiz</h5>
                 <h2>Office of the City Social Welfare and Development Officer</h2>
-                <p>Inzo Arnaldo Village, Roxas City | Tel: (036) 52026-83</p>
+                <p>{{ $signatories['office_address'] }} | Tel: {{ $signatories['office_hotline'] }}</p>
             </td>
 
             <td class="logo-right">

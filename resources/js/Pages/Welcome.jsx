@@ -88,41 +88,32 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                     </div>
                 )}
 
-                {/* --- 1. HERO SECTION --- */}
+                {/* --- 1. HERO SECTION (OFFICIAL & LOCALIZED) --- */}
                 <section id="home" className="relative bg-blue-900 overflow-hidden pt-24 min-h-[90vh] flex items-center">
                     <div className="absolute inset-0">
-                        <img
-                            className="w-full h-full object-cover opacity-20 mix-blend-overlay blur-sm scale-105"
-                            src="/images/aics-1.jpg"
-                            alt="Background Texture"
-                        />
+                        <img className="w-full h-full object-cover opacity-20 mix-blend-overlay blur-sm scale-105" src="/images/aics-1.jpg" alt="Background Texture" />
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-950 via-blue-900/95 to-blue-800/90"></div>
                     </div>
 
                     <div className="relative container mx-auto px-4 md:px-8 py-12 flex flex-col md:flex-row items-center gap-16">
                         <div className="md:w-3/5 text-center md:text-left space-y-7">
 
+                            {/* DUAL LOGOS */}
                             <div className="inline-flex items-center gap-4 bg-white/10 rounded-full px-5 py-2 border border-white/20 backdrop-blur-md animate-fade-in-down shadow-lg">
                                 <div className="flex -space-x-2">
                                     <img src="/images/roxas-seal.png" alt="Roxas City Seal" className="h-10 w-auto drop-shadow-md z-10" />
                                     <img src="/images/cswdo-logo.jpg" alt="CSWDO Logo" className="h-10 w-auto drop-shadow-md rounded-full border-2 border-blue-900 z-0" />
                                 </div>
                                 <div className="h-4 w-px bg-white/30"></div>
-                                <span className="text-blue-50 text-xs md:text-sm font-bold tracking-widest uppercase">
-                                    Official CSWDO Program
-                                </span>
+                                <span className="text-blue-50 text-xs md:text-sm font-bold tracking-widest uppercase">Official CSWDO Program</span>
                             </div>
 
                             <div className="space-y-2">
                                 <h1 className="text-4xl md:text-6xl font-extrabold text-white leading-tight drop-shadow-xl tracking-tight">
                                     Compassionate Service,<br />
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">
-                                        Accessible to All.
-                                    </span>
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">Accessible to All.</span>
                                 </h1>
-                                <p className="text-xl md:text-2xl text-blue-200 font-serif italic opacity-90">
-                                    "Bulig para sa mga Roxasnon nga ara sa krisis."
-                                </p>
+                                <p className="text-xl md:text-2xl text-blue-200 font-serif italic opacity-90">"Bulig para sa mga Roxasnon nga ara sa krisis."</p>
                             </div>
 
                             <p className="text-lg text-blue-100 max-w-2xl leading-relaxed font-light border-l-4 border-yellow-500 pl-4 bg-blue-800/30 p-2 rounded-r-lg">
@@ -153,21 +144,13 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
 
                         <div className="md:w-2/5 grid grid-cols-2 gap-4 relative">
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] bg-blue-500/20 rounded-full blur-3xl -z-10 animate-pulse"></div>
-                            <img
-                                src="/images/aics-2.jpg"
-                                className="rounded-xl shadow-2xl shadow-black/60 transform translate-y-10 object-cover h-52 w-full border-[6px] border-white rotate-[-3deg] hover:rotate-0 transition duration-500 hover:scale-105 hover:z-20 hover:shadow-yellow-500/30"
-                                alt="Distribution Activity"
-                            />
-                            <img
-                                src="/images/aics-3.jpg"
-                                className="rounded-xl shadow-2xl shadow-black/60 transform -translate-y-6 object-cover h-52 w-full border-[6px] border-white rotate-[3deg] hover:rotate-0 transition duration-500 hover:scale-105 hover:z-20 hover:shadow-yellow-500/30"
-                                alt="CSWDO Staff"
-                            />
+                            <img src="/images/aics-2.jpg" className="rounded-xl shadow-2xl shadow-black/60 transform translate-y-10 object-cover h-52 w-full border-[6px] border-white rotate-[-3deg] hover:rotate-0 transition duration-500 hover:scale-105 hover:z-20 hover:shadow-yellow-500/30" alt="Activity" />
+                            <img src="/images/aics-3.jpg" className="rounded-xl shadow-2xl shadow-black/60 transform -translate-y-6 object-cover h-52 w-full border-[6px] border-white rotate-[3deg] hover:rotate-0 transition duration-500 hover:scale-105 hover:z-20 hover:shadow-yellow-500/30" alt="Staff" />
                         </div>
                     </div>
                 </section>
 
-                {/* --- 2. ELIGIBILITY SECTION (NEW: Based on Dean's Feedback) --- */}
+                {/* --- 2. ELIGIBILITY SECTION (NEW) --- */}
                 <section className="py-16 bg-white border-b border-gray-100">
                     <div className="container mx-auto px-4">
                         <div className="text-center mb-10">
@@ -280,7 +263,6 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                 <section id="about" className="py-24 bg-white scroll-mt-24">
                     <div className="container mx-auto px-4">
                         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-                            {/* Left: About Text */}
                             <div className="bg-slate-50 rounded-2xl shadow-sm p-8 border border-slate-100 h-full">
                                 <h2 className="text-3xl font-bold text-slate-900 mb-6">About Assista & CSWDO</h2>
                                 <p className="text-slate-600 leading-relaxed mb-4 text-lg">
@@ -291,7 +273,6 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                                 </p>
                             </div>
 
-                            {/* Right: Contact Information */}
                             <div className="bg-blue-900 rounded-2xl shadow-lg p-8 text-white h-full flex flex-col justify-center">
                                 <h2 className="text-3xl font-bold mb-8">Contact Us</h2>
                                 <ul className="space-y-8">
@@ -301,7 +282,7 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                                         </div>
                                         <div>
                                             <p className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-1">Visit our Office</p>
-                                            <p className="text-xl font-bold leading-snug">Inzo Arnaldo Village,<br/>Roxas City, 5800</p>
+                                            <p className="text-xl font-bold leading-snug">{settings.office_address || 'Inzo Arnaldo Village, Roxas City'}</p>
                                         </div>
                                     </li>
                                     <li className="flex items-start gap-5">
@@ -310,7 +291,7 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                                         </div>
                                         <div>
                                             <p className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-1">Call Hotline</p>
-                                            <p className="text-2xl font-bold tracking-tight">(036) 5206-83</p>
+                                            <p className="text-2xl font-bold tracking-tight">{settings.office_hotline || '(036) 52026-83'}</p>
                                         </div>
                                     </li>
                                 </ul>

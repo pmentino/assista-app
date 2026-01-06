@@ -6,12 +6,15 @@ import TextInput from '@/Components/TextInput';
 import { Transition } from '@headlessui/react';
 
 export default function SettingsIndex({ auth, settings }) {
-    // Initialize form with data from database (No Mayor)
+    // Initialize form with data from database
     const { data, setData, post, processing, recentlySuccessful } = useForm({
         accepting_applications: settings.accepting_applications === '1',
         system_announcement: settings.system_announcement || '',
         signatory_cswdo_head: settings.signatory_cswdo_head || 'PERSEUS L. CORDOVA',
         signatory_social_worker: settings.signatory_social_worker || 'BIVIEN B. DELA CRUZ, RSW',
+        // NEW: Contact Info Fields (Ensure your backend/SettingsController handles these new keys)
+        office_hotline: settings.office_hotline || '(036) 52026-83',
+        office_address: settings.office_address || 'Inzo Arnaldo Village, Roxas City',
     });
 
     const submit = (e) => {
@@ -47,13 +50,12 @@ export default function SettingsIndex({ auth, settings }) {
                                         <h4 className="font-medium text-gray-900">Accept Online Applications</h4>
                                         <p className="text-sm text-gray-500">If disabled, the "Apply Now" button will be hidden for all users.</p>
                                     </div>
-                                    {/* Toggle Switch */}
                                     <label className="relative inline-flex items-center cursor-pointer">
                                         <input
                                             type="checkbox"
                                             className="sr-only peer"
                                             checked={data.accepting_applications}
-                                            onChange={(e) => setData('accepting_applications', e.target.checked)}
+                                            onChange={(e) => setData('accepting_applications', e.target.value)}
                                         />
                                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                     </label>
@@ -73,13 +75,18 @@ export default function SettingsIndex({ auth, settings }) {
                             </div>
                         </div>
 
-                        {/* --- CARD 2: OFFICIAL SIGNATORIES --- */}
+                        {/* --- CARD 2: DOCUMENT & OFFICE DETAILS --- */}
                         <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
                             <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
-                                <h3 className="text-lg font-bold text-gray-800">Document Signatories</h3>
-                                <p className="text-sm text-gray-500">Update the names appearing on Claim Stubs and Official Reports.</p>
+                                <h3 className="text-lg font-bold text-gray-800">Document & Office Configuration</h3>
+                                <p className="text-sm text-gray-500">Update signatories and contact details appearing on official documents.</p>
                             </div>
-                            <div className="p-6 grid grid-cols-1 gap-6">
+                            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                {/* Signatories Section */}
+                                <div className="md:col-span-2">
+                                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider border-b pb-2 mb-4">Official Signatories</h4>
+                                </div>
                                 <div>
                                     <InputLabel htmlFor="signatory_social_worker" value="Social Worker / Verifier" />
                                     <TextInput
@@ -101,6 +108,31 @@ export default function SettingsIndex({ auth, settings }) {
                                         placeholder="e.g. PERSEUS L. CORDOVA"
                                     />
                                     <p className="text-xs text-gray-500 mt-1">Appears as "Approved By" on Claim Stub.</p>
+                                </div>
+
+                                {/* Contact Details Section */}
+                                <div className="md:col-span-2 mt-2">
+                                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider border-b pb-2 mb-4">Office Contact Details</h4>
+                                </div>
+                                <div>
+                                    <InputLabel htmlFor="office_hotline" value="Official Hotline" />
+                                    <TextInput
+                                        id="office_hotline"
+                                        className="mt-1 block w-full"
+                                        value={data.office_hotline}
+                                        onChange={(e) => setData('office_hotline', e.target.value)}
+                                        placeholder="(036) 52026-83"
+                                    />
+                                </div>
+                                <div>
+                                    <InputLabel htmlFor="office_address" value="Office Address" />
+                                    <TextInput
+                                        id="office_address"
+                                        className="mt-1 block w-full"
+                                        value={data.office_address}
+                                        onChange={(e) => setData('office_address', e.target.value)}
+                                        placeholder="Inzo Arnaldo Village, Roxas City"
+                                    />
                                 </div>
                             </div>
                         </div>

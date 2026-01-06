@@ -201,24 +201,19 @@ class ApplicationController extends Controller
             'approved_date' => now(),
         ]);
 
-        // 2. CREATE AUDIT LOG (This was missing!)
-        // This ensures EVERY approval is tracked, even if Admin approves their own request.
+        // 2. CREATE AUDIT LOG (Fixed!)
         AuditLog::create([
-            'user_id' => Auth::id(), // Records WHO clicked the approve button
+            'user_id' => Auth::id(),
             'action' => 'Approved Application',
             'details' => "Approved App #{$application->id} - Amount Released: ₱" . number_format($request->amount, 2)
         ]);
 
-        // =========================================================
-        // NOTIFICATIONS
-        // =========================================================
-
-        // 3. TRIGGER BELL NOTIFICATION (Database)
+        // 3. TRIGGER BELL NOTIFICATION
         if ($application->user) {
             $application->user->notify(new ApplicationStatusAlert($application));
         }
 
-        // 4. TRIGGER EMAIL (Mailtrap)
+        // 4. TRIGGER EMAIL
         if ($application->user && $application->user->email) {
             try {
                 Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
@@ -249,25 +244,19 @@ class ApplicationController extends Controller
             'remarks' => 'required|string|max:1000',
         ]);
 
-        // 1. UPDATE STATUS TO REJECTED
         $application->update([
             'status' => 'Rejected',
             'remarks' => $request->remarks,
         ]);
 
-        // 2. TRIGGER BELL NOTIFICATION (Guaranteed to run)
-        // We do this BEFORE the email, so even if email fails, the system notif works.
         if ($application->user) {
             $application->user->notify(new ApplicationStatusAlert($application));
         }
 
-        // 3. TRIGGER EMAIL (Optional / Internet Dependent)
         if ($application->user && $application->user->email) {
             try {
                 Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
-            } catch (\Exception $e) {
-                // Log error if needed, but don't stop the process
-            }
+            } catch (\Exception $e) { }
         }
 
         AuditLog::create([
@@ -285,9 +274,12 @@ class ApplicationController extends Controller
             abort(403, 'This application is not approved yet.');
         }
 
+        // Fetch ALL relevant settings including new address/hotline
         $signatories = [
             'assessed_by' => Setting::where('key', 'signatory_social_worker')->value('value') ?? 'BIVIEN B. DELA CRUZ, RSW',
             'approved_by' => Setting::where('key', 'signatory_cswdo_head')->value('value') ?? 'PERSEUS L. CORDOVA',
+            'office_hotline' => Setting::where('key', 'office_hotline')->value('value') ?? '(036) 52026-83',
+            'office_address' => Setting::where('key', 'office_address')->value('value') ?? 'Inzo Arnaldo Village, Roxas City',
         ];
 
         $pdf = Pdf::loadView('pdf.claim_stub', [

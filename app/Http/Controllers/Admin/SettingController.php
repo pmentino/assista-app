@@ -25,6 +25,21 @@ class SettingController extends Controller
 
     public function update(Request $request)
     {
+        // 1. VALIDATION: Ensure data integrity for official fields
+        $request->validate([
+            'accepting_applications' => 'nullable|in:0,1',
+            'system_announcement' => 'nullable|string|max:255',
+            'signatory_cswdo_head' => 'nullable|string|max:100',
+            'signatory_social_worker' => 'nullable|string|max:100',
+
+            // NEW FIELDS (Added validation to prevent errors)
+            'office_hotline' => 'nullable|string|max:50',
+            'office_address' => 'nullable|string|max:255',
+        ]);
+
+        // 2. DYNAMIC SAVING
+        // This loop automatically handles 'office_hotline' and 'office_address'
+        // because they are now part of the $request payload.
         $data = $request->except(['_token']);
 
         foreach ($data as $key => $value) {
@@ -34,6 +49,6 @@ class SettingController extends Controller
             );
         }
 
-        return redirect()->back()->with('message', 'System settings updated successfully.');
+        return redirect()->back()->with('message', 'System configuration updated successfully.');
     }
 }
