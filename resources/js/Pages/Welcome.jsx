@@ -88,24 +88,20 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                     </div>
                 )}
 
-                {/* --- 1. HERO SECTION (THE "WOW" FACTOR UPGRADE) --- */}
+                {/* --- 1. HERO SECTION --- */}
                 <section id="home" className="relative bg-blue-900 overflow-hidden pt-24 min-h-[90vh] flex items-center">
-                    {/* Background Texture - Using your real uploaded photo */}
                     <div className="absolute inset-0">
                         <img
                             className="w-full h-full object-cover opacity-20 mix-blend-overlay blur-sm scale-105"
-                            src="/images/aics-1.jpg" // Using your real crowd photo for texture
+                            src="/images/aics-1.jpg"
                             alt="Background Texture"
                         />
-                        {/* Gradient Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-950 via-blue-900/95 to-blue-800/90"></div>
                     </div>
 
                     <div className="relative container mx-auto px-4 md:px-8 py-12 flex flex-col md:flex-row items-center gap-16">
-                        {/* Left Content */}
                         <div className="md:w-3/5 text-center md:text-left space-y-7">
 
-                            {/* OFFICIAL SEALS BADGE */}
                             <div className="inline-flex items-center gap-4 bg-white/10 rounded-full px-5 py-2 border border-white/20 backdrop-blur-md animate-fade-in-down shadow-lg">
                                 <div className="flex -space-x-2">
                                     <img src="/images/roxas-seal.png" alt="Roxas City Seal" className="h-10 w-auto drop-shadow-md z-10" />
@@ -117,7 +113,6 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                                 </span>
                             </div>
 
-                            {/* HEADLINES */}
                             <div className="space-y-2">
                                 <h1 className="text-4xl md:text-6xl font-extrabold text-white leading-tight drop-shadow-xl tracking-tight">
                                     Compassionate Service,<br />
@@ -125,18 +120,15 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                                         Accessible to All.
                                     </span>
                                 </h1>
-                                {/* LOCAL DIALECT SUB-HEADER */}
                                 <p className="text-xl md:text-2xl text-blue-200 font-serif italic opacity-90">
                                     "Bulig para sa mga Roxasnon nga ara sa krisis."
                                 </p>
                             </div>
 
-                            {/* DSWD / OFFICIAL DESCRIPTION */}
                             <p className="text-lg text-blue-100 max-w-2xl leading-relaxed font-light border-l-4 border-yellow-500 pl-4 bg-blue-800/30 p-2 rounded-r-lg">
-                                The <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> is a social welfare service providing medical, burial, hospitalization, chemotherapy, laboratory, or financial assistance for the distinct needs of a person or family.
+                                The <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> is a social welfare service providing medical, burial, transportation, education, food, or financial assistance for the distinct needs of a person or family.
                             </p>
 
-                            {/* ACTION BUTTONS */}
                             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start pt-2">
                                 {isAccepting ? (
                                     <Link href={route('register')} className="bg-yellow-500 text-blue-900 px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:bg-yellow-400 hover:shadow-2xl transition transform hover:-translate-y-1 text-center border-b-4 border-yellow-600 ring-2 ring-yellow-300/50">
@@ -159,11 +151,8 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                             )}
                         </div>
 
-                        {/* Right Content: Photo Grid (POLAROID STYLE) */}
                         <div className="md:w-2/5 grid grid-cols-2 gap-4 relative">
-                            {/* Decorative Glow */}
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] bg-blue-500/20 rounded-full blur-3xl -z-10 animate-pulse"></div>
-
                             <img
                                 src="/images/aics-2.jpg"
                                 className="rounded-xl shadow-2xl shadow-black/60 transform translate-y-10 object-cover h-52 w-full border-[6px] border-white rotate-[-3deg] hover:rotate-0 transition duration-500 hover:scale-105 hover:z-20 hover:shadow-yellow-500/30"
@@ -178,7 +167,33 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                     </div>
                 </section>
 
-                {/* --- 2. MAYOR'S MESSAGE SECTION --- */}
+                {/* --- 2. ELIGIBILITY SECTION (NEW: Based on Dean's Feedback) --- */}
+                <section className="py-16 bg-white border-b border-gray-100">
+                    <div className="container mx-auto px-4">
+                        <div className="text-center mb-10">
+                            <h2 className="text-2xl md:text-3xl font-bold text-blue-900 uppercase tracking-wide">Who Can Avail?</h2>
+                            <p className="text-slate-500 mt-2">Eligibility Criteria for AICS Assistance</p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                            {[
+                                { title: 'Indigent Families', desc: 'Families with no regular income or those living below the poverty threshold.', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+                                { title: 'Individuals in Crisis', desc: 'Those facing unexpected life events (fire, calamities, death of family member).', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' },
+                                { title: 'Vulnerable Sectors', desc: 'Senior Citizens, PWDs, Solo Parents, and Out-of-School Youth.', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
+                                { title: 'Roxas City Residents', desc: 'Must be a bona fide resident of Roxas City with valid proof of residency.', icon: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z' },
+                            ].map((item, index) => (
+                                <div key={index} className="bg-slate-50 p-6 rounded-xl border border-slate-100 hover:shadow-md transition text-center">
+                                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} /></svg>
+                                    </div>
+                                    <h3 className="font-bold text-lg text-slate-900 mb-2">{item.title}</h3>
+                                    <p className="text-sm text-slate-600 leading-snug">{item.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* --- 3. MAYOR'S MESSAGE SECTION --- */}
                 <section className="bg-white py-20 border-b border-gray-100">
                     <div className="container mx-auto px-4">
                         <div className="max-w-5xl mx-auto bg-blue-50 rounded-3xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-10 shadow-sm border border-blue-100">
@@ -200,7 +215,7 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                     </div>
                 </section>
 
-                {/* --- 3. NEWS SECTION --- */}
+                {/* --- 4. NEWS SECTION --- */}
                 {news && news.length > 0 && (
                     <section id="news" className="py-24 bg-slate-50 scroll-mt-24">
                         <div className="container mx-auto px-4">
@@ -238,7 +253,7 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                     </section>
                 )}
 
-                {/* --- 4. ASSISTANCE PROGRAMS --- */}
+                {/* --- 5. ASSISTANCE PROGRAMS --- */}
                 <section id="assistance" className="py-24 bg-gray-50 scroll-mt-24">
                     <div className="container mx-auto px-4">
                         <div className="text-center mb-16">
@@ -261,7 +276,7 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                     </div>
                 </section>
 
-                {/* --- 5. ABOUT & CONTACT SECTION --- */}
+                {/* --- 6. ABOUT & CONTACT SECTION --- */}
                 <section id="about" className="py-24 bg-white scroll-mt-24">
                     <div className="container mx-auto px-4">
                         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
