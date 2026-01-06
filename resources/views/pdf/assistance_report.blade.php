@@ -47,7 +47,7 @@
         <tr>
             <td class="logo-col text-right">
                 {{-- Ensure these images exist in public/images folder --}}
-                <img src="{{ public_path('images/cswdo-logo.jpg') }}" class="logo-img" alt="CSWDO Logo">
+                <img src="{{ public_path('images/cswdo-logo.png') }}" class="logo-img" alt="CSWDO Logo">
             </td>
             <td class="text-col header-text">
                 <h4>Republic of the Philippines</h4>

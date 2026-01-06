@@ -9,6 +9,7 @@ class Setting extends Model
 {
     use HasFactory;
 
-    // This property allows 'key' and 'value' to be saved to the database
-    protected $fillable = ['key', 'value', 'label', 'type'];
+    // --- THIS IS THE MISSING KEY ---
+    // Without this, Laravel silently ignores the 'value' you try to save.
+    protected $fillable = ['key', 'value'];
 }

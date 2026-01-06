@@ -8,22 +8,32 @@ import { Transition } from '@headlessui/react';
 export default function SettingsIndex({ auth, settings }) {
     // Initialize form with data from database
     const { data, setData, post, processing, recentlySuccessful } = useForm({
-        accepting_applications: settings.accepting_applications === '1',
+        // Convert '1'/'0' string from DB to boolean true/false for the checkbox
+        accepting_applications: settings.accepting_applications === '1' || settings.accepting_applications === true,
         system_announcement: settings.system_announcement || '',
         signatory_cswdo_head: settings.signatory_cswdo_head || 'PERSEUS L. CORDOVA',
         signatory_social_worker: settings.signatory_social_worker || 'BIVIEN B. DELA CRUZ, RSW',
-        // NEW: Contact Info Fields (Ensure your backend/SettingsController handles these new keys)
         office_hotline: settings.office_hotline || '(036) 52026-83',
         office_address: settings.office_address || 'Inzo Arnaldo Village, Roxas City',
     });
 
     const submit = (e) => {
         e.preventDefault();
-        const formData = {
+
+        // Force conversion to "1" or "0" string
+        // This ensures Laravel validation (in:0,1) passes
+        const payload = {
             ...data,
-            accepting_applications: data.accepting_applications ? '1' : '0'
+            accepting_applications: data.accepting_applications === true ? '1' : '0',
         };
-        post(route('admin.settings.update'), formData);
+
+        post(route('admin.settings.update'), payload, {
+            preserveScroll: true,
+            onSuccess: () => {
+                // Optional: Force a reload of props to ensure UI syncs with DB
+                // window.location.reload();
+            }
+        });
     };
 
     return (
@@ -55,7 +65,8 @@ export default function SettingsIndex({ auth, settings }) {
                                             type="checkbox"
                                             className="sr-only peer"
                                             checked={data.accepting_applications}
-                                            onChange={(e) => setData('accepting_applications', e.target.value)}
+                                            // FIX: Use e.target.checked for checkboxes, NOT e.target.value
+                                            onChange={(e) => setData('accepting_applications', e.target.checked)}
                                         />
                                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                     </label>

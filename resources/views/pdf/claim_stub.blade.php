@@ -34,13 +34,14 @@
         /* Main Body */
         .certify-text { text-align: justify; margin-bottom: 8px; text-indent: 30px; font-size: 11pt; }
 
+        /* --- THE FIX: Align the line with the text baseline --- */
         .details-line {
             border-bottom: 1px solid #000;
             display: inline-block;
             text-align: center;
             font-weight: bold;
             padding: 0 5px;
-            vertical-align: bottom;
+            vertical-align: baseline; /* CHANGED FROM 'bottom' TO 'baseline' */
         }
 
         /* Family Table */
@@ -68,7 +69,8 @@
     <table class="header-table">
         <tr>
             <td class="logo-left">
-                <img src="{{ public_path('images/cswdo-logo.jpg') }}" class="logo-img" alt="CSWDO Logo">
+                {{-- Ensure your logo path is correct --}}
+                <img src="{{ public_path('images/cswdo-logo.png') }}" class="logo-img" alt="CSWDO Logo">
             </td>
 
             <td class="header-text">
@@ -76,7 +78,8 @@
                 <h3>CITY OF ROXAS</h3>
                 <h5>Province of Capiz</h5>
                 <h2>Office of the City Social Welfare and Development Officer</h2>
-                <p>{{ $signatories['office_address'] }} | Tel: {{ $signatories['office_hotline'] }}</p>
+                {{-- Dynamic Office Info --}}
+                <p>{{ $signatories['office_address'] ?? 'Inzo Arnaldo Village, Roxas City' }} | Tel: {{ $signatories['office_hotline'] ?? '(036) 52026-83' }}</p>
             </td>
 
             <td class="logo-right">
@@ -138,7 +141,8 @@
     </table>
 
     <div class="certify-text">
-        The above-named client has been found eligible for financial assistance from <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> program. Based on the assessment conducted by the undersigned social worker, it is strongly recommended that the client/beneficiary be extended financial assistance to defray the <span class="details-line" style="min-width: 100px;">{{ $application->program }}</span> expenses in the amount of <strong>Php <span class="details-line" style="min-width: 80px;">{{ number_format($application->amount_released, 2) }}</span></strong>.
+        {{-- I removed the hardcoded min-width on program so it hugs the text better, or you can keep it if you want uniformity --}}
+        The above-named client has been found eligible for financial assistance from <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> program. Based on the assessment conducted by the undersigned social worker, it is strongly recommended that the client/beneficiary be extended financial assistance to defray the <span class="details-line" style="min-width: 120px;">{{ $application->program }}</span> expenses in the amount of <strong>Php <span class="details-line" style="min-width: 80px;">{{ number_format($application->amount_released, 2) }}</span></strong>.
     </div>
 
     <div class="certify-text">
@@ -153,13 +157,13 @@
         <tr>
             <td>
                 Assessed by:<br><br>
-                <div class="signatory-name">{{ strtoupper($signatories['assessed_by'] ?? 'BIVIEN B. DELA CRUZ, RSW') }}</div>
+                <div class="signatory-name">{{ strtoupper($signatories['assessed_by'] ?? $signatories['signatory_social_worker'] ?? 'BIVIEN B. DELA CRUZ, RSW') }}</div>
                 <div class="sig-line"></div>
                 <div class="role">Social Welfare Officer I</div>
             </td>
             <td>
                 Approved by:<br><br>
-                <div class="signatory-name">{{ strtoupper($signatories['approved_by'] ?? 'PERSEUS L. CORDOVA') }}</div>
+                <div class="signatory-name">{{ strtoupper($signatories['approved_by'] ?? $signatories['signatory_cswdo_head'] ?? 'PERSEUS L. CORDOVA') }}</div>
                 <div class="sig-line"></div>
                 <div class="role">City Social Welfare and Development Officer</div>
             </td>

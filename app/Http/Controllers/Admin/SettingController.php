@@ -27,7 +27,7 @@ class SettingController extends Controller
     {
         // 1. VALIDATION: Ensure data integrity for official fields
         $request->validate([
-            'accepting_applications' => 'nullable|in:0,1',
+            'accepting_applications' => 'nullable|boolean',
             'system_announcement' => 'nullable|string|max:255',
             'signatory_cswdo_head' => 'nullable|string|max:100',
             'signatory_social_worker' => 'nullable|string|max:100',

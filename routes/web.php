@@ -7,18 +7,16 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\NewsController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\AssistanceProgramController;
+use App\Http\Controllers\Admin\SettingController; // Ensure this is imported
+use App\Http\Controllers\Staff\StaffController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Http\Request;
 use App\Models\Application as ApplicationModel;
 use App\Models\News;
 use App\Models\AssistanceProgram;
-use App\Http\Controllers\Admin\SettingController;
-use Illuminate\Http\Request; // Needed for the new routes
-
-// Import Staff Controllers
-use App\Http\Controllers\Staff\StaffController;
 
 // --- PUBLIC ROUTES ---
 
@@ -28,16 +26,25 @@ Route::get('/', function () {
     $settings = [];
 
     try {
+        // Fetch News
         if (\Illuminate\Support\Facades\Schema::hasTable('news')) {
              $news = News::latest()->take(3)->get();
         }
+
+        // Fetch Programs
         if (\Illuminate\Support\Facades\Schema::hasTable('assistance_programs')) {
             $programs = AssistanceProgram::where('is_active', true)->get();
         }
+
+        // --- FETCH SETTINGS (The Courier Fix) ---
         if (\Illuminate\Support\Facades\Schema::hasTable('settings')) {
+            // This converts the database rows into a simple list:
+            // { "system_announcement": "text", "accepting_applications": "1" }
             $settings = \App\Models\Setting::all()->pluck('value', 'key');
         }
-    } catch (\Exception $e) { }
+    } catch (\Exception $e) {
+        // Silent fail if DB isn't set up yet
+    }
 
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -46,19 +53,19 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
         'news' => $news,
         'programs' => $programs,
-        'settings' => $settings,
+        'settings' => $settings, // <--- Passing the settings here
         'auth' => ['user' => Auth::user()],
     ]);
 });
 
 Route::get('/news', function () {
     return Inertia::render('News/Index', [
-        'news' => \App\Models\News::latest()->get(),
+        'news' => News::latest()->get(),
         'auth' => ['user' => Auth::user()]
     ]);
 })->name('news.index');
 
-Route::get('/news/{news}', function (\App\Models\News $news) {
+Route::get('/news/{news}', function (News $news) {
     return Inertia::render('News/Show', [
         'news' => $news,
         'auth' => ['user' => Auth::user()]
@@ -94,7 +101,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/applications/{application}/update', [ApplicationController::class, 'update'])->name('applications.update');
     Route::get('/applications/{application}/claim-stub', [ApplicationController::class, 'generateClaimStub'])->name('applications.claim-stub');
 
-    // --- NOTIFICATION ROUTES (ADDED HERE) ---
+    // --- NOTIFICATION ROUTES ---
     Route::get('/notifications', function (Request $request) {
         return response()->json([
             'notifications' => $request->user()->notifications()->latest()->take(10)->get(),
@@ -119,7 +126,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
 
     // 1. ADMIN DASHBOARD ROUTE
-    Route::get('/dashboard', function (Illuminate\Http\Request $request) {
+    Route::get('/dashboard', function (Request $request) {
         $now = \Carbon\Carbon::now();
 
         // --- BUDGET LOGIC ---
@@ -208,7 +215,7 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs');
 
     // 3. BUDGET UPDATE ROUTE
-    Route::post('/dashboard/budget', function (Illuminate\Http\Request $request) {
+    Route::post('/dashboard/budget', function (Request $request) {
         $request->validate([ 'amount' => 'required|numeric|min:0' ]);
         $now = \Carbon\Carbon::now();
 
