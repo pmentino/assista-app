@@ -27,11 +27,14 @@ class ApplicationStatusAlert extends Notification
     public function toArray($notifiable)
     {
         return [
-            'application_id' => $this->application->id,
+            'id' => $this->application->id,
+            // 1. CLEAR STATUS HEADER (Professional & Direct)
+            'message' => "Application {$this->application->status}",
+
+            // 2. DETAILED CONTEXT (Who & What)
+            'description' => "The {$this->application->program} request for {$this->application->first_name} {$this->application->last_name} has been processed.",
+
             'status' => $this->application->status,
-            'message' => 'Your application status is now: ' . $this->application->status,
-            // When they click the notification, it goes here:
-            'link' => route('dashboard'),
         ];
     }
 }

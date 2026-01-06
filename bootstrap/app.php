@@ -15,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'is_admin' => \App\Http\Middleware\IsAdmin::class,
             'is_staff' => \App\Http\Middleware\IsStaff::class,
+
+            // --- ADDED THIS LINE TO REGISTER YOUR CUSTOM REDIRECT ---
+            'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -87,39 +87,43 @@
 
     <table class="main">
         <thead>
-            <tr>
-                <th width="5%">NO.</th>
-                <th width="15%">DATE APPROVED</th>
-                <th width="25%">BENEFICIARY NAME</th>
-                <th width="15%">BARANGAY</th>
-                <th width="20%">TYPE OF ASSISTANCE</th>
-                <th width="10%">STATUS</th>
-                <th width="10%">AMOUNT</th>
-            </tr>
+            <thead>
+    <tr>
+        <th width="5%">NO.</th>
+        <th width="18%">DATE & TIME APPROVED</th>
+        <th width="22%">BENEFICIARY NAME</th>
+        <th width="15%">BARANGAY</th>
+        <th width="20%">TYPE OF ASSISTANCE</th>
+        <th width="10%">STATUS</th>
+        <th width="10%">AMOUNT</th>
+    </tr>
+</thead>
         </thead>
         <tbody>
-            @forelse($applications as $index => $app)
-            <tr>
-                <td class="text-center">{{ $index + 1 }}</td>
-                <td class="text-center">
-                    @if($app->approved_date)
-                        {{ \Carbon\Carbon::parse($app->approved_date)->format('m/d/Y') }}
-                    @else
-                        {{ $app->created_at->format('m/d/Y') }}
-                    @endif
-                </td>
-                <td>
-                    <span style="text-transform: uppercase;">
-                        {{ $app->last_name }}, {{ $app->first_name }}
-                    </span>
-                </td>
-                <td>{{ $app->barangay }}</td>
-                <td>{{ $app->program }}</td>
-                <td class="text-center" style="font-size: 8pt;">{{ strtoupper($app->status) }}</td>
-                <td class="text-right">
-                    {{ $app->amount_released > 0 ? number_format($app->amount_released, 2) : '-' }}
-                </td>
-            </tr>
+    @forelse($applications as $index => $app)
+    <tr>
+        <td class="text-center">{{ $index + 1 }}</td>
+        <td class="text-center" style="font-size: 8pt;">
+            {{-- CHANGED: Added time format h:i A --}}
+            @if($app->approved_date)
+                {{ \Carbon\Carbon::parse($app->approved_date)->format('m/d/Y h:i A') }}
+            @else
+                {{-- Fallback to updated_at if approved_date is missing --}}
+                {{ $app->updated_at->format('m/d/Y h:i A') }}
+            @endif
+        </td>
+        <td>
+            <span style="text-transform: uppercase;">
+                {{ $app->last_name }}, {{ $app->first_name }}
+            </span>
+        </td>
+        <td>{{ $app->barangay }}</td>
+        <td>{{ $app->program }}</td>
+        <td class="text-center" style="font-size: 8pt;">{{ strtoupper($app->status) }}</td>
+        <td class="text-right">
+            {{ $app->amount_released > 0 ? number_format($app->amount_released, 2) : '-' }}
+        </td>
+    </tr>
             @empty
             <tr>
                 <td colspan="7" class="text-center" style="padding: 20px;">No records found for this period.</td>

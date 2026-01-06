@@ -99,17 +99,33 @@ export default function ApplicationShow({ application: initialApplication }) {
                                         </div>
                                     </div>
 
+                                    {/* --- APPROVED SECTION WITH PRINT BUTTON --- */}
                                     {application.status === 'Approved' && (
-                                        <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-100 flex justify-between items-center">
-                                            <div>
-                                                <p className="text-xs font-bold text-green-800 uppercase">Amount Released</p>
-                                                <p className="text-xl font-bold text-green-700">₱{new Intl.NumberFormat('en-PH').format(application.amount_released)}</p>
+                                        <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-100">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <div>
+                                                    <p className="text-xs font-bold text-green-800 uppercase">Amount Released</p>
+                                                    <p className="text-xl font-bold text-green-700">₱{new Intl.NumberFormat('en-PH').format(application.amount_released)}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-xs font-bold text-green-800 uppercase">Date Approved</p>
+                                                    <p className="text-green-900 font-medium">
+                                                        {application.approved_date ? new Date(application.approved_date).toLocaleDateString() : 'N/A'}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="text-xs font-bold text-green-800 uppercase">Date Approved</p>
-                                                <p className="text-green-900 font-medium">
-                                                    {application.approved_date ? new Date(application.approved_date).toLocaleDateString() : 'N/A'}
-                                                </p>
+
+                                            {/* NEW: Print Button Logic */}
+                                            <div className="flex justify-end pt-2 border-t border-green-200/60">
+                                                <a
+                                                    href={route('applications.claim-stub', application.id)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-sm"
+                                                >
+                                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                                    Print Claim Stub
+                                                </a>
                                             </div>
                                         </div>
                                     )}

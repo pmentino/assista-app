@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Dropdown from '@/Components/Dropdown';
 import { Link, usePage } from '@inertiajs/react';
 import { Toaster, toast } from 'react-hot-toast';
-import NotificationBell from '@/Components/NotificationBell'; // <--- IMPORTED HERE
+import NotificationBell from '@/Components/NotificationBell';
 
 export default function AuthenticatedLayout({ user, header, children }) {
     const { props } = usePage();
@@ -15,26 +15,17 @@ export default function AuthenticatedLayout({ user, header, children }) {
     const isAdmin = currentUser?.role === 'admin' || currentUser?.type === 'admin';
     const isStaff = currentUser?.role === 'staff' || currentUser?.type === 'staff';
 
+    // LOGIC: Show "My Dashboard" if user is NOT Admin.
+    // (Meaning: Applicants AND Staff can see it)
+    const showApplicantDashboard = !isAdmin;
+
     useEffect(() => {
-        // 1. Success Message (Green)
-        if (props.flash?.message) {
-            toast.success(props.flash.message);
-        }
-
-        // 2. ALSO Check for 'success' key if you use that sometimes
-        if (props.flash?.success) {
-            toast.success(props.flash.success);
-        }
-
-        // 3. Error Message (Red) - Attempt toast
+        if (props.flash?.message) toast.success(props.flash.message);
+        if (props.flash?.success) toast.success(props.flash.success);
         if (props.flash?.error) {
             toast.error(props.flash.error, {
                 duration: 5000,
-                style: {
-                    border: '1px solid #EF4444',
-                    color: '#B91C1C',
-                    background: '#FEF2F2',
-                },
+                style: { border: '1px solid #EF4444', color: '#B91C1C', background: '#FEF2F2' },
             });
         }
     }, [props.flash]);
@@ -51,11 +42,9 @@ export default function AuthenticatedLayout({ user, header, children }) {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            {/* The Toaster component makes the popups visible */}
             <Toaster position="top-right" />
 
-            {/* --- FAIL-SAFE ERROR BANNER (Added Here) --- */}
-            {/* If the toast fails, this raw HTML box WILL show up. */}
+            {/* --- FAIL-SAFE ERROR BANNER --- */}
             {props.flash?.error && (
                 <div className="bg-red-600 text-white px-6 py-4 text-center font-bold text-lg sticky top-0 z-[100] shadow-xl animate-pulse flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -69,7 +58,6 @@ export default function AuthenticatedLayout({ user, header, children }) {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
                         <div className="flex">
-                            {/* Logo */}
                             <div className="shrink-0 flex items-center">
                                 <Link href="/">
                                     <img src="/images/logo.png" alt="Assista Logo" className="block h-9 w-auto" />
@@ -79,10 +67,12 @@ export default function AuthenticatedLayout({ user, header, children }) {
                             {/* --- DESKTOP NAVIGATION --- */}
                             <div className="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
 
-                                {/* 1. COMMON LINK: Available to EVERYONE */}
-                                <Link href={route('dashboard')} className={navLinkClasses(route().current('dashboard'))}>
-                                    My Dashboard
-                                </Link>
+                                {/* 1. APPLICANT DASHBOARD (Visible to Staff & Applicants) */}
+                                {showApplicantDashboard && (
+                                    <Link href={route('dashboard')} className={navLinkClasses(route().current('dashboard'))}>
+                                        My Dashboard
+                                    </Link>
+                                )}
 
                                 {/* 2. STAFF LINKS */}
                                 {isStaff && (
@@ -125,12 +115,9 @@ export default function AuthenticatedLayout({ user, header, children }) {
                             </div>
                         </div>
 
-                        {/* Settings Dropdown */}
+                        {/* Settings Dropdown & Bell */}
                         <div className="hidden sm:flex sm:items-center sm:ml-6">
-
-                            {/* --- ADDED NOTIFICATION BELL HERE --- */}
                             <NotificationBell />
-
                             <div className="ml-3 relative">
                                 <Dropdown>
                                     <Dropdown.Trigger>
@@ -153,15 +140,12 @@ export default function AuthenticatedLayout({ user, header, children }) {
 
                         {/* Hamburger */}
                         <div className="-mr-2 flex items-center sm:hidden">
-
-                            {/* Show bell on mobile too, next to hamburger */}
                             <div className="mr-2">
                                 <NotificationBell />
                             </div>
-
                             <button
                                 onClick={() => setShowingNavigationDropdown((previousState) => !previousState)}
-                                className="inline-flex items-center justify-center p-2 rounded-md text-gray-200 hover:text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 focus:text-white transition duration-150 ease-in-out"
+                                className="inline-flex items-center justify-center p-2 rounded-md text-gray-200 hover:text-white hover:bg-blue-700 focus:outline-none transition duration-150 ease-in-out"
                             >
                                 <svg className="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                                     <path className={!showingNavigationDropdown ? 'inline-flex' : 'hidden'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -175,9 +159,14 @@ export default function AuthenticatedLayout({ user, header, children }) {
                 {/* --- MOBILE MENU --- */}
                 <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden bg-blue-800 border-t border-blue-900'}>
                     <div className="pt-2 pb-3 space-y-1">
-                        <Link href={route('dashboard')} className={mobileNavLinkClasses(route().current('dashboard'))}>
-                            My Dashboard
-                        </Link>
+
+                        {/* 1. APPLICANT DASHBOARD (HIDDEN FOR ADMIN) */}
+                        {showApplicantDashboard && (
+                            <Link href={route('dashboard')} className={mobileNavLinkClasses(route().current('dashboard'))}>
+                                My Dashboard
+                            </Link>
+                        )}
+
                         {isStaff && (
                             <>
                                 <Link href={route('staff.dashboard')} className={mobileNavLinkClasses(route().current('staff.dashboard'))}>
@@ -188,6 +177,7 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                 </Link>
                             </>
                         )}
+
                         {isAdmin && (
                             <>
                                 <Link href={route('admin.dashboard')} className={mobileNavLinkClasses(route().current('admin.dashboard'))}>

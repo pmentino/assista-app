@@ -10,4 +10,5 @@ export default defineConfig({
         }),
         react(),
     ],
+    // We removed the 'server' block to go back to default localhost behavior
 });

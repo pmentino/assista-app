@@ -28,6 +28,14 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    // --- HELPER: DETERMINE DASHBOARD ROUTE ---
+    const getDashboardRoute = () => {
+        if (!auth.user) return route('login');
+        if (auth.user.role === 'admin' || auth.user.type === 'admin') return route('admin.dashboard');
+        if (auth.user.role === 'staff' || auth.user.type === 'staff') return route('staff.dashboard');
+        return route('dashboard');
+    };
+
     return (
         <>
             <Head title="Welcome to Assista" />
@@ -56,7 +64,10 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                                     </a>
                                 ))}
                                 {auth.user ? (
-                                    <Link href={route('dashboard')} className="bg-yellow-500 hover:bg-yellow-400 text-blue-900 px-6 py-2 rounded-full transition-transform hover:scale-105 shadow-lg">DASHBOARD</Link>
+                                    // --- UPDATED: SMART DASHBOARD LINK ---
+                                    <Link href={getDashboardRoute()} className="bg-yellow-500 hover:bg-yellow-400 text-blue-900 px-6 py-2 rounded-full transition-transform hover:scale-105 shadow-lg">
+                                        DASHBOARD
+                                    </Link>
                                 ) : (
                                     <div className="flex gap-4">
                                         <Link href={route('login')} className="text-white hover:text-yellow-400 transition">LOG IN</Link>
@@ -83,6 +94,11 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                                 <a href="#news" onClick={() => setMobileMenuOpen(false)}>News & Updates</a>
                                 <a href="#assistance" onClick={() => setMobileMenuOpen(false)}>Assistance Programs</a>
                                 <a href="#about" onClick={() => setMobileMenuOpen(false)}>About Us</a>
+                                {auth.user && (
+                                    <Link href={getDashboardRoute()} className="text-blue-600 font-bold" onClick={() => setMobileMenuOpen(false)}>
+                                        Go to Dashboard
+                                    </Link>
+                                )}
                             </nav>
                         </div>
                     </div>
