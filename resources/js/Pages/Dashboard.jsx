@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // <--- Added useEffect
 
 // --- CONFIGURATION: Citizen's Charter / Requirements List ---
 const REQUIREMENTS_MAP = {
@@ -20,6 +20,14 @@ export default function Dashboard({ applications = [] }) {
     // Default to guidelines so users see requirements immediately
     const [activeTab, setActiveTab] = useState('guidelines');
 
+    // --- FIX: AUTO-SWITCH TO HISTORY TAB IF URL SAYS SO ---
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('tab') === 'history') {
+            setActiveTab('history');
+        }
+    }, []);
+
     const filteredApplications = applications.filter(app => {
         if (activeTab === 'ongoing') return app.status === 'Pending';
         if (activeTab === 'approved') return app.status === 'Approved';
@@ -30,7 +38,6 @@ export default function Dashboard({ applications = [] }) {
     // Counts for badges
     const pendingCount = applications.filter(a => a.status === 'Pending').length;
     const approvedCount = applications.filter(a => a.status === 'Approved').length;
-    // NEW: Calculate rejected count for the badge
     const rejectedCount = applications.filter(a => a.status === 'Rejected').length;
 
     return (
@@ -95,7 +102,6 @@ export default function Dashboard({ applications = [] }) {
                                     count={approvedCount}
                                     badgeColor="green"
                                 />
-                                {/* UPDATED HISTORY TAB: Now shows Red Badge for Rejections */}
                                 <TabButton
                                     active={activeTab === 'history'}
                                     onClick={() => setActiveTab('history')}
@@ -184,7 +190,6 @@ function TabButton({ active, onClick, label, count, badgeColor, icon }) {
     const activeClass = "border-blue-600 text-blue-800 font-bold bg-blue-50/50";
     const inactiveClass = "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300";
 
-    // ADDED: Red badge style for rejections
     const badgeColors = {
         yellow: "bg-yellow-100 text-yellow-800",
         green: "bg-green-100 text-green-800",

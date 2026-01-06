@@ -11,15 +11,18 @@ export default function NotificationBell() {
 
     // --- SMART ROUTING FUNCTION ---
     const getActivityRoute = () => {
-        const role = auth?.user?.role || auth?.user?.type; // Handle different DB column names
+        const role = auth?.user?.role || auth?.user?.type;
 
         if (role === 'admin') {
-            return route('admin.dashboard'); // Admins go to their dashboard (or audit logs)
+            return route('admin.audit-logs');
         }
         if (role === 'staff') {
-            return route('staff.dashboard'); // Staff go to their dashboard
+            return route('staff.applications.index');
         }
-        return route('dashboard'); // Applicants go to their dashboard
+
+        // FIX: For Applicants, force the URL to open the "history" tab
+        // (Note: We will need to update your Dashboard.jsx to read this!)
+        return route('dashboard') + '?tab=history';
     };
 
     // Fetch notifications on mount

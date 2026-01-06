@@ -19,25 +19,18 @@ class StaffController extends Controller
             'today'   => Application::whereDate('created_at', \Carbon\Carbon::today())->count(),
         ];
 
-        // 2. Get Recent Applications (Limit 5)
-        $recentApplications = Application::with('user')
-            ->latest()
-            ->take(5)
-            ->get()
-            ->map(function ($app) {
-                return [
-                    'id' => $app->id,
-                    'name' => $app->first_name . ' ' . $app->last_name,
-                    'program' => $app->program,
-                    'status' => $app->status,
-                    'date' => $app->created_at->diffForHumans(),
-                ];
-            });
+        // 2. THE FIX: Get PENDING applications for the Queue (FIFO - Oldest First)
+        // This creates a "To-Do List" for staff.
+        $queue = Application::where('status', 'Pending')
+            ->with('user')
+            ->oldest() // Sort by Oldest First (First-In, First-Out)
+            ->take(10) // Show top 10 items in the queue
+            ->get();
 
         return Inertia::render('Staff/Dashboard', [
             'stats' => $stats,
-            'recentApplications' => $recentApplications,
-            'auth' => ['user' => Auth::user()] // <--- FIXED: Added this back!
+            'queue' => $queue, // Passing 'queue' instead of 'recentApplications'
+            'auth' => ['user' => Auth::user()]
         ]);
     }
 
@@ -76,7 +69,7 @@ class StaffController extends Controller
             'filters' => $request->only(['search', 'status', 'program', 'barangay']),
             'sort_by' => $request->sort_by,
             'sort_direction' => $request->sort_direction,
-            'auth' => ['user' => Auth::user()] // Ensures Nav works here too
+            'auth' => ['user' => Auth::user()]
         ]);
     }
 
@@ -84,7 +77,7 @@ class StaffController extends Controller
     {
         return Inertia::render('Staff/ApplicationShow', [
             'application' => $application->load('user'),
-            'auth' => ['user' => Auth::user()] // Ensures Nav works here too
+            'auth' => ['user' => Auth::user()]
         ]);
     }
 
