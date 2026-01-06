@@ -2,6 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
+// --- CONFIGURATION: Citizen's Charter / Requirements List ---
 const REQUIREMENTS_MAP = {
     'Hospitalization': ['Personal Letter to Mayor', 'Final Hospital Bill', 'Medical Abstract / Certificate', 'Promissory Note (if discharged)'],
     'Medicine Assistance': ['Personal Letter to Mayor', 'Prescription (with license #)', 'Medical Certificate', 'Quotation of Medicine'],
@@ -15,6 +16,8 @@ const REQUIREMENTS_MAP = {
 export default function Dashboard({ applications = [] }) {
     const { auth } = usePage().props;
     const user = auth?.user || { name: 'Applicant', id: 0 };
+
+    // Default to guidelines so users see requirements immediately
     const [activeTab, setActiveTab] = useState('guidelines');
 
     const filteredApplications = applications.filter(app => {
@@ -24,8 +27,11 @@ export default function Dashboard({ applications = [] }) {
         return true;
     });
 
+    // Counts for badges
     const pendingCount = applications.filter(a => a.status === 'Pending').length;
     const approvedCount = applications.filter(a => a.status === 'Approved').length;
+    // NEW: Calculate rejected count for the badge
+    const rejectedCount = applications.filter(a => a.status === 'Rejected').length;
 
     return (
         <AuthenticatedLayout
@@ -37,7 +43,7 @@ export default function Dashboard({ applications = [] }) {
             <div className="py-8 md:py-12 bg-gray-50 min-h-screen font-sans">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-                    {/* WELCOME CARD */}
+                    {/* --- WELCOME CARD --- */}
                     <div className="bg-gradient-to-r from-blue-900 to-blue-800 rounded-2xl shadow-xl mb-8 overflow-hidden relative mx-4 sm:mx-0">
                         <div className="absolute right-0 top-0 h-full w-1/3 bg-white/5 skew-x-12 transform origin-bottom-left"></div>
                         <div className="p-6 md:p-10 text-white relative z-10">
@@ -63,13 +69,16 @@ export default function Dashboard({ applications = [] }) {
                         </div>
                     </div>
 
+                    {/* --- MAIN INTERFACE --- */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[600px] mx-4 sm:mx-0">
+
+                        {/* Mobile-Friendly Scrollable Tabs */}
                         <div className="border-b border-gray-200 px-4 md:px-6 bg-gray-50">
                             <nav className="-mb-px flex space-x-6 overflow-x-auto no-scrollbar py-1" aria-label="Tabs">
                                 <TabButton
                                     active={activeTab === 'guidelines'}
                                     onClick={() => setActiveTab('guidelines')}
-                                    icon={<svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+                                    icon={<svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
                                     label="Requirements"
                                 />
                                 <TabButton
@@ -86,15 +95,21 @@ export default function Dashboard({ applications = [] }) {
                                     count={approvedCount}
                                     badgeColor="green"
                                 />
+                                {/* UPDATED HISTORY TAB: Now shows Red Badge for Rejections */}
                                 <TabButton
                                     active={activeTab === 'history'}
                                     onClick={() => setActiveTab('history')}
                                     label="History"
+                                    count={rejectedCount}
+                                    badgeColor="red"
                                 />
                             </nav>
                         </div>
 
+                        {/* Content Area */}
                         <div className="p-4 md:p-8">
+
+                            {/* --- GUIDELINES TAB (First View) --- */}
                             {activeTab === 'guidelines' && (
                                 <div className="animate-fade-in space-y-6">
                                     <div className="bg-blue-50 border-l-4 border-blue-600 p-5 rounded-r-lg shadow-sm">
@@ -133,6 +148,7 @@ export default function Dashboard({ applications = [] }) {
                                 </div>
                             )}
 
+                            {/* --- APPLICATIONS LIST --- */}
                             {activeTab !== 'guidelines' && (
                                 <div className="space-y-6">
                                     {filteredApplications.length === 0 ? (
@@ -147,6 +163,7 @@ export default function Dashboard({ applications = [] }) {
                         </div>
                     </div>
 
+                    {/* --- HELP WIDGET --- */}
                     <div className="mt-8 text-center border-t border-gray-200 pt-8 pb-4">
                         <p className="text-gray-500 text-sm">Need assistance with your application?</p>
                         <p className="text-blue-900 font-bold text-lg mt-1">
@@ -161,13 +178,17 @@ export default function Dashboard({ applications = [] }) {
     );
 }
 
+// --- SUB-COMPONENTS ---
+
 function TabButton({ active, onClick, label, count, badgeColor, icon }) {
     const activeClass = "border-blue-600 text-blue-800 font-bold bg-blue-50/50";
     const inactiveClass = "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300";
 
+    // ADDED: Red badge style for rejections
     const badgeColors = {
         yellow: "bg-yellow-100 text-yellow-800",
-        green: "bg-green-100 text-green-800"
+        green: "bg-green-100 text-green-800",
+        red: "bg-red-100 text-red-800"
     };
 
     return (
@@ -178,7 +199,7 @@ function TabButton({ active, onClick, label, count, badgeColor, icon }) {
             {icon}
             {label}
             {count > 0 && (
-                <span className={`ml-2 py-0.5 px-2 rounded-full text-xs font-bold ${badgeColors[badgeColor] || 'bg-gray-100'}`}>
+                <span className={`ml-2 py-0.5 px-2 rounded-full text-xs font-bold ${badgeColors[badgeColor] || 'bg-gray-100'} ${badgeColor === 'red' ? 'animate-pulse' : ''}`}>
                     {count}
                 </span>
             )}
@@ -188,15 +209,13 @@ function TabButton({ active, onClick, label, count, badgeColor, icon }) {
 
 function ApplicationCard({ app }) {
     // --- DEADLINE / EXPIRATION LOGIC ---
-    // 1. Calculate the deadline (Created Date + 7 Days)
     const createdDate = new Date(app.created_at);
     const deadlineDate = new Date(createdDate);
-    deadlineDate.setDate(createdDate.getDate() + 7); // Adds 7 days
+    deadlineDate.setDate(createdDate.getDate() + 7);
 
     const today = new Date();
     const isExpired = today > deadlineDate && app.status === 'Pending';
 
-    // Format the date for display (e.g., "Jan 12, 2025")
     const validUntil = deadlineDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
     const isApproved = app.status === 'Approved';
@@ -226,7 +245,7 @@ function ApplicationCard({ app }) {
                             {app.barangay}
                         </p>
 
-                        {/* --- VALIDITY DISPLAY (New Feature) --- */}
+                        {/* VALIDITY DISPLAY */}
                         {isPending && !isExpired && (
                             <p className="flex items-center text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100">
                                 <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -240,7 +259,7 @@ function ApplicationCard({ app }) {
                         )}
                     </div>
 
-                    {/* --- VISUAL TIMELINE --- */}
+                    {/* VISUAL TIMELINE */}
                     <div className="mt-6 flex items-center gap-2 max-w-sm">
                         <TimelineStep active={true} label="Submitted" />
                         <div className={`h-1 flex-1 rounded-full ${!isPending && !isExpired ? 'bg-blue-500' : 'bg-gray-200'}`}></div>
