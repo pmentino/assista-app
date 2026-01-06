@@ -1,5 +1,30 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
+
+// Reusable Pagination Component (You can also extract this to a separate file later)
+const Pagination = ({ links }) => {
+    return (
+        <div className="flex justify-center mt-6">
+            <div className="flex flex-wrap gap-1">
+                {links.map((link, key) => (
+                    link.url === null ? (
+                        <div key={key} className="mr-1 mb-1 px-4 py-3 text-sm leading-4 text-gray-400 border rounded">
+                            <span dangerouslySetInnerHTML={{ __html: link.label }}></span>
+                        </div>
+                    ) : (
+                        <Link
+                            key={key}
+                            className={`mr-1 mb-1 px-4 py-3 text-sm leading-4 border rounded hover:bg-white focus:border-indigo-500 focus:text-indigo-500 ${link.active ? 'bg-blue-700 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+                            href={link.url}
+                        >
+                            <span dangerouslySetInnerHTML={{ __html: link.label }}></span>
+                        </Link>
+                    )
+                ))}
+            </div>
+        </div>
+    );
+};
 
 export default function AuditLogsIndex({ auth, logs }) {
     return (
@@ -76,6 +101,12 @@ export default function AuditLogsIndex({ auth, logs }) {
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* --- PAGINATION CONTROLS (ADDED) --- */}
+                        <div className="p-4 border-t border-gray-200 bg-gray-50">
+                            <Pagination links={logs.links} />
+                        </div>
+
                     </div>
                 </div>
             </div>
