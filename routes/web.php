@@ -7,7 +7,8 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\NewsController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\AssistanceProgramController;
-use App\Http\Controllers\Admin\SettingController; // Ensure this is imported
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\UserController; // <--- NEW IMPORT
 use App\Http\Controllers\Staff\StaffController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
@@ -53,7 +54,7 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
         'news' => $news,
         'programs' => $programs,
-        'settings' => $settings, // <--- Passing the settings here
+        'settings' => $settings,
         'auth' => ['user' => Auth::user()],
     ]);
 });
@@ -243,9 +244,16 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
     // 4. APPLICATIONS ROUTES
     Route::get('/applications', [AidRequestController::class, 'index'])->name('applications.index');
 
+    // Find this route in your Admin Group
+    // Find this route in your Admin Group
     Route::get('/applications/{application}', function (ApplicationModel $application) {
+
+        // Fetch program to get default amount
+        $programSettings = \App\Models\AssistanceProgram::where('title', $application->program)->first();
+
         return Inertia::render('Admin/ApplicationShow', [
             'application' => $application->load('user'),
+            'programSettings' => $programSettings, // Sending to Frontend
             'auth' => [ 'user' => Auth::user() ]
         ]);
     })->name('applications.show');
@@ -274,6 +282,11 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
 
+    // 9. USER MANAGEMENT (Sir Mark's Suggestion)
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::post('/users/{user}/role', [UserController::class, 'changeRole'])->name('users.role');
+    Route::post('/users/{user}/status', [UserController::class, 'toggleStatus'])->name('users.status');
+
 });
 
 // --- STAFF ROUTES ---
@@ -282,6 +295,10 @@ Route::middleware(['auth', 'verified', 'is_staff'])->prefix('staff')->name('staf
     Route::get('/applications', [StaffController::class, 'applicationsIndex'])->name('applications.index');
     Route::get('/applications/{application}', [StaffController::class, 'applicationsShow'])->name('applications.show');
     Route::post('/applications/{application}/remarks', [StaffController::class, 'storeRemark'])->name('applications.remarks.store');
+    // --- STAFF REPORTS ---
+    Route::get('/reports', [StaffController::class, 'reportsIndex'])->name('reports.index');
+    Route::get('/reports/export-pdf', [StaffController::class, 'exportPdf'])->name('reports.export-pdf');
+    Route::get('/reports/export-excel', [StaffController::class, 'exportExcel'])->name('reports.export-excel');
 });
 
 require __DIR__.'/auth.php';

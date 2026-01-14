@@ -6,7 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Relations\HasMany; // <-- Import HasMany
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -18,18 +18,19 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-    'name',
-    'email',
-    'password',
-    'profile_photo_path', // Don't forget this!
-    'contact_number',     // <--- NEW
-    'civil_status',       // <--- NEW
-    'sex',                // <--- NEW
-    'birth_date',         // <--- NEW
-    'barangay',           // <--- NEW
-    'house_no',           // <--- NEW
-    'type',               // For admin/user distinction
-];
+        'name',
+        'email',
+        'password',
+        'profile_photo_path',
+        'contact_number',
+        'civil_status',
+        'sex',
+        'birth_date',
+        'barangay',
+        'house_no',
+        'type',       // admin, staff, user
+        'is_active',  // <--- NEW: Added this to allow updates
+    ];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -51,15 +52,25 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean', // <--- NEW: Ensures it returns true/false, not 1/0
         ];
     }
 
     /**
      * Get the applications for the user.
      */
-
     public function applications(): HasMany
     {
         return $this->hasMany(Application::class);
+    }
+
+    // --- OPTIONAL HELPER ---
+    // You can use this later: if ($user->isAdmin()) { ... }
+    public function isAdmin() {
+        return $this->type === 'admin';
+    }
+
+    public function isStaff() {
+        return $this->type === 'staff';
     }
 }

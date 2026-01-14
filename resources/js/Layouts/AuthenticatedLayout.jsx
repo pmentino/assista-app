@@ -11,12 +11,11 @@ export default function AuthenticatedLayout({ user, header, children }) {
     // Safely access user
     const currentUser = user || props.auth?.user || {};
 
-    // Check Roles
+    // Check Roles - FIX: Check 'type' as well
     const isAdmin = currentUser?.role === 'admin' || currentUser?.type === 'admin';
     const isStaff = currentUser?.role === 'staff' || currentUser?.type === 'staff';
 
     // LOGIC: Show "My Dashboard" if user is NOT Admin.
-    // (Meaning: Applicants AND Staff can see it)
     const showApplicantDashboard = !isAdmin;
 
     useEffect(() => {
@@ -67,7 +66,7 @@ export default function AuthenticatedLayout({ user, header, children }) {
                             {/* --- DESKTOP NAVIGATION --- */}
                             <div className="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
 
-                                {/* 1. APPLICANT DASHBOARD (Visible to Staff & Applicants) */}
+                                {/* 1. APPLICANT DASHBOARD */}
                                 {showApplicantDashboard && (
                                     <Link href={route('dashboard')} className={navLinkClasses(route().current('dashboard'))}>
                                         My Dashboard
@@ -83,6 +82,9 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                         <Link href={route('staff.applications.index')} className={navLinkClasses(route().current('staff.applications.index'))}>
                                             All Applications
                                         </Link>
+                                        <Link href={route('staff.reports.index')} className={navLinkClasses(route().current('staff.reports.*'))}>
+    Reports
+</Link>
                                     </>
                                 )}
 
@@ -98,6 +100,12 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                         <Link href={route('admin.reports.index')} className={navLinkClasses(route().current('admin.reports.*'))}>
                                             Reports
                                         </Link>
+
+                                        {/* --- NEW: MANAGE USERS LINK --- */}
+                                        <Link href={route('admin.users.index')} className={navLinkClasses(route().current('admin.users.*'))}>
+                                            Manage Users
+                                        </Link>
+
                                         <Link href={route('admin.news.index')} className={navLinkClasses(route().current('admin.news.*'))}>
                                             News
                                         </Link>
@@ -160,7 +168,6 @@ export default function AuthenticatedLayout({ user, header, children }) {
                 <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden bg-blue-800 border-t border-blue-900'}>
                     <div className="pt-2 pb-3 space-y-1">
 
-                        {/* 1. APPLICANT DASHBOARD (HIDDEN FOR ADMIN) */}
                         {showApplicantDashboard && (
                             <Link href={route('dashboard')} className={mobileNavLinkClasses(route().current('dashboard'))}>
                                 My Dashboard
@@ -189,6 +196,12 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                 <Link href={route('admin.reports.index')} className={mobileNavLinkClasses(route().current('admin.reports.*'))}>
                                     Reports
                                 </Link>
+
+                                {/* --- NEW: MOBILE MANAGE USERS --- */}
+                                <Link href={route('admin.users.index')} className={mobileNavLinkClasses(route().current('admin.users.*'))}>
+                                    Manage Users
+                                </Link>
+
                                 <Link href={route('admin.news.index')} className={mobileNavLinkClasses(route().current('admin.news.*'))}>
                                     News
                                 </Link>

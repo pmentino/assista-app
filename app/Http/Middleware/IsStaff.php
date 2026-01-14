@@ -16,12 +16,14 @@ class IsStaff
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Check if the user is logged in AND has the 'staff' role
-        if (Auth::check() && Auth::user()->role === 'staff') {
+        // FIX: Check 'type' instead of 'role' (since we are using the 'type' column now)
+        // We also allow 'admin' to access staff routes if needed, or strictly 'staff'.
+        // For now, let's strictly check if they are Staff.
+        if (Auth::check() && (Auth::user()->type === 'staff' || Auth::user()->role === 'staff')) {
             return $next($request);
         }
 
-        // If not staff, redirect them to the homepage or show an error
+        // If not staff, redirect them to the homepage with an error
         return redirect('/')->with('message', 'You do not have access to this page.');
     }
 }

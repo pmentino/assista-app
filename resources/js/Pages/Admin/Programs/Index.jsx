@@ -26,6 +26,8 @@ export default function ProgramsIndex({ auth, programs }) {
     const form = useForm({
         title: '',
         description: '',
+        requirements: '', // <--- NEW FIELD
+        default_amount: '',
         icon_path: '',
     });
 
@@ -42,11 +44,20 @@ export default function ProgramsIndex({ auth, programs }) {
         setIsEditing(true);
         setEditId(program.id);
         form.clearErrors();
+
+        // Convert JSON array ["A", "B"] -> String "A, B"
+        const reqString = Array.isArray(program.requirements)
+            ? program.requirements.join(', ')
+            : '';
+
         form.setData({
             title: program.title,
             description: program.description,
+            requirements: Array.isArray(program.requirements) ? program.requirements.join(', ') : '',
+            default_amount: program.default_amount || '', // <--- LOAD AMOUNT
             icon_path: program.icon_path || '',
         });
+
         setIsModalOpen(true);
     };
 
@@ -268,6 +279,45 @@ export default function ProgramsIndex({ auth, programs }) {
                             required
                         />
                         <InputError message={form.errors.description} className="mt-2" />
+                    </div>
+
+                    {/* --- NEW REQUIREMENTS FIELD --- */}
+                    <div className="mb-4">
+                        <InputLabel htmlFor="requirements" value="Requirements (comma-separated)" />
+                        <textarea
+                            id="requirements"
+                            value={form.data.requirements}
+                            onChange={(e) => form.setData('requirements', e.target.value)}
+                            className="mt-1 block w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm text-sm"
+                            rows="3"
+                            placeholder="e.g. Valid ID, Barangay Certificate, Medical Abstract"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                            Separate each requirement with a comma. These will be shown to the applicant.
+                        </p>
+                        <InputError message={form.errors.requirements} className="mt-2" />
+                    </div>
+
+                    {/* --- NEW DEFAULT AMOUNT FIELD --- */}
+                    <div className="mb-4">
+                        <InputLabel htmlFor="default_amount" value="Default Assistance Amount (₱)" />
+                        <div className="relative mt-1 rounded-md shadow-sm">
+                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                <span className="text-gray-500 sm:text-sm">₱</span>
+                            </div>
+                            <TextInput
+                                id="default_amount"
+                                type="number"
+                                value={form.data.default_amount}
+                                onChange={(e) => form.setData('default_amount', e.target.value)}
+                                className="block w-full pl-7"
+                                placeholder="0.00"
+                            />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                            This amount will be auto-suggested when approving applications for this program.
+                        </p>
+                        <InputError message={form.errors.default_amount} className="mt-2" />
                     </div>
 
                     <div className="mb-6">

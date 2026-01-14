@@ -6,18 +6,7 @@ import TextInput from '@/Components/TextInput';
 import { Head, useForm, usePage, Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 
-// --- CONFIGURATION: Requirements per Program ---
-const REQUIREMENTS_MAP = {
-    'Hospitalization': [ 'Personal Letter to Mayor', 'Final Hospital Bill', 'Medical Abstract / Medical Certificate', 'Promissory Note (if discharged)' ],
-    'Laboratory Tests': [ 'Personal Letter to Mayor', 'Laboratory Request', 'Medical Certificate' ],
-    'Anti-Rabies Vaccine Treatment': [ 'Personal Letter to Mayor', 'Rabies Vaccination Card', 'Medical Certificate' ],
-    'Medicine Assistance': [ 'Personal Letter to Mayor', 'Prescription (with price & doctor license)', 'Medical Certificate' ],
-    'Funeral Assistance': [ 'Personal Letter to Mayor', 'Death Certificate (Certified True Copy)', 'Burial Contract' ],
-    'Chemotherapy': [ 'Personal Letter to Mayor', 'Chemotherapy Protocol / Doctor\'s Order', 'Medical Certificate', 'Quotation of Medicine' ],
-    'Diagnostic Blood Tests': [ 'Personal Letter to Mayor', 'Laboratory/Diagnostic Request', 'Medical Certificate' ]
-};
-
-// --- BARANGAY LIST ---
+// --- BARANGAY LIST (Static is fine for locations) ---
 const BARANGAYS = [
     'Adlawan', 'Bago', 'Balijuagan', 'Banica', 'Barra', 'Bato', 'Baybay', 'Bolo',
     'Cabugao', 'Cagay', 'Cogon', 'Culajao', 'Culasi', 'Dayao', 'Dinginan', 'Dumolog',
@@ -29,8 +18,9 @@ const BARANGAYS = [
     'Poblacion IX', 'Poblacion X', 'Poblacion XI'
 ];
 
-export default function Create() {
-    const { auth, flash } = usePage().props;
+// 1. Accept 'programs' from the Controller
+export default function Create({ auth, programs = [] }) {
+    const { flash } = usePage().props;
 
     const { data, setData, post, processing, errors } = useForm({
         program: '',
@@ -56,10 +46,15 @@ export default function Create() {
     const [requiredDocs, setRequiredDocs] = useState([]);
     const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
 
+    // --- 2. THE FIX: Dynamic Requirement Logic ---
     useEffect(() => {
-        if (data.program && REQUIREMENTS_MAP[data.program]) {
-            setRequiredDocs(REQUIREMENTS_MAP[data.program]);
-            setData('attachments', []);
+        // Find the selected program in the database list
+        const selectedProgram = programs.find(p => p.title === data.program);
+
+        if (selectedProgram && selectedProgram.requirements) {
+            // Use the JSON requirements from DB
+            setRequiredDocs(selectedProgram.requirements);
+            setData('attachments', []); // Reset attachments
         } else {
             setRequiredDocs([]);
         }
@@ -71,9 +66,7 @@ export default function Create() {
         setData('attachments', newAttachments);
     };
 
-    // --- FIX: Strict Name Validation (Letters & Spaces Only) ---
     const handleNameChange = (field, value) => {
-        // Regex: Only allows letters (a-z, A-Z) and spaces. No numbers or special symbols.
         const regex = /^[a-zA-Z\s]*$/;
         if (regex.test(value)) {
             setData(field, value);
@@ -126,7 +119,6 @@ export default function Create() {
                                         </p>
                                     </div>
                                 )}
-
                             </div>
                         </div>
                     </div>
@@ -144,9 +136,17 @@ export default function Create() {
                                     <div className="space-y-2">
                                         <InputLabel htmlFor="program" value="Type of Assistance *" className="text-gray-700 font-bold" />
                                         <select id="program" value={data.program} onChange={(e) => setData('program', e.target.value)} className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-3 px-4 text-base" required>
-                                            <option value="">-- Select Program --</option>
-                                            {Object.keys(REQUIREMENTS_MAP).map((prog) => <option key={prog} value={prog}>{prog}</option>)}
-                                        </select>
+                                        <option value="">-- Select Program --</option>
+
+                                        {/* FIX: Add check for programs.length */}
+                                        {programs && programs.length > 0 ? (
+                                            programs.map((prog) => (
+                                                <option key={prog.id} value={prog.title}>{prog.title}</option>
+                                            ))
+                                        ) : (
+                                            <option disabled>No programs available</option>
+                                        )}
+                                    </select>
                                         <InputError message={errors.program} />
                                     </div>
                                     <div className="space-y-2">
@@ -157,14 +157,13 @@ export default function Create() {
                                 </div>
                             </div>
 
-                            {/* --- SECTION 2: PERSONAL INFO --- */}
+                            {/* --- SECTION 2: PERSONAL INFO (Unchanged) --- */}
                             <div>
                                 <div className="flex items-center mb-6 border-b pb-4">
                                     <div className="flex-shrink-0 bg-gray-700 text-white rounded-full h-8 w-8 flex items-center justify-center font-bold shadow-sm mr-3">2</div>
                                     <h3 className="text-xl font-bold text-gray-800 uppercase tracking-wide">Personal Information</h3>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {/* FIX: Use handleNameChange for strict validation */}
                                     <div className="space-y-1">
                                         <InputLabel htmlFor="first_name" value="First Name *" />
                                         <TextInput id="first_name" className="block w-full capitalize" value={data.first_name} onChange={(e) => handleNameChange('first_name', e.target.value)} required placeholder="e.g. Juan" />
@@ -189,7 +188,7 @@ export default function Create() {
                                 </div>
                             </div>
 
-                            {/* --- SECTION 3: ADDRESS --- */}
+                            {/* --- SECTION 3: ADDRESS (Unchanged) --- */}
                             <div>
                                 <div className="flex items-center mb-6 border-b pb-4">
                                     <div className="flex-shrink-0 bg-gray-700 text-white rounded-full h-8 w-8 flex items-center justify-center font-bold shadow-sm mr-3">3</div>
@@ -208,7 +207,6 @@ export default function Create() {
                                             value={data.contact_number}
                                             placeholder="09123456789"
                                             maxLength={11}
-                                            // FIX: Strict Number Only Validation
                                             onChange={(e) => setData('contact_number', e.target.value.replace(/\D/g, '').slice(0, 11))}
                                             required
                                         />
@@ -227,6 +225,7 @@ export default function Create() {
                                     <div> <h3 className="text-xl font-bold text-gray-800 uppercase tracking-wide">Required Documents</h3> <p className="text-xs text-gray-500 mt-1">Allowed formats: JPG, PNG, PDF. Max size: 2MB per file.</p> </div>
                                 </div>
                                 <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {/* Standard Docs */}
                                     <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm hover:border-blue-300 transition">
                                         <InputLabel htmlFor="valid_id" value="Valid ID (with signature) *" className="mb-2 block text-sm font-bold text-gray-700" />
                                         <input id="valid_id" type="file" onChange={(e) => setData('valid_id', e.target.files[0])} required className="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition cursor-pointer" />
@@ -237,6 +236,8 @@ export default function Create() {
                                         <input id="indigency_cert" type="file" onChange={(e) => setData('indigency_cert', e.target.files[0])} required className="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition cursor-pointer" />
                                         <InputError message={errors.indigency_cert} className="mt-2" />
                                     </div>
+
+                                    {/* --- 4. THE FIX: Dynamic File Inputs --- */}
                                     {requiredDocs.length > 0 ? (
                                         requiredDocs.map((docName, index) => (
                                             <div key={index} className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm hover:border-blue-300 transition">
@@ -245,7 +246,9 @@ export default function Create() {
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="col-span-1 md:col-span-2 text-center py-8 bg-gray-100 rounded-lg border border-dashed border-gray-300"> <p className="text-gray-500 italic">Select a "Type of Assistance" above to view specific requirements.</p> </div>
+                                        <div className="col-span-1 md:col-span-2 text-center py-8 bg-gray-100 rounded-lg border border-dashed border-gray-300">
+                                            <p className="text-gray-500 italic">Select a "Type of Assistance" above to view specific requirements.</p>
+                                        </div>
                                     )}
                                 </div>
                             </div>

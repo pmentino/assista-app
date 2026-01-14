@@ -8,6 +8,7 @@ use App\Notifications\ApplicationStatusAlert; // Handles Bell Icon (Database)
 use App\Models\Setting;
 use App\Models\Application;
 use App\Models\AuditLog;
+use App\Models\AssistanceProgram; // <--- NEW IMPORT
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -22,8 +23,14 @@ class ApplicationController extends Controller
     // Show form
     public function create()
     {
+        // --- THE FIX: Fetch Active Programs from Database ---
+        $programs = AssistanceProgram::where('is_active', true)
+            ->select('id', 'title', 'requirements') // We need title and requirements
+            ->get();
+
         return Inertia::render('Applications/Create', [
-            'auth' => ['user' => Auth::user()]
+            'auth' => ['user' => Auth::user()],
+            'programs' => $programs, // <--- Pass them to React
         ]);
     }
 
@@ -36,10 +43,17 @@ class ApplicationController extends Controller
         $hasPending = Application::where('user_id', $user->id)->where('status', 'Pending')->exists();
 
         if ($hasPending) {
+            // --- FIX 2: Fetch programs again so the page doesn't crash on error ---
+            $programs = AssistanceProgram::where('is_active', true)
+                ->select('id', 'title', 'requirements')
+                ->get();
+
              return Inertia::render('Applications/Create', [
                 'errors' => [
                     'error' => '⚠️ STOP: You already have a pending application.'
-                ]
+                ],
+                'programs' => $programs, // <--- PASS THIS DATA TO PREVENT CRASH
+                'auth' => ['user' => Auth::user()]
             ]);
         }
 
