@@ -295,6 +295,10 @@ Route::middleware(['auth', 'verified', 'is_staff'])->prefix('staff')->name('staf
     Route::get('/applications', [StaffController::class, 'applicationsIndex'])->name('applications.index');
     Route::get('/applications/{application}', [StaffController::class, 'applicationsShow'])->name('applications.show');
     Route::post('/applications/{application}/remarks', [StaffController::class, 'storeRemark'])->name('applications.remarks.store');
+
+    // --- ADD THIS NEW LINE HERE: ---
+    Route::post('/applications/{application}/reject', [StaffController::class, 'reject'])->name('applications.reject');
+
     // --- STAFF REPORTS ---
     Route::get('/reports', [StaffController::class, 'reportsIndex'])->name('reports.index');
     Route::get('/reports/export-pdf', [StaffController::class, 'exportPdf'])->name('reports.export-pdf');

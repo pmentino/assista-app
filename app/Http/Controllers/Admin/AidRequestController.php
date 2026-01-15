@@ -47,9 +47,16 @@ class AidRequestController extends Controller
                               ->paginate(10)
                               ->withQueryString();
 
+        // --- NEW: Fetch Dropdown Data for the Frontend ---
+        $allBarangays = Application::select('barangay')->distinct()->orderBy('barangay')->pluck('barangay');
+        $programs = \App\Models\AssistanceProgram::where('is_active', true)->pluck('title');
+
         return Inertia::render('Admin/ApplicationsIndex', [
             'applications' => $applications,
-            'filters' => $request->only(['search', 'status', 'program', 'barangay']),
+            // Pass the lists so the Admin can select from them
+            'allBarangays' => $allBarangays,
+            'programs' => $programs,
+            'filters' => $request->only(['search', 'status', 'program', 'barangay', 'sort_by', 'sort_direction']),
             'auth' => ['user' => Auth::user()],
         ]);
     }
@@ -57,14 +64,13 @@ class AidRequestController extends Controller
     public function destroy(Application $application)
     {
         // --- CRITICAL FIX: PREVENT DELETION OF APPROVED RECORDS ---
-        // In a government system, you cannot delete records that have financial implications.
         if ($application->status === 'Approved') {
             return redirect()->back()
                 ->with('error', 'CRITICAL ERROR: Cannot delete an Approved application. This record is linked to disbursed funds.')
                 ->setStatusCode(303);
         }
 
-        // Optional: Capture name for logs before deleting
+        // Capture name for logs before deleting
         $applicantName = $application->first_name . ' ' . $application->last_name;
 
         $application->delete();

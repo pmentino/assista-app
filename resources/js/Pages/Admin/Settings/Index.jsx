@@ -21,7 +21,6 @@ export default function SettingsIndex({ auth, settings }) {
         e.preventDefault();
 
         // Force conversion to "1" or "0" string
-        // This ensures Laravel validation (in:0,1) passes
         const payload = {
             ...data,
             accepting_applications: data.accepting_applications === true ? '1' : '0',
@@ -30,8 +29,7 @@ export default function SettingsIndex({ auth, settings }) {
         post(route('admin.settings.update'), payload, {
             preserveScroll: true,
             onSuccess: () => {
-                // Optional: Force a reload of props to ensure UI syncs with DB
-                // window.location.reload();
+                // Optional: Force a reload if needed
             }
         });
     };
@@ -39,107 +37,106 @@ export default function SettingsIndex({ auth, settings }) {
     return (
         <AuthenticatedLayout
             user={auth?.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">System Configuration</h2>}
+            header={<h2 className="font-semibold text-xl text-gray-800 dark:text-white leading-tight">System Configuration</h2>}
         >
             <Head title="System Settings" />
 
-            <div className="py-12 bg-gray-50 min-h-screen">
+            <div className="py-12 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
 
                     <form onSubmit={submit} className="space-y-6">
 
                         {/* --- CARD 1: SYSTEM CONTROLS --- */}
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
-                            <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
-                                <h3 className="text-lg font-bold text-gray-800">Application Controls</h3>
-                                <p className="text-sm text-gray-500">Manage the availability of the online application portal.</p>
+                        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 dark:border-gray-700 transition-colors">
+                            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700">
+                                <h3 className="text-lg font-bold text-gray-800 dark:text-white">Application Controls</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Manage the availability of the online application portal.</p>
                             </div>
                             <div className="p-6 space-y-6">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <h4 className="font-medium text-gray-900">Accept Online Applications</h4>
-                                        <p className="text-sm text-gray-500">If disabled, the "Apply Now" button will be hidden for all users.</p>
+                                        <h4 className="font-medium text-gray-900 dark:text-gray-200">Accept Online Applications</h4>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">If disabled, the "Apply Now" button will be hidden for all users.</p>
                                     </div>
                                     <label className="relative inline-flex items-center cursor-pointer">
                                         <input
                                             type="checkbox"
                                             className="sr-only peer"
                                             checked={data.accepting_applications}
-                                            // FIX: Use e.target.checked for checkboxes, NOT e.target.value
                                             onChange={(e) => setData('accepting_applications', e.target.checked)}
                                         />
-                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                        <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                     </label>
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="system_announcement" value="Global Announcement (Optional)" />
+                                    <InputLabel htmlFor="system_announcement" value="Global Announcement (Optional)" className="dark:text-gray-300" />
                                     <TextInput
                                         id="system_announcement"
-                                        className="mt-1 block w-full"
+                                        className="mt-1 block w-full dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600"
                                         value={data.system_announcement}
                                         onChange={(e) => setData('system_announcement', e.target.value)}
                                         placeholder="e.g. Office closed on Dec 25 due to Holiday."
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">This text will appear at the top of the Welcome page if set.</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">This text will appear at the top of the Welcome page if set.</p>
                                 </div>
                             </div>
                         </div>
 
                         {/* --- CARD 2: DOCUMENT & OFFICE DETAILS --- */}
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
-                            <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
-                                <h3 className="text-lg font-bold text-gray-800">Document & Office Configuration</h3>
-                                <p className="text-sm text-gray-500">Update signatories and contact details appearing on official documents.</p>
+                        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 dark:border-gray-700 transition-colors">
+                            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700">
+                                <h3 className="text-lg font-bold text-gray-800 dark:text-white">Document & Office Configuration</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Update signatories and contact details appearing on official documents.</p>
                             </div>
                             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
 
                                 {/* Signatories Section */}
                                 <div className="md:col-span-2">
-                                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider border-b pb-2 mb-4">Official Signatories</h4>
+                                    <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-gray-700 pb-2 mb-4">Official Signatories</h4>
                                 </div>
                                 <div>
-                                    <InputLabel htmlFor="signatory_social_worker" value="Social Worker / Verifier" />
+                                    <InputLabel htmlFor="signatory_social_worker" value="Social Worker / Verifier" className="dark:text-gray-300" />
                                     <TextInput
                                         id="signatory_social_worker"
-                                        className="mt-1 block w-full"
+                                        className="mt-1 block w-full dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600"
                                         value={data.signatory_social_worker}
                                         onChange={(e) => setData('signatory_social_worker', e.target.value)}
                                         placeholder="e.g. BIVIEN B. DELA CRUZ, RSW"
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">Appears as "Assessed By" on Claim Stub.</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Appears as "Assessed By" on Claim Stub.</p>
                                 </div>
                                 <div>
-                                    <InputLabel htmlFor="signatory_cswdo_head" value="CSWDO Head / Approving Officer" />
+                                    <InputLabel htmlFor="signatory_cswdo_head" value="CSWDO Head / Approving Officer" className="dark:text-gray-300" />
                                     <TextInput
                                         id="signatory_cswdo_head"
-                                        className="mt-1 block w-full"
+                                        className="mt-1 block w-full dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600"
                                         value={data.signatory_cswdo_head}
                                         onChange={(e) => setData('signatory_cswdo_head', e.target.value)}
                                         placeholder="e.g. PERSEUS L. CORDOVA"
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">Appears as "Approved By" on Claim Stub.</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Appears as "Approved By" on Claim Stub.</p>
                                 </div>
 
                                 {/* Contact Details Section */}
                                 <div className="md:col-span-2 mt-2">
-                                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider border-b pb-2 mb-4">Office Contact Details</h4>
+                                    <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-gray-700 pb-2 mb-4">Office Contact Details</h4>
                                 </div>
                                 <div>
-                                    <InputLabel htmlFor="office_hotline" value="Official Hotline" />
+                                    <InputLabel htmlFor="office_hotline" value="Official Hotline" className="dark:text-gray-300" />
                                     <TextInput
                                         id="office_hotline"
-                                        className="mt-1 block w-full"
+                                        className="mt-1 block w-full dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600"
                                         value={data.office_hotline}
                                         onChange={(e) => setData('office_hotline', e.target.value)}
                                         placeholder="(036) 52026-83"
                                     />
                                 </div>
                                 <div>
-                                    <InputLabel htmlFor="office_address" value="Office Address" />
+                                    <InputLabel htmlFor="office_address" value="Office Address" className="dark:text-gray-300" />
                                     <TextInput
                                         id="office_address"
-                                        className="mt-1 block w-full"
+                                        className="mt-1 block w-full dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600"
                                         value={data.office_address}
                                         onChange={(e) => setData('office_address', e.target.value)}
                                         placeholder="Inzo Arnaldo Village, Roxas City"
@@ -151,9 +148,9 @@ export default function SettingsIndex({ auth, settings }) {
                         {/* --- ACTION BAR --- */}
                         <div className="flex items-center justify-end gap-4">
                             <Transition show={recentlySuccessful} enter="transition ease-in-out" enterFrom="opacity-0" leave="transition ease-in-out" leaveTo="opacity-0">
-                                <p className="text-sm text-green-600 font-bold">Settings Updated.</p>
+                                <p className="text-sm text-green-600 dark:text-green-400 font-bold">Settings Updated.</p>
                             </Transition>
-                            <PrimaryButton disabled={processing} className="bg-blue-800 hover:bg-blue-900 px-6 py-3 text-lg">
+                            <PrimaryButton disabled={processing} className="bg-blue-800 hover:bg-blue-900 dark:bg-blue-600 dark:hover:bg-blue-700 px-6 py-3 text-lg">
                                 Save Configuration
                             </PrimaryButton>
                         </div>

@@ -8,6 +8,9 @@
 
         body { font-family: 'Times New Roman', serif; font-size: 11pt; margin: 0; padding: 0; line-height: 1.15; color: #000; }
 
+        /* --- FIX 1: Special Font for Peso Sign --- */
+        .peso { font-family: "DejaVu Sans", sans-serif; }
+
         /* HEADER LAYOUT WITH LOGOS */
         .header-table { width: 100%; border-collapse: collapse; margin-bottom: 5px; }
         .header-table td { vertical-align: middle; text-align: center; }
@@ -34,14 +37,16 @@
         /* Main Body */
         .certify-text { text-align: justify; margin-bottom: 8px; text-indent: 30px; font-size: 11pt; }
 
-        /* --- THE FIX: Align the line with the text baseline --- */
+        /* --- FIX 2: TIGHTER UNDERLINES & ALIGNMENT --- */
         .details-line {
             border-bottom: 1px solid #000;
             display: inline-block;
             text-align: center;
             font-weight: bold;
             padding: 0 5px;
-            vertical-align: baseline; /* CHANGED FROM 'bottom' TO 'baseline' */
+            /* 'baseline' aligns text naturally, 'line-height: 1' pulls the border up */
+            vertical-align: baseline;
+            line-height: 1.0;
         }
 
         /* Family Table */
@@ -69,7 +74,6 @@
     <table class="header-table">
         <tr>
             <td class="logo-left">
-                {{-- Ensure your logo path is correct --}}
                 <img src="{{ public_path('images/cswdo-logo.png') }}" class="logo-img" alt="CSWDO Logo">
             </td>
 
@@ -78,7 +82,6 @@
                 <h3>CITY OF ROXAS</h3>
                 <h5>Province of Capiz</h5>
                 <h2>Office of the City Social Welfare and Development Officer</h2>
-                {{-- Dynamic Office Info --}}
                 <p>{{ $signatories['office_address'] ?? 'Inzo Arnaldo Village, Roxas City' }} | Tel: {{ $signatories['office_hotline'] ?? '(036) 52026-83' }}</p>
             </td>
 
@@ -141,8 +144,8 @@
     </table>
 
     <div class="certify-text">
-        {{-- I removed the hardcoded min-width on program so it hugs the text better, or you can keep it if you want uniformity --}}
-        The above-named client has been found eligible for financial assistance from <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> program. Based on the assessment conducted by the undersigned social worker, it is strongly recommended that the client/beneficiary be extended financial assistance to defray the <span class="details-line" style="min-width: 120px;">{{ $application->program }}</span> expenses in the amount of <strong>Php <span class="details-line" style="min-width: 80px;">{{ number_format($application->amount_released, 2) }}</span></strong>.
+        {{-- FIX: Added .peso span, changed Php to symbol, and increased width to 200px --}}
+        The above-named client has been found eligible for financial assistance from <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> program. Based on the assessment conducted by the undersigned social worker, it is strongly recommended that the client/beneficiary be extended financial assistance to defray the <span class="details-line" style="min-width: 200px;">{{ $application->program }}</span> expenses in the amount of <strong><span class="peso">&#8369;</span> <span class="details-line" style="min-width: 80px;">{{ number_format($application->amount_released, 2) }}</span></strong>.
     </div>
 
     <div class="certify-text">
@@ -187,11 +190,12 @@
         </div>
 
         <div class="certify-text" style="text-indent: 0;">
-            I, <span class="details-line" style="min-width: 250px;">{{ strtoupper($application->first_name . ' ' . $application->last_name) }}</span>, hereby acknowledge the receipt of cash assistance in the amount of <strong>Php <span class="details-line" style="min-width: 80px;">{{ number_format($application->amount_released, 2) }}</span></strong> from the Roxas City Government – Assistance to Individuals in Crisis Situation (AICS) program.
+            {{-- FIX: Added .peso span, changed Php to symbol --}}
+            I, <span class="details-line" style="min-width: 250px;">{{ strtoupper($application->first_name . ' ' . $application->last_name) }}</span>, hereby acknowledge the receipt of cash assistance in the amount of <strong><span class="peso">&#8369;</span> <span class="details-line" style="min-width: 80px;">{{ number_format($application->amount_released, 2) }}</span></strong> from the Roxas City Government – Assistance to Individuals in Crisis Situation (AICS) program.
         </div>
 
         <div class="certify-text" style="text-indent: 0;">
-            This assistance was provided as support for <span class="details-line" style="min-width: 150px;">{{ $application->program }}</span> expenses. I confirm that I have received the said amount in full and understand that it is provided without any obligation for repayment.
+            This assistance was provided as support for <span class="details-line" style="min-width: 200px;">{{ $application->program }}</span> expenses. I confirm that I have received the said amount in full and understand that it is provided without any obligation for repayment.
         </div>
 
         <table class="signatures" style="margin-top: 20px;">

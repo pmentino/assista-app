@@ -19,7 +19,7 @@ export default function UsersIndex({ auth, users, filters }) {
         return () => clearTimeout(timer);
     }, [search, role]);
 
-    // --- NEW: EXPLICIT ROLE CHANGE ---
+    // --- ROLE CHANGE HANDLER ---
     const changeRole = (user, newRole) => {
         const action = newRole === 'admin' || (newRole === 'staff' && user.type === 'user')
             ? 'Promote'
@@ -40,15 +40,15 @@ export default function UsersIndex({ auth, users, filters }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-blue-900 leading-tight">User Management</h2>}
+            header={<h2 className="font-semibold text-xl text-blue-900 dark:text-blue-300 leading-tight">User Management</h2>}
         >
             <Head title="Manage Users" />
 
-            <div className="py-12 bg-gray-50 min-h-screen font-sans">
+            <div className="py-12 bg-gray-50 dark:bg-gray-900 min-h-screen font-sans transition-colors duration-300">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
                     {/* --- HEADER CONTROLS --- */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 transition-colors">
                         <div className="w-full md:w-1/3 relative">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -58,14 +58,14 @@ export default function UsersIndex({ auth, users, filters }) {
                             <TextInput
                                 type="text"
                                 placeholder="Search by name or email..."
-                                className="w-full pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
+                                className="w-full pl-10 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 focus:ring-blue-500 rounded-lg"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                             />
                         </div>
                         <div className="w-full md:w-auto flex gap-3">
                             <select
-                                className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg shadow-sm text-sm text-gray-700 bg-gray-50"
+                                className="border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 rounded-lg shadow-sm text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-700 cursor-pointer"
                                 value={role}
                                 onChange={(e) => setRole(e.target.value)}
                             >
@@ -78,10 +78,10 @@ export default function UsersIndex({ auth, users, filters }) {
                     </div>
 
                     {/* --- PROFESSIONAL TABLE --- */}
-                    <div className="bg-white overflow-hidden shadow-sm rounded-xl border border-gray-200">
+                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-xl border border-gray-200 dark:border-gray-700 transition-colors">
                         <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-blue-900">
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead className="bg-blue-900 dark:bg-gray-700">
                                     <tr>
                                         <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">User Profile</th>
                                         <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Current Role</th>
@@ -90,27 +90,27 @@ export default function UsersIndex({ auth, users, filters }) {
                                         <th className="px-6 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">Manage Authority</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                     {users.data.length === 0 ? (
                                         <tr>
-                                            <td colSpan="5" className="px-6 py-12 text-center text-gray-500 italic">
+                                            <td colSpan="5" className="px-6 py-12 text-center text-gray-500 dark:text-gray-400 italic">
                                                 No users found matching your criteria.
                                             </td>
                                         </tr>
                                     ) : (
                                         users.data.map((user) => (
-                                            <tr key={user.id} className="hover:bg-blue-50/50 transition duration-150">
+                                            <tr key={user.id} className="hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition duration-150">
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center">
                                                         <div className={`h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm ${
-                                                            user.type === 'admin' ? 'bg-blue-800' :
-                                                            user.type === 'staff' ? 'bg-yellow-500' : 'bg-gray-400'
+                                                            user.type === 'admin' ? 'bg-blue-800 dark:bg-blue-600' :
+                                                            user.type === 'staff' ? 'bg-yellow-500 dark:bg-yellow-600' : 'bg-gray-400 dark:bg-gray-600'
                                                         }`}>
                                                             {user.name.charAt(0)}
                                                         </div>
                                                         <div className="ml-4">
-                                                            <div className="text-sm font-bold text-gray-900">{user.name}</div>
-                                                            <div className="text-xs text-gray-500">{user.email}</div>
+                                                            <div className="text-sm font-bold text-gray-900 dark:text-white">{user.name}</div>
+                                                            <div className="text-xs text-gray-500 dark:text-gray-400">{user.email}</div>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -120,14 +120,14 @@ export default function UsersIndex({ auth, users, filters }) {
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-bold rounded-full border ${
                                                         user.is_active
-                                                            ? 'bg-green-50 text-green-700 border-green-200'
-                                                            : 'bg-red-50 text-red-700 border-red-200'
+                                                            ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800'
+                                                            : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800'
                                                     }`}>
                                                         {user.is_active ? 'Active' : 'Deactivated'}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {user.barangay || <span className="text-gray-300 italic">N/A</span>}
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                                    {user.barangay || <span className="text-gray-300 dark:text-gray-600 italic">N/A</span>}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-center">
                                                     {user.id !== auth.user.id && (
@@ -169,15 +169,15 @@ export default function UsersIndex({ auth, users, filters }) {
                                                                 />
                                                             )}
 
-                                                            <div className="h-4 w-px bg-gray-300 mx-2"></div>
+                                                            <div className="h-4 w-px bg-gray-300 dark:bg-gray-600 mx-2"></div>
 
                                                             {/* Status Button */}
                                                             <button
                                                                 onClick={() => toggleStatus(user)}
                                                                 className={`p-1.5 rounded-md transition-colors ${
                                                                     user.is_active
-                                                                        ? 'text-red-500 hover:bg-red-50'
-                                                                        : 'text-green-500 hover:bg-green-50'
+                                                                        ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30'
+                                                                        : 'text-green-500 hover:bg-green-50 dark:hover:bg-green-900/30'
                                                                 }`}
                                                                 title={user.is_active ? "Deactivate Account" : "Activate Account"}
                                                             >
@@ -198,18 +198,22 @@ export default function UsersIndex({ auth, users, filters }) {
                         </div>
 
                         {/* --- PAGINATION --- */}
-                        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                             <div className="flex justify-between items-center">
                                 {users.links.map((link, key) => (
                                     link.url ? (
                                         <Link
                                             key={key}
                                             href={link.url}
-                                            className={`px-3 py-1.5 border rounded-lg text-xs font-bold shadow-sm transition ${link.active ? 'bg-blue-800 text-white border-blue-800' : 'bg-white text-gray-700 hover:bg-gray-100 border-gray-300'}`}
+                                            className={`px-3 py-1.5 border rounded-lg text-xs font-bold shadow-sm transition ${
+                                                link.active
+                                                ? 'bg-blue-800 text-white border-blue-800 dark:bg-blue-600 dark:border-blue-600'
+                                                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 border-gray-300 dark:border-gray-600'
+                                            }`}
                                             dangerouslySetInnerHTML={{ __html: link.label }}
                                         />
                                     ) : (
-                                        <span key={key} className="px-3 py-1.5 border border-transparent rounded text-xs text-gray-400" dangerouslySetInnerHTML={{ __html: link.label }}></span>
+                                        <span key={key} className="px-3 py-1.5 border border-transparent rounded text-xs text-gray-400 dark:text-gray-500" dangerouslySetInnerHTML={{ __html: link.label }}></span>
                                     )
                                 ))}
                             </div>
@@ -225,9 +229,9 @@ export default function UsersIndex({ auth, users, filters }) {
 
 function RoleBadge({ role }) {
     const styles = {
-        admin: 'bg-blue-100 text-blue-800 border-blue-200 ring-blue-500',
-        staff: 'bg-yellow-100 text-yellow-800 border-yellow-200 ring-yellow-500',
-        user: 'bg-gray-100 text-gray-600 border-gray-200 ring-gray-400',
+        admin: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800 ring-blue-500 dark:ring-blue-400',
+        staff: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800 ring-yellow-500 dark:ring-yellow-400',
+        user: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 ring-gray-400',
     };
 
     const label = {
@@ -245,10 +249,10 @@ function RoleBadge({ role }) {
 
 function ActionButton({ onClick, color, icon, label }) {
     const colors = {
-        green: 'text-green-600 hover:bg-green-50',
-        blue: 'text-blue-600 hover:bg-blue-50',
-        orange: 'text-orange-600 hover:bg-orange-50',
-        gray: 'text-gray-500 hover:bg-gray-50',
+        green: 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20',
+        blue: 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20',
+        orange: 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20',
+        gray: 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700',
     };
 
     return (

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Staff;
 
+use App\Notifications\ApplicationStatusAlert; // <--- Add this line
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -115,6 +116,29 @@ class StaffController extends Controller
         ]);
 
         return redirect()->back()->with('message', 'Remark saved successfully.');
+    }
+
+    // --- ADD THIS NEW FUNCTION ---
+    public function reject(Request $request, Application $application)
+    {
+        // 1. Validate that a reason was provided
+        $request->validate([
+            'remarks' => 'required|string|max:1000',
+        ]);
+
+        // 2. Update the status and save the reason
+        $application->update([
+            'status' => 'Rejected',
+            'remarks' => $request->remarks,
+        ]);
+
+        // 3. --- FIX: Trigger the Notification Bell ---
+        if ($application->user) {
+            $application->user->notify(new ApplicationStatusAlert($application));
+        }
+
+        // 4. Return to the page
+        return redirect()->back()->with('message', 'Application returned/rejected successfully.');
     }
 
     // --- STAFF REPORTING MODULE ---

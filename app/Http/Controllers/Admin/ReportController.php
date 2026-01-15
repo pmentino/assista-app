@@ -36,6 +36,11 @@ class ReportController extends Controller
             $query->whereDate('created_at', '<=', $request->end_date);
         }
 
+        // 5. --- NEW: Filter by Barangay ---
+        if ($request->filled('barangay')) {
+            $query->where('barangay', $request->barangay);
+        }
+
         // Fetch Data: Newest Created First
         $applications = $query->orderBy('created_at', 'desc')
                               ->paginate(15)
@@ -49,9 +54,15 @@ class ReportController extends Controller
             'rejected' => Application::where('status', 'Rejected')->count(),
         ];
 
+        // --- NEW: Fetch Dropdown Data ---
+        $allBarangays = Application::select('barangay')->distinct()->orderBy('barangay')->pluck('barangay');
+        $programs = \App\Models\AssistanceProgram::pluck('title'); // Get all programs (even inactive ones for reports)
+
         return Inertia::render('Admin/Reports/Index', [
             'applications' => $applications,
-            'filters' => $request->only(['status', 'program', 'start_date', 'end_date']),
+            'allBarangays' => $allBarangays, // Sending to Frontend
+            'programs' => $programs,         // Sending to Frontend
+            'filters' => $request->only(['status', 'program', 'start_date', 'end_date', 'barangay']),
             'stats' => $stats,
             'auth' => ['user' => Auth::user()]
         ]);
@@ -72,6 +83,10 @@ class ReportController extends Controller
         }
         if ($request->filled('end_date')) {
             $query->whereDate('created_at', '<=', $request->end_date);
+        }
+        // --- NEW: Filter by Barangay in PDF ---
+        if ($request->filled('barangay')) {
+            $query->where('barangay', $request->barangay);
         }
 
         $applications = $query->orderBy('created_at', 'desc')->get();
@@ -112,6 +127,10 @@ class ReportController extends Controller
         if ($request->filled('end_date')) {
             $query->whereDate('created_at', '<=', $request->end_date);
         }
+        // --- NEW: Filter by Barangay in Excel ---
+        if ($request->filled('barangay')) {
+            $query->where('barangay', $request->barangay);
+        }
 
         $applications = $query->orderBy('created_at', 'desc')->get();
 
@@ -137,7 +156,7 @@ class ReportController extends Controller
             'Barangay'
         ];
 
-        // 4. Stream the File (Efficient for large data)
+        // 4. Stream the File
         $callback = function() use($applications, $columns) {
             $file = fopen('php://output', 'w');
 
@@ -155,7 +174,6 @@ class ReportController extends Controller
                     $app->amount_released,
                     $app->created_at->format('Y-m-d'),
                     $app->approved_date ? date('Y-m-d', strtotime($app->approved_date)) : 'N/A',
-                    // Adding a single quote forces Excel to treat this as text (keeps the 09...)
                     "'" . $app->contact_number,
                     $app->barangay
                 ]);

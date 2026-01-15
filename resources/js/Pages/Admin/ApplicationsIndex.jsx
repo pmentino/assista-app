@@ -7,9 +7,9 @@ import Pagination from '@/Components/Pagination';
 // --- HELPER COMPONENTS ---
 
 const SortArrow = ({ direction }) => {
-    if (direction === 'asc') return <span className="ml-1 text-blue-600">↑</span>;
-    if (direction === 'desc') return <span className="ml-1 text-blue-600">↓</span>;
-    return <span className="ml-1 text-gray-300">↕</span>;
+    if (direction === 'asc') return <span className="ml-1 text-blue-600 dark:text-blue-400">↑</span>;
+    if (direction === 'desc') return <span className="ml-1 text-blue-600 dark:text-blue-400">↓</span>;
+    return <span className="ml-1 text-gray-300 dark:text-gray-600">↕</span>;
 };
 
 const SortableHeader = ({ label, columnName, sortBy, sortDirection }) => {
@@ -30,16 +30,16 @@ const SortableHeader = ({ label, columnName, sortBy, sortDirection }) => {
     };
 
     return (
-        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors select-none group whitespace-nowrap" onClick={handleSort}>
+        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors select-none group whitespace-nowrap" onClick={handleSort}>
             <div className="flex items-center">
-                <span className={`group-hover:text-blue-600 ${isCurrentSort ? 'text-blue-600' : ''}`}>{label}</span>
+                <span className={`group-hover:text-blue-600 dark:group-hover:text-blue-400 ${isCurrentSort ? 'text-blue-600 dark:text-blue-400' : ''}`}>{label}</span>
                 <SortArrow direction={isCurrentSort ? sortDirection : null} />
             </div>
         </th>
     );
 };
 
-// --- ROW COMPONENT WITH DISABLED DELETE LOGIC ---
+// --- ROW COMPONENT ---
 const Row = ({ app, getStatusColor }) => {
     const { delete: destroy } = useForm();
 
@@ -56,25 +56,25 @@ const Row = ({ app, getStatusColor }) => {
     const isApproved = app.status === 'Approved';
 
     return (
-        <tr className="hover:bg-blue-50 transition-colors duration-150">
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+        <tr className="hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors duration-150">
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">
                 #{String(app.id).padStart(5, '0')}
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center">
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs mr-3 shrink-0">
+                    <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-200 font-bold text-xs mr-3 shrink-0">
                         {app.first_name?.[0]}{app.last_name?.[0]}
                     </div>
                     <div>
-                        <div className="text-sm font-bold text-gray-900">{app.first_name} {app.last_name}</div>
-                        <div className="text-xs text-gray-500">{app.email || 'No email'}</div>
+                        <div className="text-sm font-bold text-gray-900 dark:text-white">{app.first_name} {app.last_name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{app.email || 'No email'}</div>
                     </div>
                 </div>
             </td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                 {app.program}
             </td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                 {app.barangay}
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
@@ -82,23 +82,22 @@ const Row = ({ app, getStatusColor }) => {
                     {app.status}
                 </span>
             </td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                 {new Date(app.created_at).toLocaleDateString()}
             </td>
             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
                 <Link
                     href={route('admin.applications.show', app.id)}
-                    className="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 hover:text-blue-600 focus:outline-none transition ease-in-out duration-150"
+                    className="inline-flex items-center px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-200 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none transition ease-in-out duration-150"
                 >
                     Review
                 </Link>
 
                 {/* CONDITIONAL DELETE BUTTON */}
                 {isApproved ? (
-                    // DISABLED STATE (Greyed Out)
                     <button
                         disabled
-                        className="inline-flex items-center p-1.5 bg-gray-100 border border-gray-200 rounded-md text-gray-400 cursor-not-allowed"
+                        className="inline-flex items-center p-1.5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-gray-400 dark:text-gray-600 cursor-not-allowed"
                         title="Cannot delete Approved application (Funded)"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,10 +105,9 @@ const Row = ({ app, getStatusColor }) => {
                         </svg>
                     </button>
                 ) : (
-                    // ACTIVE STATE (Red)
                     <button
                         onClick={handleDelete}
-                        className="inline-flex items-center p-1.5 bg-white border border-red-200 rounded-md text-red-600 hover:bg-red-50 hover:border-red-400 transition"
+                        className="inline-flex items-center p-1.5 bg-white dark:bg-gray-700 border border-red-200 dark:border-red-800 rounded-md text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:border-red-400 transition"
                         title="Delete Application"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,9 +122,8 @@ const Row = ({ app, getStatusColor }) => {
 
 // --- MAIN COMPONENT ---
 
-export default function ApplicationsIndex({ auth, applications, filters: initialFilters = {}, sort_by: initialSortBy, sort_direction: initialSortDirection }) {
+export default function ApplicationsIndex({ auth, applications, filters: initialFilters = {}, sort_by: initialSortBy, sort_direction: initialSortDirection, allBarangays, programs }) {
 
-    // Default empty object fallback
     const { flash = {} } = usePage().props;
     const [visibleSuccess, setVisibleSuccess] = useState(null);
 
@@ -176,9 +173,9 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'Approved': return 'bg-green-100 text-green-800 border-green-200';
-            case 'Rejected': return 'bg-red-100 text-red-800 border-red-200';
-            default: return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+            case 'Approved': return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800';
+            case 'Rejected': return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800';
+            default: return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800';
         }
     };
 
@@ -187,8 +184,8 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
             user={auth?.user}
             header={
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                    <h2 className="font-bold text-2xl text-gray-800 leading-tight">Manage Applications</h2>
-                    <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">
+                    <h2 className="font-bold text-2xl text-gray-800 dark:text-gray-200 leading-tight">Manage Applications</h2>
+                    <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 text-xs font-bold rounded-full">
                         {applications.total} Records
                     </span>
                 </div>
@@ -196,41 +193,40 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
         >
             <Head title="Manage Applications" />
 
-            {/* --- FLOATING SUCCESS TOAST ONLY (Since error is now impossible via UI) --- */}
             {visibleSuccess && (
                 <div className="fixed top-24 right-5 z-50 flex flex-col gap-2 w-full max-w-sm pointer-events-none">
-                    <div className="bg-white border-l-8 border-green-500 rounded-lg shadow-2xl p-4 flex items-start animate-fade-in-left pointer-events-auto ring-1 ring-black/5">
+                    <div className="bg-white dark:bg-gray-800 border-l-8 border-green-500 rounded-lg shadow-2xl p-4 flex items-start animate-fade-in-left pointer-events-auto ring-1 ring-black/5 dark:ring-white/10">
                         <div className="flex-shrink-0 text-green-500">
                             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
                         <div className="ml-3 w-0 flex-1">
-                            <h3 className="text-sm font-bold text-green-900">Success</h3>
-                            <p className="text-sm text-green-700 mt-1">{visibleSuccess}</p>
+                            <h3 className="text-sm font-bold text-green-900 dark:text-green-300">Success</h3>
+                            <p className="text-sm text-green-700 dark:text-green-400 mt-1">{visibleSuccess}</p>
                         </div>
-                        <button onClick={() => setVisibleSuccess(null)} className="ml-4 text-gray-400 hover:text-gray-500">
+                        <button onClick={() => setVisibleSuccess(null)} className="ml-4 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
                             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                     </div>
                 </div>
             )}
 
-            <div className="py-6 md:py-10 bg-gray-50 min-h-screen">
+            <div className="py-6 md:py-10 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
 
                         {/* --- DRILL-DOWN BANNER --- */}
                         {filters.barangay && (
-                            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 flex justify-between items-center">
+                            <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-4 flex justify-between items-center">
                                 <div className="flex items-center">
-                                    <p className="text-sm text-blue-700">
+                                    <p className="text-sm text-blue-700 dark:text-blue-300">
                                         Showing applicants from <strong>{filters.barangay}</strong>
                                     </p>
                                 </div>
                                 <button
                                     onClick={() => setFilters(prev => ({ ...prev, barangay: '' }))}
-                                    className="text-sm text-blue-700 font-bold hover:underline hover:text-blue-900"
+                                    className="text-sm text-blue-700 dark:text-blue-400 font-bold hover:underline hover:text-blue-900 dark:hover:text-blue-200"
                                 >
                                     Clear Filter
                                 </button>
@@ -238,15 +234,15 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                         )}
 
                         {/* --- TOOLBAR SECTION --- */}
-                        <div className="p-5 border-b border-gray-100 bg-white grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                            <div className="col-span-1 md:col-span-5 relative">
+                        <div className="p-5 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                            <div className="col-span-1 md:col-span-3 relative">
                                 <input
                                     type="text"
                                     name="search"
                                     value={filters.search}
                                     onChange={handleFilterChange}
                                     placeholder="Search by Name or ID..."
-                                    className="block w-full pl-4 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm transition h-10"
+                                    className="block w-full pl-4 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm transition h-10"
                                 />
                             </div>
                             <div className="col-span-1 md:col-span-3">
@@ -254,7 +250,7 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                                     name="status"
                                     value={filters.status}
                                     onChange={handleFilterChange}
-                                    className="block w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm cursor-pointer h-10"
+                                    className="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm cursor-pointer h-10"
                                 >
                                     <option value="">All Statuses</option>
                                     <option value="Pending">Pending Review</option>
@@ -267,23 +263,19 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                                     name="program"
                                     value={filters.program}
                                     onChange={handleFilterChange}
-                                    className="block w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm cursor-pointer h-10"
+                                    className="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm cursor-pointer h-10"
                                 >
                                     <option value="">All Programs</option>
-                                    <option value="Hospitalization">Hospitalization</option>
-                                    <option value="Laboratory Tests">Laboratory Tests</option>
-                                    <option value="Anti-Rabies Vaccine Treatment">Anti-Rabies Vaccine</option>
-                                    <option value="Medicine Assistance">Medicine Assistance</option>
-                                    <option value="Funeral Assistance">Funeral Assistance</option>
-                                    <option value="Chemotherapy">Chemotherapy</option>
-                                    <option value="Diagnostic Blood Tests">Diagnostic Blood Tests</option>
+                                    {programs && programs.map((p) => (
+                                        <option key={p} value={p}>{p}</option>
+                                    ))}
                                 </select>
                             </div>
                             <div className="col-span-1 text-right md:text-center">
                                 {(filters.search || filters.status || filters.program || filters.barangay) && (
                                     <button
                                         onClick={() => setFilters({ search: '', status: '', program: '', barangay: '' })}
-                                        className="text-sm text-red-600 hover:text-red-800 font-bold underline transition"
+                                        className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 font-bold underline transition"
                                     >
                                         Reset
                                     </button>
@@ -293,19 +285,19 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
 
                         {/* --- DATA TABLE --- */}
                         <div className="overflow-x-auto w-full">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead className="bg-gray-50 dark:bg-gray-700">
                                     <tr>
                                         <SortableHeader label="ID" columnName="id" sortBy={initialSortBy} sortDirection={initialSortDirection} />
                                         <SortableHeader label="Applicant Name" columnName="first_name" sortBy={initialSortBy} sortDirection={initialSortDirection} />
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Assistance Type</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Barangay</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Assistance Type</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Barangay</th>
                                         <SortableHeader label="Status" columnName="status" sortBy={initialSortBy} sortDirection={initialSortDirection} />
                                         <SortableHeader label="Submitted On" columnName="created_at" sortBy={initialSortBy} sortDirection={initialSortDirection} />
-                                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Action</th>
+                                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                     {applications.data.length > 0 ? (
                                         applications.data.map((app) => (
                                             <Row key={app.id} app={app} getStatusColor={getStatusColor} />
@@ -313,10 +305,10 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                                     ) : (
                                         <tr>
                                             <td colSpan="7" className="px-6 py-12 text-center">
-                                                <p className="text-gray-500 text-lg">No applications match your search.</p>
+                                                <p className="text-gray-500 dark:text-gray-400 text-lg">No applications match your search.</p>
                                                 <button
                                                     onClick={() => setFilters({ search: '', status: '', program: '', barangay: '' })}
-                                                    className="mt-2 text-blue-600 hover:underline font-bold text-sm"
+                                                    className="mt-2 text-blue-600 dark:text-blue-400 hover:underline font-bold text-sm"
                                                 >
                                                     Clear Filters
                                                 </button>
@@ -328,7 +320,7 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                         </div>
 
                         {/* --- PAGINATION --- */}
-                        <div className="p-4 border-t border-gray-100 bg-gray-50">
+                        <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                             <Pagination links={applications.links} />
                         </div>
 

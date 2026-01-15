@@ -26,8 +26,15 @@ class ApplicationStatusAlert extends Notification
     // This defines what data is saved into the database for the bell
     public function toArray($notifiable)
     {
+        // --- SMART LINK LOGIC ---
+        // If Rejected, go straight to Edit form. Otherwise, go to Dashboard.
+        $actionLink = $this->application->status === 'Rejected'
+            ? route('applications.edit', $this->application->id)
+            : route('dashboard');
+
         return [
             'id' => $this->application->id,
+
             // 1. CLEAR STATUS HEADER (Professional & Direct)
             'message' => "Application {$this->application->status}",
 
@@ -35,6 +42,9 @@ class ApplicationStatusAlert extends Notification
             'description' => "The {$this->application->program} request for {$this->application->first_name} {$this->application->last_name} has been processed.",
 
             'status' => $this->application->status,
+
+            // 3. THE SMART ACTION LINK
+            'link' => $actionLink,
         ];
     }
 }

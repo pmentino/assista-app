@@ -8,16 +8,51 @@ export default function AuthenticatedLayout({ user, header, children }) {
     const { props } = usePage();
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
 
+    // --- ACCESSIBILITY STATES ---
+    const [darkMode, setDarkMode] = useState(localStorage.getItem('theme') === 'dark');
+    const [fontSize, setFontSize] = useState(localStorage.getItem('fontSize') || 'text-base');
+
     // Safely access user
     const currentUser = user || props.auth?.user || {};
 
-    // Check Roles - FIX: Check 'type' as well
+    // Check Roles
     const isAdmin = currentUser?.role === 'admin' || currentUser?.type === 'admin';
     const isStaff = currentUser?.role === 'staff' || currentUser?.type === 'staff';
 
     // LOGIC: Show "My Dashboard" if user is NOT Admin.
     const showApplicantDashboard = !isAdmin;
 
+    // --- EFFECT: HANDLE DARK MODE ---
+    useEffect(() => {
+        if (darkMode) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
+    }, [darkMode]);
+
+    // --- EFFECT: HANDLE FONT SIZE ---
+    useEffect(() => {
+        // Remove old classes
+        document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg', 'text-xl');
+        // Add new class
+        document.documentElement.classList.add(fontSize);
+        localStorage.setItem('fontSize', fontSize);
+    }, [fontSize]);
+
+    // --- TOGGLE FUNCTIONS ---
+    const toggleTheme = () => setDarkMode(!darkMode);
+
+    const cycleFontSize = () => {
+        if (fontSize === 'text-sm') setFontSize('text-base');
+        else if (fontSize === 'text-base') setFontSize('text-lg');
+        else if (fontSize === 'text-lg') setFontSize('text-xl');
+        else setFontSize('text-sm');
+    };
+
+    // --- TOAST NOTIFICATIONS ---
     useEffect(() => {
         if (props.flash?.message) toast.success(props.flash.message);
         if (props.flash?.success) toast.success(props.flash.success);
@@ -40,7 +75,7 @@ export default function AuthenticatedLayout({ user, header, children }) {
             : 'block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-300 hover:text-white hover:bg-blue-700 hover:border-gray-300 focus:outline-none focus:text-white focus:bg-blue-700 transition duration-150 ease-in-out';
 
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'}`}>
             <Toaster position="top-right" />
 
             {/* --- FAIL-SAFE ERROR BANNER --- */}
@@ -53,12 +88,13 @@ export default function AuthenticatedLayout({ user, header, children }) {
                 </div>
             )}
 
-            <nav className="bg-blue-800 border-b border-blue-900 sticky top-0 z-50">
+            <nav className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-blue-800 border-blue-900'} border-b sticky top-0 z-50 transition-colors duration-300`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
                         <div className="flex">
                             <div className="shrink-0 flex items-center">
                                 <Link href="/">
+                                    {/* Use filter invert for dark mode logo if needed, or keep as is */}
                                     <img src="/images/logo.png" alt="Assista Logo" className="block h-9 w-auto" />
                                 </Link>
                             </div>
@@ -83,8 +119,8 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                             All Applications
                                         </Link>
                                         <Link href={route('staff.reports.index')} className={navLinkClasses(route().current('staff.reports.*'))}>
-    Reports
-</Link>
+                                            Reports
+                                        </Link>
                                     </>
                                 )}
 
@@ -100,12 +136,9 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                         <Link href={route('admin.reports.index')} className={navLinkClasses(route().current('admin.reports.*'))}>
                                             Reports
                                         </Link>
-
-                                        {/* --- NEW: MANAGE USERS LINK --- */}
                                         <Link href={route('admin.users.index')} className={navLinkClasses(route().current('admin.users.*'))}>
                                             Manage Users
                                         </Link>
-
                                         <Link href={route('admin.news.index')} className={navLinkClasses(route().current('admin.news.*'))}>
                                             News
                                         </Link>
@@ -124,13 +157,45 @@ export default function AuthenticatedLayout({ user, header, children }) {
                         </div>
 
                         {/* Settings Dropdown & Bell */}
-                        <div className="hidden sm:flex sm:items-center sm:ml-6">
+                        <div className="hidden sm:flex sm:items-center sm:ml-6 gap-3">
+
+                            {/* --- ACCESSIBILITY CONTROLS --- */}
+                            <div className="flex items-center bg-black/20 rounded-full p-1 border border-white/10">
+                                {/* Font Size Toggle */}
+                                <button
+                                    onClick={cycleFontSize}
+                                    className="p-1.5 rounded-full text-gray-200 hover:text-white hover:bg-white/10 transition"
+                                    title="Change Font Size"
+                                >
+                                    <span className="font-serif font-bold text-xs">A</span>
+                                    <span className="font-serif font-bold text-lg ml-0.5">A</span>
+                                </button>
+
+                                {/* Dark Mode Toggle */}
+                                <button
+                                    onClick={toggleTheme}
+                                    className="p-1.5 rounded-full text-yellow-300 hover:text-yellow-200 hover:bg-white/10 transition ml-1"
+                                    title="Toggle Dark Mode"
+                                >
+                                    {darkMode ? (
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                                        </svg>
+                                    ) : (
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                                        </svg>
+                                    )}
+                                </button>
+                            </div>
+
                             <NotificationBell />
+
                             <div className="ml-3 relative">
                                 <Dropdown>
                                     <Dropdown.Trigger>
                                         <span className="inline-flex rounded-md">
-                                            <button type="button" className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-200 bg-blue-800 hover:text-white focus:outline-none transition ease-in-out duration-150">
+                                            <button type="button" className={`inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-200 ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-blue-800 hover:text-white'} focus:outline-none transition ease-in-out duration-150`}>
                                                 {currentUser.name || 'Account'}
                                                 <svg className="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                                     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -148,7 +213,10 @@ export default function AuthenticatedLayout({ user, header, children }) {
 
                         {/* Hamburger */}
                         <div className="-mr-2 flex items-center sm:hidden">
-                            <div className="mr-2">
+                            <div className="flex mr-2 gap-2">
+                                <button onClick={toggleTheme} className="text-gray-200 p-2">
+                                     {darkMode ? '☀️' : '🌙'}
+                                </button>
                                 <NotificationBell />
                             </div>
                             <button
@@ -165,15 +233,19 @@ export default function AuthenticatedLayout({ user, header, children }) {
                 </div>
 
                 {/* --- MOBILE MENU --- */}
-                <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden bg-blue-800 border-t border-blue-900'}>
+                <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ` sm:hidden ${darkMode ? 'bg-gray-800' : 'bg-blue-800'} border-t border-blue-900`}>
                     <div className="pt-2 pb-3 space-y-1">
+                         {/* Accessibility Links for Mobile */}
+                         <button onClick={cycleFontSize} className={`w-full text-left pl-3 pr-4 py-2 text-base font-medium ${darkMode ? 'text-gray-300' : 'text-blue-100'}`}>
+                            Adjust Font Size: {fontSize.replace('text-', '').toUpperCase()}
+                         </button>
 
                         {showApplicantDashboard && (
                             <Link href={route('dashboard')} className={mobileNavLinkClasses(route().current('dashboard'))}>
                                 My Dashboard
                             </Link>
                         )}
-
+                        {/* ... Existing Mobile Links ... */}
                         {isStaff && (
                             <>
                                 <Link href={route('staff.dashboard')} className={mobileNavLinkClasses(route().current('staff.dashboard'))}>
@@ -196,12 +268,9 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                 <Link href={route('admin.reports.index')} className={mobileNavLinkClasses(route().current('admin.reports.*'))}>
                                     Reports
                                 </Link>
-
-                                {/* --- NEW: MOBILE MANAGE USERS --- */}
                                 <Link href={route('admin.users.index')} className={mobileNavLinkClasses(route().current('admin.users.*'))}>
                                     Manage Users
                                 </Link>
-
                                 <Link href={route('admin.news.index')} className={mobileNavLinkClasses(route().current('admin.news.*'))}>
                                     News
                                 </Link>
@@ -243,14 +312,16 @@ export default function AuthenticatedLayout({ user, header, children }) {
             </nav>
 
             {header && (
-                <header className="bg-white shadow relative z-10">
+                <header className={`${darkMode ? 'bg-gray-800 shadow-gray-900' : 'bg-white'} shadow relative z-10 transition-colors duration-300`}>
                     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {header}
+                        <div className={darkMode ? 'text-gray-100' : 'text-gray-800'}>
+                             {header}
+                        </div>
                     </div>
                 </header>
             )}
 
-            <main>{children}</main>
+            <main className={darkMode ? 'text-gray-100' : ''}>{children}</main>
         </div>
     );
 }

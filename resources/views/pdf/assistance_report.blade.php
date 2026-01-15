@@ -5,6 +5,9 @@
     <style>
         body { font-family: 'Times New Roman', serif; font-size: 10pt; color: #000; }
 
+        /* --- FIX 1: Special Font for Peso Sign to prevent '?' error --- */
+        .peso { font-family: "DejaVu Sans", sans-serif; }
+
         /* Official Header Layout */
         .header-table { width: 100%; margin-bottom: 20px; border-collapse: collapse; }
         .header-table td { vertical-align: middle; text-align: center; }
@@ -87,43 +90,44 @@
 
     <table class="main">
         <thead>
-            <thead>
-    <tr>
-        <th width="5%">NO.</th>
-        <th width="18%">DATE & TIME APPROVED</th>
-        <th width="22%">BENEFICIARY NAME</th>
-        <th width="15%">BARANGAY</th>
-        <th width="20%">TYPE OF ASSISTANCE</th>
-        <th width="10%">STATUS</th>
-        <th width="10%">AMOUNT</th>
-    </tr>
-</thead>
+            <tr>
+                <th width="5%">NO.</th>
+                <th width="18%">DATE & TIME APPROVED</th>
+                <th width="22%">BENEFICIARY NAME</th>
+                <th width="15%">BARANGAY</th>
+                <th width="20%">TYPE OF ASSISTANCE</th>
+                <th width="10%">STATUS</th>
+                <th width="10%">AMOUNT</th>
+            </tr>
         </thead>
         <tbody>
-    @forelse($applications as $index => $app)
-    <tr>
-        <td class="text-center">{{ $index + 1 }}</td>
-        <td class="text-center" style="font-size: 8pt;">
-            {{-- CHANGED: Added time format h:i A --}}
-            @if($app->approved_date)
-                {{ \Carbon\Carbon::parse($app->approved_date)->format('m/d/Y h:i A') }}
-            @else
-                {{-- Fallback to updated_at if approved_date is missing --}}
-                {{ $app->updated_at->format('m/d/Y h:i A') }}
-            @endif
-        </td>
-        <td>
-            <span style="text-transform: uppercase;">
-                {{ $app->last_name }}, {{ $app->first_name }}
-            </span>
-        </td>
-        <td>{{ $app->barangay }}</td>
-        <td>{{ $app->program }}</td>
-        <td class="text-center" style="font-size: 8pt;">{{ strtoupper($app->status) }}</td>
-        <td class="text-right">
-            {{ $app->amount_released > 0 ? number_format($app->amount_released, 2) : '-' }}
-        </td>
-    </tr>
+            @forelse($applications as $index => $app)
+            <tr>
+                <td class="text-center">{{ $index + 1 }}</td>
+                <td class="text-center" style="font-size: 8pt;">
+                    @if($app->approved_date)
+                        {{ \Carbon\Carbon::parse($app->approved_date)->format('m/d/Y h:i A') }}
+                    @else
+                        {{ $app->updated_at->format('m/d/Y h:i A') }}
+                    @endif
+                </td>
+                <td>
+                    <span style="text-transform: uppercase;">
+                        {{ $app->last_name }}, {{ $app->first_name }}
+                    </span>
+                </td>
+                <td>{{ $app->barangay }}</td>
+                <td>{{ $app->program }}</td>
+                <td class="text-center" style="font-size: 8pt;">{{ strtoupper($app->status) }}</td>
+                <td class="text-right">
+                    {{-- FIX: Using the .peso class and HTML entity --}}
+                    @if($app->amount_released > 0)
+                        <span class="peso">&#8369;</span> {{ number_format($app->amount_released, 2) }}
+                    @else
+                        -
+                    @endif
+                </td>
+            </tr>
             @empty
             <tr>
                 <td colspan="7" class="text-center" style="padding: 20px;">No records found for this period.</td>
@@ -132,7 +136,10 @@
 
             <tr>
                 <td colspan="6" class="text-right" style="background-color: #f9f9f9;"><strong>GRAND TOTAL:</strong></td>
-                <td class="text-right" style="background-color: #f9f9f9;"><strong>{{ number_format($applications->sum('amount_released'), 2) }}</strong></td>
+                <td class="text-right" style="background-color: #f9f9f9;">
+                    {{-- FIX: Using the .peso class and HTML entity --}}
+                    <strong><span class="peso">&#8369;</span> {{ number_format($applications->sum('amount_released'), 2) }}</strong>
+                </td>
             </tr>
         </tbody>
     </table>
