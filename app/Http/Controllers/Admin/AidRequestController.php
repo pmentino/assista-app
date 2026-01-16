@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Application;
+use App\Models\AssistanceProgram; // Import this
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use App\Models\AuditLog; // Import this
 
 class AidRequestController extends Controller
 {
@@ -47,23 +49,28 @@ class AidRequestController extends Controller
                               ->paginate(10)
                               ->withQueryString();
 
-        // --- NEW: Fetch Dropdown Data for the Frontend ---
-        $allBarangays = Application::select('barangay')->distinct()->orderBy('barangay')->pluck('barangay');
-        $programs = \App\Models\AssistanceProgram::where('is_active', true)->pluck('title');
+        // --- FETCH DROPDOWN DATA ---
+        // Get unique barangays from existing applications for the filter list
+        $allBarangays = Application::select('barangay')
+                                   ->distinct()
+                                   ->orderBy('barangay')
+                                   ->pluck('barangay');
+
+        // Get active programs
+        $programs = AssistanceProgram::where('is_active', true)->pluck('title');
 
         return Inertia::render('Admin/ApplicationsIndex', [
             'applications' => $applications,
-            // Pass the lists so the Admin can select from them
-            'allBarangays' => $allBarangays,
-            'programs' => $programs,
-            'filters' => $request->only(['search', 'status', 'program', 'barangay', 'sort_by', 'sort_direction']),
-            'auth' => ['user' => Auth::user()],
+            'allBarangays' => $allBarangays, // Passing the list to React
+            'programs'     => $programs,     // Passing the programs to React
+            'filters'      => $request->only(['search', 'status', 'program', 'barangay', 'sort_by', 'sort_direction']),
+            'auth'         => ['user' => Auth::user()],
         ]);
     }
 
     public function destroy(Application $application)
     {
-        // --- CRITICAL FIX: PREVENT DELETION OF APPROVED RECORDS ---
+        // PREVENT DELETION OF APPROVED RECORDS (Financial Integrity)
         if ($application->status === 'Approved') {
             return redirect()->back()
                 ->with('error', 'CRITICAL ERROR: Cannot delete an Approved application. This record is linked to disbursed funds.')
@@ -75,7 +82,7 @@ class AidRequestController extends Controller
 
         $application->delete();
 
-        \App\Models\AuditLog::create([
+        AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Deleted Application',
             'details' => "Permanently deleted App #{$application->id} for {$applicantName}",

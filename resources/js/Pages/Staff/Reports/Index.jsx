@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react';
 import { pickBy } from 'lodash';
 import Pagination from '@/Components/Pagination';
 
-export default function StaffReportsIndex({ applications, filters: initialFilters, stats }) {
+// FIX: Added 'allBarangays' prop
+export default function StaffReportsIndex({ applications, filters: initialFilters, stats, allBarangays }) {
     const { auth } = usePage().props;
 
     const [filters, setFilters] = useState({
         status: initialFilters.status || '',
         program: initialFilters.program || '',
+        barangay: initialFilters.barangay || '', // <--- NEW: Added Barangay to state
         start_date: initialFilters.start_date || '',
         end_date: initialFilters.end_date || '',
     });
@@ -103,8 +105,10 @@ export default function StaffReportsIndex({ applications, filters: initialFilter
                             </div>
                         </div>
 
-                        {/* Filters Section */}
-                        <div className="p-6 grid grid-cols-1 md:grid-cols-5 gap-4 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+                        {/* Filters Section - CHANGED: Added Barangay */}
+                        <div className="p-6 grid grid-cols-1 md:grid-cols-6 gap-4 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+
+                            {/* 1. Period */}
                             <div className="col-span-1">
                                 <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Period</label>
                                 <select value={period} onChange={handlePeriodChange} className="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm text-sm cursor-pointer focus:border-blue-500 focus:ring-blue-500">
@@ -117,6 +121,8 @@ export default function StaffReportsIndex({ applications, filters: initialFilter
                                     <option value="custom">Custom Range</option>
                                 </select>
                             </div>
+
+                            {/* 2. Date Range */}
                             <div className="col-span-2 grid grid-cols-2 gap-2">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">From</label>
@@ -127,6 +133,19 @@ export default function StaffReportsIndex({ applications, filters: initialFilter
                                     <input type="date" name="end_date" value={filters.end_date} onChange={handleFilterChange} className="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500" />
                                 </div>
                             </div>
+
+                            {/* 3. NEW: Barangay Filter */}
+                            <div className="col-span-1">
+                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Barangay</label>
+                                <select name="barangay" value={filters.barangay} onChange={handleFilterChange} className="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm text-sm cursor-pointer focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="">All Barangays</option>
+                                    {allBarangays && allBarangays.map((bgy) => (
+                                        <option key={bgy} value={bgy}>{bgy}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* 4. Status Filter */}
                             <div className="col-span-1">
                                 <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Status</label>
                                 <select name="status" value={filters.status} onChange={handleFilterChange} className="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm text-sm cursor-pointer focus:border-blue-500 focus:ring-blue-500">
@@ -136,6 +155,8 @@ export default function StaffReportsIndex({ applications, filters: initialFilter
                                     <option value="Rejected">Rejected</option>
                                 </select>
                             </div>
+
+                            {/* 5. Program Filter */}
                             <div className="col-span-1">
                                 <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Program</label>
                                 <select name="program" value={filters.program} onChange={handleFilterChange} className="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm text-sm cursor-pointer focus:border-blue-500 focus:ring-blue-500">
@@ -160,6 +181,7 @@ export default function StaffReportsIndex({ applications, filters: initialFilter
                                         <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Program</th>
                                         <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                                         <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Barangay</th>
                                         <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date Submitted</th>
                                     </tr>
                                 </thead>
@@ -175,6 +197,9 @@ export default function StaffReportsIndex({ applications, filters: initialFilter
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-mono font-bold">
                                                     {app.amount_released ? `₱${Number(app.amount_released).toLocaleString()}` : '-'}
                                                 </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                                                    {app.barangay}
+                                                </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
                                                     {new Date(app.created_at).toLocaleDateString()}
                                                 </td>
@@ -182,7 +207,7 @@ export default function StaffReportsIndex({ applications, filters: initialFilter
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="5" className="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic">
+                                            <td colSpan="6" className="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic">
                                                 No records found matching your filters.
                                             </td>
                                         </tr>

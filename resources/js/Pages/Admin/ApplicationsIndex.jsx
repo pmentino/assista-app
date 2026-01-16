@@ -139,7 +139,7 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
         status: initialFilters.status || '',
         program: initialFilters.program || '',
         search: initialFilters.search || '',
-        barangay: initialFilters.barangay || '',
+        barangay: initialFilters.barangay || '', // <--- Added Barangay State
     });
 
     const isFirstRun = useRef(true);
@@ -193,6 +193,7 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
         >
             <Head title="Manage Applications" />
 
+            {/* Success Toast */}
             {visibleSuccess && (
                 <div className="fixed top-24 right-5 z-50 flex flex-col gap-2 w-full max-w-sm pointer-events-none">
                     <div className="bg-white dark:bg-gray-800 border-l-8 border-green-500 rounded-lg shadow-2xl p-4 flex items-start animate-fade-in-left pointer-events-auto ring-1 ring-black/5 dark:ring-white/10">
@@ -216,25 +217,10 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
 
-                        {/* --- DRILL-DOWN BANNER --- */}
-                        {filters.barangay && (
-                            <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-4 flex justify-between items-center">
-                                <div className="flex items-center">
-                                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                                        Showing applicants from <strong>{filters.barangay}</strong>
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={() => setFilters(prev => ({ ...prev, barangay: '' }))}
-                                    className="text-sm text-blue-700 dark:text-blue-400 font-bold hover:underline hover:text-blue-900 dark:hover:text-blue-200"
-                                >
-                                    Clear Filter
-                                </button>
-                            </div>
-                        )}
-
-                        {/* --- TOOLBAR SECTION --- */}
+                        {/* --- TOOLBAR SECTION (UPDATED LAYOUT) --- */}
                         <div className="p-5 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+
+                            {/* 1. Search (3 cols) */}
                             <div className="col-span-1 md:col-span-3 relative">
                                 <input
                                     type="text"
@@ -242,15 +228,17 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                                     value={filters.search}
                                     onChange={handleFilterChange}
                                     placeholder="Search by Name or ID..."
-                                    className="block w-full pl-4 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm transition h-10"
+                                    className="block w-full pl-4 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm transition h-10"
                                 />
                             </div>
-                            <div className="col-span-1 md:col-span-3">
+
+                            {/* 2. Status (2 cols) */}
+                            <div className="col-span-1 md:col-span-2">
                                 <select
                                     name="status"
                                     value={filters.status}
                                     onChange={handleFilterChange}
-                                    className="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm cursor-pointer h-10"
+                                    className="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm cursor-pointer h-10"
                                 >
                                     <option value="">All Statuses</option>
                                     <option value="Pending">Pending Review</option>
@@ -258,12 +246,14 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                                     <option value="Rejected">Rejected</option>
                                 </select>
                             </div>
+
+                            {/* 3. Program (3 cols) */}
                             <div className="col-span-1 md:col-span-3">
                                 <select
                                     name="program"
                                     value={filters.program}
                                     onChange={handleFilterChange}
-                                    className="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm cursor-pointer h-10"
+                                    className="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm cursor-pointer h-10"
                                 >
                                     <option value="">All Programs</option>
                                     {programs && programs.map((p) => (
@@ -271,6 +261,23 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                                     ))}
                                 </select>
                             </div>
+
+                            {/* 4. NEW: Barangay Filter (3 cols) */}
+                            <div className="col-span-1 md:col-span-3">
+                                <select
+                                    name="barangay"
+                                    value={filters.barangay}
+                                    onChange={handleFilterChange}
+                                    className="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm cursor-pointer h-10"
+                                >
+                                    <option value="">All Barangays</option>
+                                    {allBarangays && allBarangays.map((bgy) => (
+                                        <option key={bgy} value={bgy}>{bgy}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* 5. Reset Button (1 col) */}
                             <div className="col-span-1 text-right md:text-center">
                                 {(filters.search || filters.status || filters.program || filters.barangay) && (
                                     <button

@@ -40,14 +40,14 @@ const SortableHeader = ({ label, columnName, sortBy, sortDirection }) => {
 };
 
 // --- MAIN COMPONENT ---
-
-export default function ApplicationsIndex({ auth, applications, filters: initialFilters = {}, sort_by: initialSortBy, sort_direction: initialSortDirection }) {
+// FIX: Added 'allBarangays' and 'programs' to props
+export default function ApplicationsIndex({ auth, applications, filters: initialFilters = {}, sort_by: initialSortBy, sort_direction: initialSortDirection, allBarangays, programs }) {
 
     const [filters, setFilters] = useState({
         status: initialFilters.status || '',
         program: initialFilters.program || '',
         search: initialFilters.search || '',
-        barangay: initialFilters.barangay || '',
+        barangay: initialFilters.barangay || '', // <--- Added Barangay State
     });
 
     const isFirstRun = useRef(true);
@@ -128,11 +128,11 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                             </div>
                         )}
 
-                        {/* --- TOOLBAR SECTION --- */}
+                        {/* --- TOOLBAR SECTION (UPDATED LAYOUT) --- */}
                         <div className="p-5 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
 
-                            {/* Search Bar */}
-                            <div className="col-span-1 md:col-span-5 relative">
+                            {/* 1. Search (3 cols) */}
+                            <div className="col-span-1 md:col-span-3 relative">
                                 <input
                                     type="text"
                                     name="search"
@@ -143,8 +143,8 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                                 />
                             </div>
 
-                            {/* Status Filter */}
-                            <div className="col-span-1 md:col-span-3">
+                            {/* 2. Status (2 cols) */}
+                            <div className="col-span-1 md:col-span-2">
                                 <select
                                     name="status"
                                     value={filters.status}
@@ -158,7 +158,7 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                                 </select>
                             </div>
 
-                            {/* Program Filter */}
+                            {/* 3. Program (3 cols) */}
                             <div className="col-span-1 md:col-span-3">
                                 <select
                                     name="program"
@@ -167,17 +167,28 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                                     className="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm cursor-pointer h-10"
                                 >
                                     <option value="">All Programs</option>
-                                    <option value="Hospitalization">Hospitalization</option>
-                                    <option value="Laboratory Tests">Laboratory Tests</option>
-                                    <option value="Anti-Rabies Vaccine Treatment">Anti-Rabies Vaccine</option>
-                                    <option value="Medicine Assistance">Medicine Assistance</option>
-                                    <option value="Funeral Assistance">Funeral Assistance</option>
-                                    <option value="Chemotherapy">Chemotherapy</option>
-                                    <option value="Diagnostic Blood Tests">Diagnostic Blood Tests</option>
+                                    {programs && programs.map((p) => (
+                                        <option key={p} value={p}>{p}</option>
+                                    ))}
                                 </select>
                             </div>
 
-                            {/* Reset Button */}
+                            {/* 4. NEW: Barangay Filter (3 Cols) */}
+                            <div className="col-span-1 md:col-span-3">
+                                <select
+                                    name="barangay"
+                                    value={filters.barangay}
+                                    onChange={handleFilterChange}
+                                    className="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm cursor-pointer h-10"
+                                >
+                                    <option value="">All Barangays</option>
+                                    {allBarangays && allBarangays.map((bgy) => (
+                                        <option key={bgy} value={bgy}>{bgy}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* 5. Reset Button (1 col) */}
                             <div className="col-span-1 text-right md:text-center">
                                 {(filters.search || filters.status || filters.program || filters.barangay) && (
                                     <button
