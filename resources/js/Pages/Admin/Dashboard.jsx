@@ -4,91 +4,96 @@ import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { pickBy } from 'lodash';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
-// Added 'pendingApplications' to props
-export default function Dashboard({ auth, stats, budgetStats, chartData, barangayStats, allBarangays, filters, pendingApplications = [] }) {
+export default function Dashboard({ auth, stats, budgetStats, chartData, barangayStats, allBarangays, filters, pendingApplications = [], programs, queueFilters = {} }) {
     const user = auth?.user || { name: 'Admin' };
 
     // --- STATE MANAGEMENT ---
     const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
     const [isBarangayModalOpen, setIsBarangayModalOpen] = useState(false);
 
-    const budgetForm = useForm({
-        amount: budgetStats?.total_budget || '',
+    // 1. Queue Filters State (Action Center)
+    const [qFilters, setQFilters] = useState({
+        q_search: queueFilters.q_search || '',
+        q_program: queueFilters.q_program || '',
+        q_sort: queueFilters.q_sort || 'oldest',
     });
 
+    // 2. Main Filters State (For Charts/Global)
     const [filterValues, setFilterValues] = useState({
         barangay: filters.barangay || '',
         start_date: filters.start_date || '',
         end_date: filters.end_date || '',
     });
 
-    // --- HELPERS ---
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount || 0);
-    };
+    const isFirstRun = useRef(true);
 
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            month: 'short', day: 'numeric', year: 'numeric'
-        });
-    };
-
-    // --- HANDLERS ---
-    const handleBudgetSubmit = (e) => {
-        e.preventDefault();
-        budgetForm.post(route('admin.dashboard.budget'), {
-            onSuccess: () => setIsBudgetModalOpen(false),
-        });
-    };
-
-    const handleFilterChange = (key, value) => {
-        const newFilters = { ...filterValues, [key]: value };
-        setFilterValues(newFilters);
-        router.get(route('admin.dashboard'), newFilters, {
+    // --- FILTER LOGIC ---
+    // Combined function to apply both sets of filters
+    const applyFilters = (newQFilters, newMainFilters) => {
+        const query = pickBy({ ...newMainFilters, ...newQFilters }); // Merge both filter sets
+        router.get(route('admin.dashboard'), query, {
             preserveState: true,
             preserveScroll: true,
             replace: true
         });
     };
 
+    // Watcher for Queue Filters (Debounced)
+    useEffect(() => {
+        if (isFirstRun.current) { isFirstRun.current = false; return; }
+        const timer = setTimeout(() => applyFilters(qFilters, filterValues), 300);
+        return () => clearTimeout(timer);
+    }, [qFilters]);
+
+    // Handle Queue Input Changes
+    const handleQFilterChange = (e) => {
+        setQFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+
+    // Handle Main Filter Changes (Immediate)
+    const handleFilterChange = (key, value) => {
+        const newFilters = { ...filterValues, [key]: value };
+        setFilterValues(newFilters);
+        applyFilters(qFilters, newFilters);
+    };
+
+    // --- HELPERS ---
+    const budgetForm = useForm({ amount: budgetStats?.total_budget || '' });
+    const formatCurrency = (amount) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount || 0);
+    const formatDate = (dateString) => new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    const handleBudgetSubmit = (e) => {
+        e.preventDefault();
+        budgetForm.post(route('admin.dashboard.budget'), { onSuccess: () => setIsBudgetModalOpen(false) });
+    };
+
     // --- CHART CONFIG ---
     const data = {
-        labels: chartData.labels,
+        labels: chartData.labels || [],
         datasets: [{
             label: 'Amount Released (PHP)',
-            data: chartData.values,
+            data: chartData.values || [],
             fill: true,
-            backgroundColor: 'rgba(59, 130, 246, 0.2)', // Blue-500 with opacity
-            borderColor: 'rgb(37, 99, 235)', // Blue-600
+            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+            borderColor: 'rgb(37, 99, 235)',
             tension: 0.4,
         }],
     };
 
-    // Chart Options (Tweaked to look okay on both modes, though specialized dark config would require more JS)
     const options = {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         plugins: {
-            legend: {
-                position: 'top',
-                labels: { color: '#9ca3af' } // gray-400 for neutral visibility
-            },
+            legend: { position: 'top', labels: { color: '#9ca3af' } },
             tooltip: { callbacks: { label: function(context) { return formatCurrency(context.raw); } } }
         },
         scales: {
-            y: {
-                beginAtZero: true,
-                ticks: { color: '#9ca3af', callback: function(value) { return '₱' + value; } },
-                grid: { color: 'rgba(156, 163, 175, 0.1)' }
-            },
-            x: {
-                ticks: { color: '#9ca3af' },
-                grid: { color: 'rgba(156, 163, 175, 0.1)' }
-            }
+            y: { beginAtZero: true, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(156, 163, 175, 0.1)' } },
+            x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(156, 163, 175, 0.1)' } }
         }
     };
 
@@ -96,7 +101,6 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
         <AuthenticatedLayout user={user} header={<h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Executive Dashboard</h2>}>
             <Head title="Admin Dashboard" />
 
-            {/* DARK MODE: Main Background */}
             <div className="py-12 bg-gray-100 dark:bg-gray-900 min-h-screen transition-colors duration-300">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
@@ -116,49 +120,76 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
 
                     {/* --- ACTION CENTER (PENDING APPLICATIONS) --- */}
                     <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-8 border border-amber-200 dark:border-amber-900/50 transition-colors duration-300">
-                        <div className="bg-amber-50 dark:bg-amber-900/20 px-6 py-4 border-b border-amber-200 dark:border-amber-800/50 flex justify-between items-center">
-                            <div>
+
+                        {/* Header & Filters */}
+                        <div className="bg-amber-50 dark:bg-amber-900/20 px-6 py-4 border-b border-amber-200 dark:border-amber-800/50 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div className="flex-1">
                                 <h3 className="text-lg font-bold text-amber-800 dark:text-amber-400 flex items-center gap-2">
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    Action Required: Pending Applications
+                                    Verification Queue
                                 </h3>
-                                <p className="text-sm text-amber-700 dark:text-amber-500">These citizens are waiting for validation. Review them promptly.</p>
+                                <p className="text-xs text-amber-700 dark:text-amber-500">
+                                    {stats.pending} items pending. Prioritize oldest first.
+                                </p>
                             </div>
-                            {stats.pending > 0 && (
-                                <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse shadow-sm">
-                                    {stats.pending} Pending
-                                </span>
-                            )}
+
+                            {/* --- NEW: QUEUE FILTERS TOOLBAR --- */}
+                            <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                                <input
+                                    type="text"
+                                    name="q_search"
+                                    value={qFilters.q_search}
+                                    onChange={handleQFilterChange}
+                                    placeholder="Search Name/ID..."
+                                    className="text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md h-9 focus:ring-amber-500 focus:border-amber-500"
+                                />
+                                <select
+                                    name="q_program"
+                                    value={qFilters.q_program}
+                                    onChange={handleQFilterChange}
+                                    className="text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md h-9 focus:ring-amber-500 focus:border-amber-500 cursor-pointer"
+                                >
+                                    <option value="">All Programs</option>
+                                    {programs && programs.map((p) => <option key={p} value={p}>{p}</option>)}
+                                </select>
+                                <select
+                                    name="q_sort"
+                                    value={qFilters.q_sort}
+                                    onChange={handleQFilterChange}
+                                    className="text-xs border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md h-9 focus:ring-amber-500 focus:border-amber-500 cursor-pointer"
+                                >
+                                    <option value="oldest">Sort: Oldest First (FIFO)</option>
+                                    <option value="newest">Sort: Newest First</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div className="p-0">
+                            {/* FIX: Check length directly on array, not .data */}
                             {pendingApplications && pendingApplications.length > 0 ? (
                                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                     <thead className="bg-gray-50 dark:bg-gray-700">
                                         <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Queue ID</th>
                                             <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Applicant Name</th>
-                                            <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type / Purpose</th>
-                                            <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date Submitted</th>
+                                            <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Program</th>
+                                            <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Submitted</th>
                                             <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                         {pendingApplications.map((app, index) => (
                                             <tr key={index} className="hover:bg-amber-50 dark:hover:bg-amber-900/10 transition">
+                                                <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-400 dark:text-gray-500 font-mono">
+                                                    #{String(app.id).padStart(5, '0')}
+                                                </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="flex items-center">
-                                                        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-amber-200 dark:bg-amber-700 flex items-center justify-center text-amber-800 dark:text-amber-100 font-bold text-xs">
-                                                            {app.first_name ? app.first_name.charAt(0) : 'U'}
-                                                        </div>
-                                                        <div className="ml-4">
-                                                            <div className="text-sm font-medium text-gray-900 dark:text-white">{app.first_name} {app.last_name}</div>
-                                                            <div className="text-xs text-gray-500 dark:text-gray-400">{app.barangay}</div>
-                                                        </div>
-                                                    </div>
+                                                    <div className="text-sm font-bold text-gray-900 dark:text-white">{app.first_name} {app.last_name}</div>
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400">{app.barangay}</div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
-                                                        {app.assistance_type}
+                                                        {app.program}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
@@ -167,7 +198,7 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <Link
                                                         href={route('admin.applications.show', app.id)}
-                                                        className="text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 px-4 py-2 rounded shadow-sm text-xs font-bold transition"
+                                                        className="text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 px-4 py-2 rounded shadow-sm text-xs font-bold transition uppercase tracking-wide"
                                                     >
                                                         Review Now
                                                     </Link>
@@ -181,12 +212,12 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                                     <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <p className="mt-2 text-sm font-medium text-gray-500 dark:text-gray-400">No pending applications found. Good job!</p>
+                                    <p className="mt-2 text-sm font-medium text-gray-500 dark:text-gray-400">No pending applications found matching criteria.</p>
                                 </div>
                             )}
                             <div className="bg-gray-50 dark:bg-gray-700/30 px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-center">
-                                <Link href={route('admin.applications.index', { status: 'Pending' })} className="text-sm text-indigo-600 dark:text-indigo-400 font-bold hover:underline">
-                                    View All Pending Applications &rarr;
+                                <Link href={route('admin.applications.index', { status: 'Pending' })} className="text-xs text-indigo-600 dark:text-indigo-400 font-bold hover:underline">
+                                    View Full Applications List &rarr;
                                 </Link>
                             </div>
                         </div>
@@ -234,15 +265,15 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                                     <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded border border-gray-100 dark:border-gray-700">
-                                        <span className="block text-gray-500 dark:text-gray-400 text-xs uppercase font-bold">Allocated Budget</span>
+                                        <span className="block text-gray-50 dark:text-gray-400 text-xs uppercase font-bold">Allocated Budget</span>
                                         <span className="block text-xl font-extrabold text-gray-800 dark:text-white">{formatCurrency(budgetStats.total_budget)}</span>
                                     </div>
                                     <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded border border-gray-100 dark:border-gray-700">
-                                        <span className="block text-gray-500 dark:text-gray-400 text-xs uppercase font-bold">Total Released</span>
+                                        <span className="block text-gray-50 dark:text-gray-400 text-xs uppercase font-bold">Total Released</span>
                                         <span className="block text-xl font-extrabold text-blue-600 dark:text-blue-400">{formatCurrency(budgetStats.total_used)}</span>
                                     </div>
                                     <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded border border-gray-100 dark:border-gray-700">
-                                        <span className="block text-gray-500 dark:text-gray-400 text-xs uppercase font-bold">Remaining Balance</span>
+                                        <span className="block text-gray-50 dark:text-gray-400 text-xs uppercase font-bold">Remaining Balance</span>
                                         <span className={`block text-xl font-extrabold ${budgetStats.remaining < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                                             {formatCurrency(budgetStats.remaining)}
                                         </span>

@@ -8,20 +8,24 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Application;
 use App\Models\AssistanceProgram;
+use App\Models\AuditLog; // <--- CRITICAL IMPORT
 use App\Models\Setting;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
 
 class StaffController extends Controller
 {
+    // ... (dashboard, applicationsIndex, applicationsShow methods remain the same) ...
     public function dashboard(Request $request)
     {
+        // 1. Get Stats
         $stats = [
             'total'   => Application::count(),
             'pending' => Application::where('status', 'Pending')->count(),
             'today'   => Application::whereDate('created_at', \Carbon\Carbon::today())->count(),
         ];
 
+        // 2. Queue Logic
         $query = Application::where('status', 'Pending')->with('user');
 
         if ($request->search) {
@@ -44,6 +48,7 @@ class StaffController extends Controller
 
         $queue = $query->take(10)->get();
 
+        // 3. Get Programs (Safely)
         $programs = AssistanceProgram::where('is_active', true)
                     ->orderBy('title')
                     ->pluck('title');
@@ -73,7 +78,7 @@ class StaffController extends Controller
 
         if ($request->status) $query->where('status', $request->status);
         if ($request->program) $query->where('program', $request->program);
-        if ($request->barangay) $query->where('barangay', $request->barangay); // Filter Logic
+        if ($request->barangay) $query->where('barangay', $request->barangay);
 
         if ($request->sort_by) {
             $direction = $request->sort_direction === 'desc' ? 'desc' : 'asc';
@@ -84,7 +89,6 @@ class StaffController extends Controller
 
         $applications = $query->paginate(10)->withQueryString();
 
-        // --- FETCH DATA FOR DROPDOWNS ---
         $allBarangays = Application::distinct()->orderBy('barangay')->pluck('barangay');
         $programs = AssistanceProgram::where('is_active', true)->pluck('title');
 
@@ -93,8 +97,8 @@ class StaffController extends Controller
             'filters' => $request->only(['search', 'status', 'program', 'barangay']),
             'sort_by' => $request->sort_by,
             'sort_direction' => $request->sort_direction,
-            'allBarangays' => $allBarangays, // Pass to View
-            'programs' => $programs,         // Pass to View
+            'allBarangays' => $allBarangays,
+            'programs' => $programs,
             'auth' => ['user' => Auth::user()]
         ]);
     }
@@ -110,11 +114,50 @@ class StaffController extends Controller
         ]);
     }
 
+    // --- ACTIONS (Now with Audit Logging) ---
+
     public function storeRemark(Request $request, Application $application)
     {
         $request->validate([ 'remarks' => 'required|string|max:1000' ]);
+
         $application->update([ 'remarks' => $request->remarks ]);
+
+        // LOGGING
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action'  => 'Added Note',
+            'details' => "Added internal note to App #{$application->id}",
+            'ip_address' => $request->ip()
+        ]);
+
         return redirect()->back()->with('message', 'Remark saved successfully.');
+    }
+
+    // Ensure you have an approve method for Staff if they are allowed to approve
+    // If Admin handles strict approval, this might not be needed, but good to have if Staff can approve.
+    public function approve(Request $request, Application $application)
+    {
+        $request->validate(['amount' => 'required|numeric|min:0']);
+
+        $application->update([
+            'status' => 'Approved',
+            'amount_released' => $request->amount,
+            'approved_date' => now(),
+        ]);
+
+        if ($application->user) {
+            $application->user->notify(new ApplicationStatusAlert($application));
+        }
+
+        // LOGGING
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action'  => 'Approved Application',
+            'details' => "Staff approved App #{$application->id} for ₱" . number_format($request->amount, 2),
+            'ip_address' => $request->ip()
+        ]);
+
+        return redirect()->back()->with('message', 'Application approved successfully.');
     }
 
     public function reject(Request $request, Application $application)
@@ -130,9 +173,18 @@ class StaffController extends Controller
             $application->user->notify(new ApplicationStatusAlert($application));
         }
 
+        // LOGGING
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action'  => 'Rejected Application',
+            'details' => "Staff returned/rejected App #{$application->id}. Reason: {$request->remarks}",
+            'ip_address' => $request->ip()
+        ]);
+
         return redirect()->back()->with('message', 'Application returned/rejected successfully.');
     }
 
+    // ... (reportsIndex, exportPdf, exportExcel methods remain the same) ...
     public function reportsIndex(Request $request)
     {
         $query = Application::query();
@@ -166,6 +218,7 @@ class StaffController extends Controller
     public function exportPdf(Request $request)
     {
         $query = Application::query();
+
         if ($request->filled('status')) $query->where('status', $request->status);
         if ($request->filled('program')) $query->where('program', $request->program);
         if ($request->filled('barangay')) $query->where('barangay', $request->barangay);
@@ -216,6 +269,7 @@ class StaffController extends Controller
             $file = fopen('php://output', 'w');
             fputs($file, "\xEF\xBB\xBF");
             fputcsv($file, $columns);
+
             foreach ($applications as $app) {
                 fputcsv($file, [
                     $app->id,
@@ -231,6 +285,7 @@ class StaffController extends Controller
             }
             fclose($file);
         };
+
         return response()->stream($callback, 200, $headers);
     }
 }
