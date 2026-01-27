@@ -19,7 +19,11 @@ const BARANGAYS = [
 ];
 
 export default function Create({ auth, programs = [] }) {
-    const { flash } = usePage().props;
+    // 1. GET TRANSLATIONS (Injected from Controller)
+    const { flash, translations = {} } = usePage().props;
+
+    // 2. HELPER FUNCTION
+    const __ = (key) => (translations[key] || key);
 
     const { data, setData, post, processing, errors } = useForm({
         program: '',
@@ -107,8 +111,9 @@ export default function Create({ auth, programs = [] }) {
                                 </svg>
                             </div>
                             <div>
-                                <h1 className="text-3xl font-extrabold tracking-tight">AICS Application Form</h1>
-                                <p className="text-blue-100 mt-1">Please fill out the details accurately to avoid delays in processing.</p>
+                                {/* Translated Header Info */}
+                                <h1 className="text-3xl font-extrabold tracking-tight">{__('form_title')}</h1>
+                                <p className="text-blue-100 mt-1">{__('form_subtitle')}</p>
                                 {errors.error && (
                                     <div className="mt-4 p-3 bg-red-600/20 border border-red-500 rounded-lg">
                                         <p className="text-sm text-white font-bold text-center">
@@ -127,11 +132,11 @@ export default function Create({ auth, programs = [] }) {
                             <div className="bg-blue-50/50 dark:bg-blue-900/10 p-6 rounded-xl border border-blue-100 dark:border-blue-800">
                                 <div className="flex items-center mb-6">
                                     <div className="flex-shrink-0 bg-blue-600 dark:bg-blue-500 text-white rounded-full h-8 w-8 flex items-center justify-center font-bold shadow-sm mr-3">1</div>
-                                    <h3 className="text-xl font-bold text-gray-800 dark:text-blue-200 uppercase tracking-wide">Assistance Selection</h3>
+                                    <h3 className="text-xl font-bold text-gray-800 dark:text-blue-200 uppercase tracking-wide">{__('step_1')}</h3>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-2">
-                                        <InputLabel htmlFor="program" value="Type of Assistance *" className="text-gray-700 dark:text-gray-300 font-bold" />
+                                        <InputLabel htmlFor="program" value={__('label_assistance_type') + " *"} className="text-gray-700 dark:text-gray-300 font-bold" />
                                         <select
                                             id="program"
                                             value={data.program}
@@ -139,7 +144,7 @@ export default function Create({ auth, programs = [] }) {
                                             className="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-3 px-4 text-base"
                                             required
                                         >
-                                            <option value="">-- Select Program --</option>
+                                            <option value="">{__('placeholder_program')}</option>
                                             {programs && programs.length > 0 ? (
                                                 programs.map((prog) => (
                                                     <option key={prog.id} value={prog.title}>{prog.title}</option>
@@ -151,7 +156,7 @@ export default function Create({ auth, programs = [] }) {
                                         <InputError message={errors.program} />
                                     </div>
                                     <div className="space-y-2">
-                                        <InputLabel htmlFor="date_of_incident" value="Date of Incident / Admission *" className="text-gray-700 dark:text-gray-300 font-bold" />
+                                        <InputLabel htmlFor="date_of_incident" value={__('label_date') + " *"} className="text-gray-700 dark:text-gray-300 font-bold" />
                                         <TextInput
                                             id="date_of_incident"
                                             type="date"
@@ -168,34 +173,34 @@ export default function Create({ auth, programs = [] }) {
                             <div>
                                 <div className="flex items-center mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
                                     <div className="flex-shrink-0 bg-gray-700 dark:bg-gray-600 text-white rounded-full h-8 w-8 flex items-center justify-center font-bold shadow-sm mr-3">2</div>
-                                    <h3 className="text-xl font-bold text-gray-800 dark:text-white uppercase tracking-wide">Personal Information</h3>
+                                    <h3 className="text-xl font-bold text-gray-800 dark:text-white uppercase tracking-wide">{__('step_2')}</h3>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     <div className="space-y-1">
-                                        <InputLabel htmlFor="first_name" value="First Name *" className="dark:text-gray-300" />
+                                        <InputLabel htmlFor="first_name" value={__('label_first_name') + " *"} className="dark:text-gray-300" />
                                         <TextInput id="first_name" className="block w-full capitalize dark:bg-gray-700 dark:text-white dark:border-gray-600" value={data.first_name} onChange={(e) => handleNameChange('first_name', e.target.value)} required placeholder="e.g. Juan" />
                                         <InputError message={errors.first_name} />
                                     </div>
                                     <div className="space-y-1">
-                                        <InputLabel htmlFor="middle_name" value="Middle Name (Optional)" className="dark:text-gray-300" />
+                                        <InputLabel htmlFor="middle_name" value={__('label_middle_name')} className="dark:text-gray-300" />
                                         <TextInput id="middle_name" className="block w-full capitalize dark:bg-gray-700 dark:text-white dark:border-gray-600" value={data.middle_name} onChange={(e) => handleNameChange('middle_name', e.target.value)} placeholder="e.g. Dela" />
                                     </div>
                                     <div className="space-y-1">
-                                        <InputLabel htmlFor="last_name" value="Last Name *" className="dark:text-gray-300" />
+                                        <InputLabel htmlFor="last_name" value={__('label_last_name') + " *"} className="dark:text-gray-300" />
                                         <TextInput id="last_name" className="block w-full capitalize dark:bg-gray-700 dark:text-white dark:border-gray-600" value={data.last_name} onChange={(e) => handleNameChange('last_name', e.target.value)} required placeholder="e.g. Cruz" />
                                         <InputError message={errors.last_name} />
                                     </div>
                                     <div className="space-y-1">
-                                        <InputLabel htmlFor="suffix_name" value="Suffix" className="dark:text-gray-300" />
+                                        <InputLabel htmlFor="suffix_name" value={__('label_suffix')} className="dark:text-gray-300" />
                                         <TextInput id="suffix_name" className="block w-full dark:bg-gray-700 dark:text-white dark:border-gray-600" value={data.suffix_name} onChange={(e) => setData('suffix_name', e.target.value)} placeholder="e.g. Jr., III" />
                                     </div>
                                     <div className="space-y-1">
-                                        <InputLabel htmlFor="birth_date" value="Birth Date *" className="dark:text-gray-300" />
+                                        <InputLabel htmlFor="birth_date" value={__('label_birthdate') + " *"} className="dark:text-gray-300" />
                                         <TextInput id="birth_date" type="date" className="block w-full dark:bg-gray-700 dark:text-white dark:border-gray-600" value={data.birth_date} onChange={(e) => setData('birth_date', e.target.value)} required />
                                         <InputError message={errors.birth_date} />
                                     </div>
                                     <div className="space-y-1">
-                                        <InputLabel htmlFor="sex" value="Sex *" className="dark:text-gray-300" />
+                                        <InputLabel htmlFor="sex" value={__('label_sex') + " *"} className="dark:text-gray-300" />
                                         <select id="sex" value={data.sex} onChange={(e) => setData('sex', e.target.value)} className="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm" required>
                                             <option value="">Select Sex</option> <option value="Male">Male</option> <option value="Female">Female</option>
                                         </select>
@@ -261,7 +266,7 @@ export default function Create({ auth, programs = [] }) {
                             </div>
 
                             {/* --- SECTION 4: DOCUMENTS --- */}
-                            <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                            <div className="bg-gray-5 dark:bg-gray-700/30 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                                 <div className="p-6 bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex items-center">
                                     <div className="flex-shrink-0 bg-red-600 dark:bg-red-500 text-white rounded-full h-8 w-8 flex items-center justify-center font-bold shadow-sm mr-3">4</div>
                                     <div>
@@ -366,7 +371,7 @@ export default function Create({ auth, programs = [] }) {
                             <div className="flex items-center justify-end pt-6 border-t border-gray-100 dark:border-gray-700">
                                 <Link href={route('dashboard')} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium mr-6 transition-colors">Cancel</Link>
                                 <PrimaryButton className={`px-8 py-4 text-lg shadow-xl transition-all transform hover:-translate-y-1 ${!agreedToPrivacy ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-800 hover:bg-blue-900 dark:bg-blue-600 dark:hover:bg-blue-700'}`} disabled={processing || !agreedToPrivacy}>
-                                    SUBMIT APPLICATION
+                                    {__('submit_btn')}
                                 </PrimaryButton>
                             </div>
 

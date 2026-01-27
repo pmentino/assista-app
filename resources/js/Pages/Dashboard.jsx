@@ -14,8 +14,13 @@ const REQUIREMENTS_MAP = {
 };
 
 export default function Dashboard({ applications = [] }) {
-    const { auth } = usePage().props;
+    // 1. GET TRANSLATIONS FROM INERTIA PROPS
+    const { auth, translations = {} } = usePage().props;
     const user = auth?.user || { name: 'Applicant', id: 0 };
+
+    // 2. HELPER FUNCTION: Translate text
+    // We pass this function down to sub-components so they can translate too.
+    const __ = (key) => (translations[key] || key);
 
     const [activeTab, setActiveTab] = useState('guidelines');
 
@@ -40,7 +45,8 @@ export default function Dashboard({ applications = [] }) {
     return (
         <AuthenticatedLayout
             user={user}
-            header={<h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Applicant Dashboard</h2>}
+            // Translate the Header
+            header={<h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{__('Dashboard')}</h2>}
         >
             <Head title="Applicant Dashboard" />
 
@@ -48,16 +54,22 @@ export default function Dashboard({ applications = [] }) {
             <div className="py-8 md:py-12 bg-gray-50 dark:bg-gray-900 min-h-screen font-sans transition-colors duration-300">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-                    {/* --- WELCOME CARD (Gradient stays, just fixing borders if any) --- */}
+                    {/* --- WELCOME CARD --- */}
                     <div className="bg-gradient-to-r from-blue-900 to-blue-800 rounded-2xl shadow-xl mb-8 overflow-hidden relative mx-4 sm:mx-0">
                         <div className="absolute right-0 top-0 h-full w-1/3 bg-white/5 skew-x-12 transform origin-bottom-left"></div>
                         <div className="p-6 md:p-10 text-white relative z-10">
                             <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                                 <div>
-                                    <h1 className="text-2xl md:text-3xl font-bold mb-2">Maayong adlaw, {user.name}!</h1>
+                                    {/* DYNAMIC WELCOME MESSAGE */}
+                                    <h1 className="text-2xl md:text-3xl font-bold mb-2">
+                                        {__('welcome_message')}, {user.name}!
+                                    </h1>
+
+                                    {/* DYNAMIC INTRO TEXT */}
                                     <p className="text-blue-100 text-sm md:text-base mb-1">
-                                        Welcome to the official <strong>Assista</strong> portal of Roxas City.
+                                        {__('portal_intro')}
                                     </p>
+
                                     <div className="inline-flex items-center gap-2 mt-2 bg-blue-900/40 px-3 py-1 rounded-lg border border-blue-500/30">
                                         <span className="text-xs text-blue-200 uppercase tracking-widest">Account ID:</span>
                                         <span className="font-mono font-bold text-yellow-400">{String(user.id).padStart(6, '0')}</span>
@@ -68,7 +80,8 @@ export default function Dashboard({ applications = [] }) {
                                     className="w-full md:w-auto bg-yellow-500 hover:bg-yellow-400 text-blue-900 font-bold py-3 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all flex items-center justify-center border-b-4 border-yellow-600"
                                 >
                                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-                                    Apply for Assistance
+                                    {/* DYNAMIC BUTTON TEXT */}
+                                    {__('apply_button')}
                                 </Link>
                             </div>
                         </div>
@@ -84,26 +97,26 @@ export default function Dashboard({ applications = [] }) {
                                     active={activeTab === 'guidelines'}
                                     onClick={() => setActiveTab('guidelines')}
                                     icon={<svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
-                                    label="Requirements"
+                                    label={__('tab_requirements')}
                                 />
                                 <TabButton
                                     active={activeTab === 'ongoing'}
                                     onClick={() => setActiveTab('ongoing')}
-                                    label="Active / Pending"
+                                    label={__('tab_active')}
                                     count={pendingCount}
                                     badgeColor="yellow"
                                 />
                                 <TabButton
                                     active={activeTab === 'approved'}
                                     onClick={() => setActiveTab('approved')}
-                                    label="Approved"
+                                    label={__('tab_approved')}
                                     count={approvedCount}
                                     badgeColor="green"
                                 />
                                 <TabButton
                                     active={activeTab === 'history'}
                                     onClick={() => setActiveTab('history')}
-                                    label="History"
+                                    label={__('tab_history')}
                                     count={rejectedCount}
                                     badgeColor="red"
                                 />
@@ -122,11 +135,11 @@ export default function Dashboard({ applications = [] }) {
                                                 <svg className="h-6 w-6 text-blue-500 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                             </div>
                                             <div className="ml-4">
-                                                <h3 className="text-base font-bold text-blue-900 dark:text-blue-200">Before you apply:</h3>
+                                                <h3 className="text-base font-bold text-blue-900 dark:text-blue-200">{__('info_title')}</h3>
                                                 <div className="mt-2 text-sm text-blue-800 dark:text-blue-300 space-y-1">
-                                                    <p>1. Make sure you are a <strong>resident of Roxas City</strong>.</p>
-                                                    <p>2. Prepare clear photos of your <strong>Valid ID</strong> and <strong>Barangay Indigency</strong>.</p>
-                                                    <p>3. Review the requirements below for your specific need.</p>
+                                                    <p>1. {__('info_step1')}</p>
+                                                    <p>2. {__('info_step2')}</p>
+                                                    <p>3. {__('info_step3')}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -136,13 +149,15 @@ export default function Dashboard({ applications = [] }) {
                                         {Object.entries(REQUIREMENTS_MAP).map(([program, reqs]) => (
                                             <div key={program} className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-800">
                                                 <div className="bg-slate-50 dark:bg-slate-700/50 px-5 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-                                                    <span className="font-bold text-slate-700 dark:text-slate-200 text-sm uppercase tracking-wide">{program}</span>
+                                                    {/* Translate Program Name */}
+                                                    <span className="font-bold text-slate-700 dark:text-slate-200 text-sm uppercase tracking-wide">{__(program)}</span>
                                                 </div>
                                                 <ul className="p-5 space-y-3">
                                                     {reqs.map((req, idx) => (
                                                         <li key={idx} className="flex items-start text-sm text-gray-600 dark:text-gray-300">
                                                             <svg className="w-4 h-4 text-green-500 mr-2 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-                                                            {req}
+                                                            {/* Translate Requirement Item */}
+                                                            {__(req)}
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -156,10 +171,12 @@ export default function Dashboard({ applications = [] }) {
                             {activeTab !== 'guidelines' && (
                                 <div className="space-y-6">
                                     {filteredApplications.length === 0 ? (
-                                        <EmptyState activeTab={activeTab} />
+                                        // Pass the translator to EmptyState
+                                        <EmptyState activeTab={activeTab} __={__} />
                                     ) : (
                                         filteredApplications.map((app) => (
-                                            <ApplicationCard key={app.id} app={app} />
+                                            // Pass the translator to ApplicationCard
+                                            <ApplicationCard key={app.id} app={app} __={__} />
                                         ))
                                     )}
                                 </div>
@@ -169,11 +186,11 @@ export default function Dashboard({ applications = [] }) {
 
                     {/* --- HELP WIDGET --- */}
                     <div className="mt-8 text-center border-t border-gray-200 dark:border-gray-700 pt-8 pb-4">
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">Need assistance with your application?</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">{__('help_title')}</p>
                         <p className="text-blue-900 dark:text-blue-400 font-bold text-lg mt-1">
-                            <span className="mr-2">📞</span> Hotline: (036) 52026-83
+                            <span className="mr-2">📞</span> {__('help_hotline')}: (036) 52026-83
                         </p>
-                        <p className="text-gray-400 text-xs mt-2">CSWDO Office, Inzo Arnaldo Village, Roxas City</p>
+                        <p className="text-gray-400 text-xs mt-2">{__('help_office')}</p>
                     </div>
 
                 </div>
@@ -210,7 +227,8 @@ function TabButton({ active, onClick, label, count, badgeColor, icon }) {
     );
 }
 
-function ApplicationCard({ app }) {
+// NOTE: Added __ prop to support translation inside the card
+function ApplicationCard({ app, __ }) {
     const createdDate = new Date(app.created_at);
     const deadlineDate = new Date(createdDate);
     deadlineDate.setDate(createdDate.getDate() + 7);
@@ -237,7 +255,8 @@ function ApplicationCard({ app }) {
                         </span>
                     </div>
 
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{app.program}</h3>
+                    {/* Translate Program Name */}
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{__(app.program)}</h3>
 
                     <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
                         <p className="flex items-center">
@@ -258,13 +277,13 @@ function ApplicationCard({ app }) {
                         )}
                     </div>
 
-                    {/* VISUAL TIMELINE */}
+                    {/* VISUAL TIMELINE (Labels Translated) */}
                     <div className="mt-6 flex items-center gap-2 max-w-sm">
-                        <TimelineStep active={true} label="Submitted" />
+                        <TimelineStep active={true} label={__('timeline_submitted')} />
                         <div className={`h-1 flex-1 rounded-full ${!isPending && !isExpired ? 'bg-blue-500' : 'bg-gray-200 dark:bg-gray-600'}`}></div>
-                        <TimelineStep active={!isPending && !isExpired} label="Reviewed" />
+                        <TimelineStep active={!isPending && !isExpired} label={__('timeline_reviewed')} />
                         <div className={`h-1 flex-1 rounded-full ${(isApproved || isRejected) ? (isApproved ? 'bg-green-500' : 'bg-red-500') : 'bg-gray-200 dark:bg-gray-600'}`}></div>
-                        <TimelineStep active={isApproved || isRejected} label="Result" color={isRejected ? 'bg-red-500' : isApproved ? 'bg-green-500' : ''} />
+                        <TimelineStep active={isApproved || isRejected} label={__('timeline_result')} color={isRejected ? 'bg-red-500' : isApproved ? 'bg-green-500' : ''} />
                     </div>
                 </div>
 
@@ -275,24 +294,24 @@ function ApplicationCard({ app }) {
                     <div className="text-right">
                         {isPending && !isExpired && (
                             <p className="text-xs text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/30 px-3 py-2 rounded-lg border border-yellow-100 dark:border-yellow-800 max-w-[200px]">
-                                Your application is currently under review. Please keep your lines open.
+                                {__('status_review')}
                             </p>
                         )}
 
                         {isExpired && (
                             <p className="text-xs text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-500 max-w-[200px]">
-                                This application has passed the 7-day validity period.
+                                {__('status_expired')}
                             </p>
                         )}
 
                         {isApproved && (
                             <div className="flex flex-col gap-2 items-end">
                                 <p className="text-xs text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 px-3 py-2 rounded-lg border border-green-100 dark:border-green-800 max-w-[200px]">
-                                    Approved! You may now download your claim stub.
+                                    {__('status_approved')}
                                 </p>
                                 <a href={route('applications.claim-stub', app.id)} target="_blank" className="inline-flex items-center justify-center w-full text-white text-sm font-bold bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg shadow transition">
                                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                    Download Claim Stub
+                                    {__('download_stub')}
                                 </a>
                             </div>
                         )}
@@ -301,11 +320,11 @@ function ApplicationCard({ app }) {
                             <div className="flex flex-col gap-2 items-end">
                                 {app.remarks && (
                                     <p className="text-xs text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/30 px-3 py-2 rounded-lg border border-red-100 dark:border-red-800 max-w-[200px] text-left">
-                                        <strong>Issue:</strong> {app.remarks}
+                                        <strong>{__('issue_label')}</strong> {app.remarks}
                                     </p>
                                 )}
                                 <Link href={route('applications.edit', app.id)} className="inline-flex items-center justify-center w-full text-blue-700 dark:text-blue-200 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-800 text-sm font-bold px-4 py-2 rounded-lg transition">
-                                    Edit & Resubmit
+                                    {__('edit_resubmit')}
                                 </Link>
                             </div>
                         )}
@@ -340,17 +359,18 @@ function StatusBadge({ status }) {
     );
 }
 
-function EmptyState({ activeTab }) {
+// NOTE: Added __ prop to support translation inside EmptyState
+function EmptyState({ activeTab, __ }) {
     return (
         <div className="text-center py-16 flex flex-col items-center bg-gray-50 dark:bg-gray-800/50 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
             <div className="bg-white dark:bg-gray-700 p-4 rounded-full mb-4 shadow-sm">
                 <svg className="w-12 h-12 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">No applications found</h3>
-            <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">You don't have any {activeTab} applications yet.</p>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{__('no_applications')}</h3>
+            <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">{__('no_applications_sub')}</p>
             {activeTab === 'ongoing' && (
                 <Link href={route('applications.create')} className="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full shadow transition transform hover:-translate-y-0.5">
-                    Start a New Application
+                    {__('start_new_app')}
                 </Link>
             )}
         </div>

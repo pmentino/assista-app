@@ -1,26 +1,39 @@
 import { useState, useEffect } from 'react';
 import Dropdown from '@/Components/Dropdown';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 import { Toaster, toast } from 'react-hot-toast';
 import NotificationBell from '@/Components/NotificationBell';
 
 export default function AuthenticatedLayout({ user, header, children }) {
+    // 1. GET LOCALE & TRANSLATIONS (With Safe Defaults)
     const { props } = usePage();
+    // FIX: Default 'translations' to an empty object {} to prevent crashes
+    const { locale = 'en', translations = {} } = props;
+
+    // 2. HELPER FUNCTION: Translate text
+    // FIX: Added optional chaining (?.) just in case
+    const __ = (key) => (translations && translations[key]) ? translations[key] : key;
+
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
 
     // --- ACCESSIBILITY STATES ---
     const [darkMode, setDarkMode] = useState(localStorage.getItem('theme') === 'dark');
     const [fontSize, setFontSize] = useState(localStorage.getItem('fontSize') || 'text-base');
 
-    // Safely access user
     const currentUser = user || props.auth?.user || {};
-
-    // Check Roles
     const isAdmin = currentUser?.role === 'admin' || currentUser?.type === 'admin';
     const isStaff = currentUser?.role === 'staff' || currentUser?.type === 'staff';
 
-    // LOGIC: Show "My Dashboard" if user is NOT Admin.
-    const showApplicantDashboard = !isAdmin;
+    // LOGIC: Check if the user is a regular applicant (not staff/admin)
+    const isApplicant = !isAdmin && !isStaff;
+    const showApplicantDashboard = isApplicant;
+
+    // --- LANGUAGE SWITCHER HANDLER ---
+    const switchLanguage = (lang) => {
+        // USE WINDOW.LOCATION INSTEAD OF ROUTER.GET
+        // This forces a hard refresh, ensuring the session updates immediately.
+        window.location.href = route('language.switch', lang);
+    };
 
     // --- EFFECT: HANDLE DARK MODE ---
     useEffect(() => {
@@ -35,14 +48,11 @@ export default function AuthenticatedLayout({ user, header, children }) {
 
     // --- EFFECT: HANDLE FONT SIZE ---
     useEffect(() => {
-        // Remove old classes
         document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg', 'text-xl');
-        // Add new class
         document.documentElement.classList.add(fontSize);
         localStorage.setItem('fontSize', fontSize);
     }, [fontSize]);
 
-    // --- TOGGLE FUNCTIONS ---
     const toggleTheme = () => setDarkMode(!darkMode);
 
     const cycleFontSize = () => {
@@ -78,7 +88,6 @@ export default function AuthenticatedLayout({ user, header, children }) {
         <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'}`}>
             <Toaster position="top-right" />
 
-            {/* --- FAIL-SAFE ERROR BANNER --- */}
             {props.flash?.error && (
                 <div className="bg-red-600 text-white px-6 py-4 text-center font-bold text-lg sticky top-0 z-[100] shadow-xl animate-pulse flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -94,22 +103,18 @@ export default function AuthenticatedLayout({ user, header, children }) {
                         <div className="flex">
                             <div className="shrink-0 flex items-center">
                                 <Link href="/">
-                                    {/* Use filter invert for dark mode logo if needed, or keep as is */}
                                     <img src="/images/logo.png" alt="Assista Logo" className="block h-9 w-auto" />
                                 </Link>
                             </div>
 
                             {/* --- DESKTOP NAVIGATION --- */}
                             <div className="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
-
-                                {/* 1. APPLICANT DASHBOARD */}
                                 {showApplicantDashboard && (
                                     <Link href={route('dashboard')} className={navLinkClasses(route().current('dashboard'))}>
-                                        My Dashboard
+                                        {__('My Dashboard')}
                                     </Link>
                                 )}
 
-                                {/* 2. STAFF LINKS */}
                                 {isStaff && (
                                     <>
                                         <Link href={route('staff.dashboard')} className={navLinkClasses(route().current('staff.dashboard'))}>
@@ -124,7 +129,6 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                     </>
                                 )}
 
-                                {/* 3. ADMIN LINKS */}
                                 {isAdmin && (
                                     <>
                                         <Link href={route('admin.dashboard')} className={navLinkClasses(route().current('admin.dashboard'))}>
@@ -158,6 +162,33 @@ export default function AuthenticatedLayout({ user, header, children }) {
 
                         {/* Settings Dropdown & Bell */}
                         <div className="hidden sm:flex sm:items-center sm:ml-6 gap-3">
+
+                            {/* --- LANGUAGE SWITCHER (HIDDEN FOR STAFF/ADMIN) --- */}
+                            {isApplicant && (
+                                <Dropdown>
+                                    <Dropdown.Trigger>
+                                        <span className="inline-flex rounded-md">
+                                            <button type="button" className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-bold rounded-md text-white bg-black/20 hover:bg-black/30 focus:outline-none transition ease-in-out duration-150 uppercase">
+                                                {locale || 'EN'}
+                                                <svg className="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    </Dropdown.Trigger>
+                                    <Dropdown.Content>
+                                        <button onClick={() => switchLanguage('en')} className="block w-full px-4 py-2 text-left text-sm leading-5 text-gray-700 hover:bg-gray-100 focus:outline-none transition duration-150 ease-in-out">
+                                            English
+                                        </button>
+                                        <button onClick={() => switchLanguage('fil')} className="block w-full px-4 py-2 text-left text-sm leading-5 text-gray-700 hover:bg-gray-100 focus:outline-none transition duration-150 ease-in-out">
+                                            Filipino
+                                        </button>
+                                        <button onClick={() => switchLanguage('hil')} className="block w-full px-4 py-2 text-left text-sm leading-5 text-gray-700 hover:bg-gray-100 focus:outline-none transition duration-150 ease-in-out">
+                                            Hiligaynon
+                                        </button>
+                                    </Dropdown.Content>
+                                </Dropdown>
+                            )}
 
                             {/* --- ACCESSIBILITY CONTROLS --- */}
                             <div className="flex items-center bg-black/20 rounded-full p-1 border border-white/10">
@@ -204,8 +235,8 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                         </span>
                                     </Dropdown.Trigger>
                                     <Dropdown.Content>
-                                        <Dropdown.Link href={route('profile.edit')}>Profile</Dropdown.Link>
-                                        <Dropdown.Link href={route('logout')} method="post" as="button">Log Out</Dropdown.Link>
+                                        <Dropdown.Link href={route('profile.edit')}>{__('Profile')}</Dropdown.Link>
+                                        <Dropdown.Link href={route('logout')} method="post" as="button">{__('Log Out')}</Dropdown.Link>
                                     </Dropdown.Content>
                                 </Dropdown>
                             </div>
@@ -213,10 +244,17 @@ export default function AuthenticatedLayout({ user, header, children }) {
 
                         {/* Hamburger */}
                         <div className="-mr-2 flex items-center sm:hidden">
-                            <div className="flex mr-2 gap-2">
-                                <button onClick={toggleTheme} className="text-gray-200 p-2">
-                                     {darkMode ? '☀️' : '🌙'}
+                            {/* Mobile Language Switcher (Hidden for Staff/Admin) */}
+                            {isApplicant && (
+                                <button onClick={() => switchLanguage(locale === 'en' ? 'fil' : 'en')} className="text-gray-200 p-2 font-bold uppercase text-xs">
+                                    {locale || 'EN'}
                                 </button>
+                            )}
+
+                            <button onClick={toggleTheme} className="text-gray-200 p-2">
+                                {darkMode ? '☀️' : '🌙'}
+                            </button>
+                            <div className="mr-2">
                                 <NotificationBell />
                             </div>
                             <button
@@ -235,17 +273,25 @@ export default function AuthenticatedLayout({ user, header, children }) {
                 {/* --- MOBILE MENU --- */}
                 <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ` sm:hidden ${darkMode ? 'bg-gray-800' : 'bg-blue-800'} border-t border-blue-900`}>
                     <div className="pt-2 pb-3 space-y-1">
-                         {/* Accessibility Links for Mobile */}
-                         <button onClick={cycleFontSize} className={`w-full text-left pl-3 pr-4 py-2 text-base font-medium ${darkMode ? 'text-gray-300' : 'text-blue-100'}`}>
+                        <button onClick={cycleFontSize} className={`w-full text-left pl-3 pr-4 py-2 text-base font-medium ${darkMode ? 'text-gray-300' : 'text-blue-100'}`}>
                             Adjust Font Size: {fontSize.replace('text-', '').toUpperCase()}
-                         </button>
+                        </button>
+
+                        {/* Only show Language options for Applicant */}
+                        {isApplicant && (
+                            <div className={`pl-3 pr-4 py-2 text-base font-medium ${darkMode ? 'text-gray-300' : 'text-blue-100'}`}>
+                                Language:
+                                <button onClick={() => switchLanguage('en')} className="ml-2 underline">EN</button>
+                                <button onClick={() => switchLanguage('fil')} className="ml-2 underline">FIL</button>
+                                <button onClick={() => switchLanguage('hil')} className="ml-2 underline">HIL</button>
+                            </div>
+                        )}
 
                         {showApplicantDashboard && (
                             <Link href={route('dashboard')} className={mobileNavLinkClasses(route().current('dashboard'))}>
-                                My Dashboard
+                                {__('My Dashboard')}
                             </Link>
                         )}
-                        {/* ... Existing Mobile Links ... */}
                         {isStaff && (
                             <>
                                 <Link href={route('staff.dashboard')} className={mobileNavLinkClasses(route().current('staff.dashboard'))}>
@@ -256,7 +302,6 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                 </Link>
                             </>
                         )}
-
                         {isAdmin && (
                             <>
                                 <Link href={route('admin.dashboard')} className={mobileNavLinkClasses(route().current('admin.dashboard'))}>
@@ -267,21 +312,6 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                 </Link>
                                 <Link href={route('admin.reports.index')} className={mobileNavLinkClasses(route().current('admin.reports.*'))}>
                                     Reports
-                                </Link>
-                                <Link href={route('admin.users.index')} className={mobileNavLinkClasses(route().current('admin.users.*'))}>
-                                    Manage Users
-                                </Link>
-                                <Link href={route('admin.news.index')} className={mobileNavLinkClasses(route().current('admin.news.*'))}>
-                                    News
-                                </Link>
-                                <Link href={route('admin.programs.index')} className={mobileNavLinkClasses(route().current('admin.programs.*'))}>
-                                    Programs
-                                </Link>
-                                <Link href={route('admin.audit-logs')} className={mobileNavLinkClasses(route().current('admin.audit-logs'))}>
-                                    Audit Logs
-                                </Link>
-                                <Link href={route('admin.settings.index')} className={mobileNavLinkClasses(route().current('admin.settings.*'))}>
-                                    Settings
                                 </Link>
                             </>
                         )}
@@ -301,10 +331,10 @@ export default function AuthenticatedLayout({ user, header, children }) {
                         </div>
                         <div className="mt-3 space-y-1">
                             <Link href={route('profile.edit')} className="block w-full pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-blue-200 hover:text-white hover:bg-blue-700 transition">
-                                Profile
+                                {__('Profile')}
                             </Link>
                             <Link href={route('logout')} method="post" as="button" className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-blue-200 hover:text-white hover:bg-blue-700 transition">
-                                Log Out
+                                {__('Log Out')}
                             </Link>
                         </div>
                     </div>
@@ -315,7 +345,7 @@ export default function AuthenticatedLayout({ user, header, children }) {
                 <header className={`${darkMode ? 'bg-gray-800 shadow-gray-900' : 'bg-white'} shadow relative z-10 transition-colors duration-300`}>
                     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                         <div className={darkMode ? 'text-gray-100' : 'text-gray-800'}>
-                             {header}
+                            {header}
                         </div>
                     </div>
                 </header>

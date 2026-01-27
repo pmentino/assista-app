@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Mail;
-use App\Mail\ApplicationStatusUpdated; // Handles Email (Mailtrap)
-use App\Notifications\ApplicationStatusAlert; // Handles Bell Icon (Database)
+use App\Mail\ApplicationStatusUpdated;
+use App\Notifications\ApplicationStatusAlert;
 use App\Models\Setting;
 use App\Models\Application;
 use App\Models\AuditLog;
-use App\Models\AssistanceProgram; // <--- NEW IMPORT
+use App\Models\AssistanceProgram;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -23,14 +23,26 @@ class ApplicationController extends Controller
     // Show form
     public function create()
     {
-        // --- THE FIX: Fetch Active Programs from Database ---
+        // 1. Fetch Active Programs
         $programs = AssistanceProgram::where('is_active', true)
-            ->select('id', 'title', 'requirements') // We need title and requirements
+            ->select('id', 'title', 'requirements')
             ->get();
+
+        // 2. FORCE LOAD TRANSLATIONS (The "Brute Force" Fix)
+        $locale = session('locale', 'en');
+        $path = base_path("resources/lang/{$locale}.json");
+        $translations = [];
+
+        if (file_exists($path)) {
+            $translations = json_decode(file_get_contents($path), true) ?? [];
+        }
 
         return Inertia::render('Applications/Create', [
             'auth' => ['user' => Auth::user()],
-            'programs' => $programs, // <--- Pass them to React
+            'programs' => $programs,
+            // Pass Data to React
+            'translations' => $translations,
+            'locale' => $locale
         ]);
     }
 
@@ -39,21 +51,27 @@ class ApplicationController extends Controller
     {
         $user = Auth::user();
 
-        // 1. Check for Pending Apps
+        // Check for Pending Apps
         $hasPending = Application::where('user_id', $user->id)->where('status', 'Pending')->exists();
 
         if ($hasPending) {
-            // --- FIX 2: Fetch programs again so the page doesn't crash on error ---
             $programs = AssistanceProgram::where('is_active', true)
                 ->select('id', 'title', 'requirements')
                 ->get();
+
+            // Load translations for error page too
+            $locale = session('locale', 'en');
+            $path = base_path("resources/lang/{$locale}.json");
+            $translations = file_exists($path) ? json_decode(file_get_contents($path), true) : [];
 
              return Inertia::render('Applications/Create', [
                 'errors' => [
                     'error' => '⚠️ STOP: You already have a pending application.'
                 ],
-                'programs' => $programs, // <--- PASS THIS DATA TO PREVENT CRASH
-                'auth' => ['user' => Auth::user()]
+                'programs' => $programs,
+                'auth' => ['user' => Auth::user()],
+                'translations' => $translations,
+                'locale' => $locale
             ]);
         }
 
@@ -215,7 +233,7 @@ class ApplicationController extends Controller
             'approved_date' => now(),
         ]);
 
-        // 2. CREATE AUDIT LOG (Fixed!)
+        // 2. CREATE AUDIT LOG
         AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Approved Application',
