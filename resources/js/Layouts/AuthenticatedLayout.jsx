@@ -5,37 +5,43 @@ import { Toaster, toast } from 'react-hot-toast';
 import NotificationBell from '@/Components/NotificationBell';
 
 export default function AuthenticatedLayout({ user, header, children }) {
-    // 1. GET LOCALE & TRANSLATIONS (With Safe Defaults)
+    // 1. GET LOCALE & TRANSLATIONS
     const { props } = usePage();
-    // FIX: Default 'translations' to an empty object {} to prevent crashes
     const { locale = 'en', translations = {} } = props;
 
-    // 2. HELPER FUNCTION: Translate text
-    // FIX: Added optional chaining (?.) just in case
+    // 2. HELPER FUNCTION
     const __ = (key) => (translations && translations[key]) ? translations[key] : key;
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
 
     // --- ACCESSIBILITY STATES ---
     const [darkMode, setDarkMode] = useState(localStorage.getItem('theme') === 'dark');
-    const [fontSize, setFontSize] = useState(localStorage.getItem('fontSize') || 'text-base');
+
+    // Define available sizes
+    const fontSizes = ['text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl'];
+
+    // Track current size index (Default: 1 = text-base)
+    const [fontIndex, setFontIndex] = useState(() => {
+        const saved = localStorage.getItem('fontSize');
+        const index = fontSizes.indexOf(saved);
+        return index !== -1 ? index : 1;
+    });
 
     const currentUser = user || props.auth?.user || {};
     const isAdmin = currentUser?.role === 'admin' || currentUser?.type === 'admin';
     const isStaff = currentUser?.role === 'staff' || currentUser?.type === 'staff';
-
-    // LOGIC: Check if the user is a regular applicant (not staff/admin)
     const isApplicant = !isAdmin && !isStaff;
     const showApplicantDashboard = isApplicant;
 
-    // --- LANGUAGE SWITCHER HANDLER ---
+    // --- LANGUAGE SWITCHER ---
     const switchLanguage = (lang) => {
-        // USE WINDOW.LOCATION INSTEAD OF ROUTER.GET
-        // This forces a hard refresh, ensuring the session updates immediately.
-        window.location.href = route('language.switch', lang);
+        router.get(route('language.switch', lang), {}, {
+            preserveScroll: true,
+            preserveState: true,
+        });
     };
 
-    // --- EFFECT: HANDLE DARK MODE ---
+    // --- EFFECTS ---
     useEffect(() => {
         if (darkMode) {
             document.documentElement.classList.add('dark');
@@ -46,23 +52,18 @@ export default function AuthenticatedLayout({ user, header, children }) {
         }
     }, [darkMode]);
 
-    // --- EFFECT: HANDLE FONT SIZE ---
     useEffect(() => {
-        document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg', 'text-xl');
-        document.documentElement.classList.add(fontSize);
-        localStorage.setItem('fontSize', fontSize);
-    }, [fontSize]);
+        document.documentElement.classList.remove(...fontSizes);
+        const newClass = fontSizes[fontIndex];
+        document.documentElement.classList.add(newClass);
+        localStorage.setItem('fontSize', newClass);
+    }, [fontIndex]);
 
     const toggleTheme = () => setDarkMode(!darkMode);
+    const increaseFont = () => setFontIndex((prev) => (prev < fontSizes.length - 1 ? prev + 1 : prev));
+    const decreaseFont = () => setFontIndex((prev) => (prev > 0 ? prev - 1 : prev));
 
-    const cycleFontSize = () => {
-        if (fontSize === 'text-sm') setFontSize('text-base');
-        else if (fontSize === 'text-base') setFontSize('text-lg');
-        else if (fontSize === 'text-lg') setFontSize('text-xl');
-        else setFontSize('text-sm');
-    };
-
-    // --- TOAST NOTIFICATIONS ---
+    // --- TOASTS ---
     useEffect(() => {
         if (props.flash?.message) toast.success(props.flash.message);
         if (props.flash?.success) toast.success(props.flash.success);
@@ -88,26 +89,79 @@ export default function AuthenticatedLayout({ user, header, children }) {
         <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'}`}>
             <Toaster position="top-right" />
 
+            {/* Error Banner */}
             {props.flash?.error && (
                 <div className="bg-red-600 text-white px-6 py-4 text-center font-bold text-lg sticky top-0 z-[100] shadow-xl animate-pulse flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
                     <span>{props.flash.error}</span>
                 </div>
             )}
 
-            <nav className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-blue-800 border-blue-900'} border-b sticky top-0 z-50 transition-colors duration-300`}>
+            {/* ==================================================================================== */}
+            {/* NEW: ELDERLY-FRIENDLY ACCESSIBILITY BAR (Always Visible Top Strip)                   */}
+            {/* ==================================================================================== */}
+            <div className="bg-blue-950 text-white text-xs py-2 px-2 sm:px-4 border-b border-blue-800 relative z-[60]">
+                <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-end gap-3 sm:gap-6">
+
+                    {/* 1. LANGUAGE SWITCHER (With Label) */}
+                    {isApplicant && (
+                        <div className="flex items-center">
+                            <span className="text-gray-400 mr-2 hidden sm:inline font-bold">Language:</span>
+                            <Dropdown>
+                                <Dropdown.Trigger>
+                                    <button className="flex items-center font-bold hover:text-yellow-400 transition bg-blue-900/50 px-2 py-1 rounded">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012 2v1.035M12 21a9 9 0 100-18 9 9 0 000 18z" />
+                                        </svg>
+                                        {locale === 'fil' ? 'Filipino' : locale === 'hil' ? 'Hiligaynon' : 'English'}
+                                        <span className="ml-1 text-[10px]">▼</span>
+                                    </button>
+                                </Dropdown.Trigger>
+                                <Dropdown.Content>
+                                    <button onClick={() => switchLanguage('en')} className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100">English</button>
+                                    <button onClick={() => switchLanguage('fil')} className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100">Filipino</button>
+                                    <button onClick={() => switchLanguage('hil')} className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100">Hiligaynon</button>
+                                </Dropdown.Content>
+                            </Dropdown>
+                        </div>
+                    )}
+
+                    {/* 2. TEXT SIZE CONTROLS (With Label) */}
+                    <div className="flex items-center">
+                        <span className="text-gray-400 mr-2 hidden sm:inline font-bold">Text Size:</span>
+                        <div className="flex bg-blue-900/50 rounded overflow-hidden border border-blue-800">
+                            <button onClick={decreaseFont} className="px-3 py-1 hover:bg-blue-700 hover:text-yellow-300 transition border-r border-blue-800 font-bold" title="Make Text Smaller">A-</button>
+                            <button onClick={increaseFont} className="px-3 py-1 hover:bg-blue-700 hover:text-yellow-300 transition font-bold" title="Make Text Bigger">A+</button>
+                        </div>
+                    </div>
+
+                    {/* 3. DARK MODE (With Label) */}
+                    <div className="flex items-center">
+                        <span className="text-gray-400 mr-2 hidden sm:inline font-bold">Mode:</span>
+                        <button onClick={toggleTheme} className="flex items-center bg-blue-900/50 px-3 py-1 rounded border border-blue-800 hover:bg-blue-700 hover:text-yellow-300 transition">
+                            {darkMode ? (
+                                <><span className="mr-1">🌙</span> <span className="hidden sm:inline">Dark</span></>
+                            ) : (
+                                <><span className="mr-1">☀️</span> <span className="hidden sm:inline">Light</span></>
+                            )}
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <nav className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-blue-800 border-blue-900'} border-b sticky top-0 z-50 transition-colors duration-300 shadow-md`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
+
+                        {/* LEFT: Logo & Links */}
                         <div className="flex">
                             <div className="shrink-0 flex items-center">
                                 <Link href="/">
-                                    <img src="/images/logo.png" alt="Assista Logo" className="block h-9 w-auto" />
+                                    <img src="/images/logo.png" alt="Assista Logo" className="block h-10 w-auto" />
                                 </Link>
                             </div>
 
-                            {/* --- DESKTOP NAVIGATION --- */}
+                            {/* Desktop Links */}
                             <div className="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
                                 {showApplicantDashboard && (
                                     <Link href={route('dashboard')} className={navLinkClasses(route().current('dashboard'))}>
@@ -117,116 +171,39 @@ export default function AuthenticatedLayout({ user, header, children }) {
 
                                 {isStaff && (
                                     <>
-                                        <Link href={route('staff.dashboard')} className={navLinkClasses(route().current('staff.dashboard'))}>
-                                            Staff Dashboard
-                                        </Link>
-                                        <Link href={route('staff.applications.index')} className={navLinkClasses(route().current('staff.applications.index'))}>
-                                            All Applications
-                                        </Link>
-                                        <Link href={route('staff.reports.index')} className={navLinkClasses(route().current('staff.reports.*'))}>
-                                            Reports
-                                        </Link>
+                                        <Link href={route('staff.dashboard')} className={navLinkClasses(route().current('staff.dashboard'))}>Staff Dashboard</Link>
+                                        <Link href={route('staff.applications.index')} className={navLinkClasses(route().current('staff.applications.index'))}>All Applications</Link>
+                                        <Link href={route('staff.reports.index')} className={navLinkClasses(route().current('staff.reports.*'))}>Reports</Link>
                                     </>
                                 )}
 
+                                {/* --- RESTORED ADMIN LINKS --- */}
                                 {isAdmin && (
                                     <>
-                                        <Link href={route('admin.dashboard')} className={navLinkClasses(route().current('admin.dashboard'))}>
-                                            Admin Dashboard
-                                        </Link>
-                                        <Link href={route('admin.applications.index')} className={navLinkClasses(route().current('admin.applications.*'))}>
-                                            All Applications
-                                        </Link>
-                                        <Link href={route('admin.reports.index')} className={navLinkClasses(route().current('admin.reports.*'))}>
-                                            Reports
-                                        </Link>
-                                        <Link href={route('admin.users.index')} className={navLinkClasses(route().current('admin.users.*'))}>
-                                            Manage Users
-                                        </Link>
-                                        <Link href={route('admin.news.index')} className={navLinkClasses(route().current('admin.news.*'))}>
-                                            News
-                                        </Link>
-                                        <Link href={route('admin.programs.index')} className={navLinkClasses(route().current('admin.programs.*'))}>
-                                            Programs
-                                        </Link>
-                                        <Link href={route('admin.audit-logs')} className={navLinkClasses(route().current('admin.audit-logs'))}>
-                                            Audit Logs
-                                        </Link>
-                                        <Link href={route('admin.settings.index')} className={navLinkClasses(route().current('admin.settings.*'))}>
-                                            Settings
-                                        </Link>
+                                        <Link href={route('admin.dashboard')} className={navLinkClasses(route().current('admin.dashboard'))}>Admin Dashboard</Link>
+                                        <Link href={route('admin.applications.index')} className={navLinkClasses(route().current('admin.applications.*'))}>All Applications</Link>
+                                        <Link href={route('admin.reports.index')} className={navLinkClasses(route().current('admin.reports.*'))}>Reports</Link>
+                                        <Link href={route('admin.users.index')} className={navLinkClasses(route().current('admin.users.*'))}>Manage Users</Link>
+                                        <Link href={route('admin.news.index')} className={navLinkClasses(route().current('admin.news.*'))}>News</Link>
+                                        <Link href={route('admin.programs.index')} className={navLinkClasses(route().current('admin.programs.*'))}>Programs</Link>
+                                        <Link href={route('admin.audit-logs')} className={navLinkClasses(route().current('admin.audit-logs'))}>Audit Logs</Link>
+                                        <Link href={route('admin.settings.index')} className={navLinkClasses(route().current('admin.settings.*'))}>Settings</Link>
                                     </>
                                 )}
                             </div>
                         </div>
 
-                        {/* Settings Dropdown & Bell */}
-                        <div className="hidden sm:flex sm:items-center sm:ml-6 gap-3">
-
-                            {/* --- LANGUAGE SWITCHER (HIDDEN FOR STAFF/ADMIN) --- */}
-                            {isApplicant && (
-                                <Dropdown>
-                                    <Dropdown.Trigger>
-                                        <span className="inline-flex rounded-md">
-                                            <button type="button" className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-bold rounded-md text-white bg-black/20 hover:bg-black/30 focus:outline-none transition ease-in-out duration-150 uppercase">
-                                                {locale || 'EN'}
-                                                <svg className="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                                </svg>
-                                            </button>
-                                        </span>
-                                    </Dropdown.Trigger>
-                                    <Dropdown.Content>
-                                        <button onClick={() => switchLanguage('en')} className="block w-full px-4 py-2 text-left text-sm leading-5 text-gray-700 hover:bg-gray-100 focus:outline-none transition duration-150 ease-in-out">
-                                            English
-                                        </button>
-                                        <button onClick={() => switchLanguage('fil')} className="block w-full px-4 py-2 text-left text-sm leading-5 text-gray-700 hover:bg-gray-100 focus:outline-none transition duration-150 ease-in-out">
-                                            Filipino
-                                        </button>
-                                        <button onClick={() => switchLanguage('hil')} className="block w-full px-4 py-2 text-left text-sm leading-5 text-gray-700 hover:bg-gray-100 focus:outline-none transition duration-150 ease-in-out">
-                                            Hiligaynon
-                                        </button>
-                                    </Dropdown.Content>
-                                </Dropdown>
-                            )}
-
-                            {/* --- ACCESSIBILITY CONTROLS --- */}
-                            <div className="flex items-center bg-black/20 rounded-full p-1 border border-white/10">
-                                {/* Font Size Toggle */}
-                                <button
-                                    onClick={cycleFontSize}
-                                    className="p-1.5 rounded-full text-gray-200 hover:text-white hover:bg-white/10 transition"
-                                    title="Change Font Size"
-                                >
-                                    <span className="font-serif font-bold text-xs">A</span>
-                                    <span className="font-serif font-bold text-lg ml-0.5">A</span>
-                                </button>
-
-                                {/* Dark Mode Toggle */}
-                                <button
-                                    onClick={toggleTheme}
-                                    className="p-1.5 rounded-full text-yellow-300 hover:text-yellow-200 hover:bg-white/10 transition ml-1"
-                                    title="Toggle Dark Mode"
-                                >
-                                    {darkMode ? (
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                                        </svg>
-                                    ) : (
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                                        </svg>
-                                    )}
-                                </button>
-                            </div>
+                        {/* RIGHT: Notifications & Profile */}
+                        <div className="flex items-center gap-4">
 
                             <NotificationBell />
 
-                            <div className="ml-3 relative">
+                            {/* Profile Dropdown (Desktop) */}
+                            <div className="hidden sm:flex relative">
                                 <Dropdown>
                                     <Dropdown.Trigger>
                                         <span className="inline-flex rounded-md">
-                                            <button type="button" className={`inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-200 ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-blue-800 hover:text-white'} focus:outline-none transition ease-in-out duration-150`}>
+                                            <button type="button" className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-200 bg-transparent hover:text-white focus:outline-none transition ease-in-out duration-150">
                                                 {currentUser.name || 'Account'}
                                                 <svg className="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                                     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -240,32 +217,19 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                     </Dropdown.Content>
                                 </Dropdown>
                             </div>
-                        </div>
 
-                        {/* Hamburger */}
-                        <div className="-mr-2 flex items-center sm:hidden">
-                            {/* Mobile Language Switcher (Hidden for Staff/Admin) */}
-                            {isApplicant && (
-                                <button onClick={() => switchLanguage(locale === 'en' ? 'fil' : 'en')} className="text-gray-200 p-2 font-bold uppercase text-xs">
-                                    {locale || 'EN'}
+                            {/* Hamburger (Mobile) */}
+                            <div className="-mr-2 flex items-center sm:hidden">
+                                <button
+                                    onClick={() => setShowingNavigationDropdown((previousState) => !previousState)}
+                                    className="inline-flex items-center justify-center p-2 rounded-md text-gray-200 hover:text-white hover:bg-blue-700 focus:outline-none transition duration-150 ease-in-out"
+                                >
+                                    <svg className="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                                        <path className={!showingNavigationDropdown ? 'inline-flex' : 'hidden'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                                        <path className={showingNavigationDropdown ? 'inline-flex' : 'hidden'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
                                 </button>
-                            )}
-
-                            <button onClick={toggleTheme} className="text-gray-200 p-2">
-                                {darkMode ? '☀️' : '🌙'}
-                            </button>
-                            <div className="mr-2">
-                                <NotificationBell />
                             </div>
-                            <button
-                                onClick={() => setShowingNavigationDropdown((previousState) => !previousState)}
-                                className="inline-flex items-center justify-center p-2 rounded-md text-gray-200 hover:text-white hover:bg-blue-700 focus:outline-none transition duration-150 ease-in-out"
-                            >
-                                <svg className="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                                    <path className={!showingNavigationDropdown ? 'inline-flex' : 'hidden'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                                    <path className={showingNavigationDropdown ? 'inline-flex' : 'hidden'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -273,20 +237,6 @@ export default function AuthenticatedLayout({ user, header, children }) {
                 {/* --- MOBILE MENU --- */}
                 <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ` sm:hidden ${darkMode ? 'bg-gray-800' : 'bg-blue-800'} border-t border-blue-900`}>
                     <div className="pt-2 pb-3 space-y-1">
-                        <button onClick={cycleFontSize} className={`w-full text-left pl-3 pr-4 py-2 text-base font-medium ${darkMode ? 'text-gray-300' : 'text-blue-100'}`}>
-                            Adjust Font Size: {fontSize.replace('text-', '').toUpperCase()}
-                        </button>
-
-                        {/* Only show Language options for Applicant */}
-                        {isApplicant && (
-                            <div className={`pl-3 pr-4 py-2 text-base font-medium ${darkMode ? 'text-gray-300' : 'text-blue-100'}`}>
-                                Language:
-                                <button onClick={() => switchLanguage('en')} className="ml-2 underline">EN</button>
-                                <button onClick={() => switchLanguage('fil')} className="ml-2 underline">FIL</button>
-                                <button onClick={() => switchLanguage('hil')} className="ml-2 underline">HIL</button>
-                            </div>
-                        )}
-
                         {showApplicantDashboard && (
                             <Link href={route('dashboard')} className={mobileNavLinkClasses(route().current('dashboard'))}>
                                 {__('My Dashboard')}
@@ -294,30 +244,28 @@ export default function AuthenticatedLayout({ user, header, children }) {
                         )}
                         {isStaff && (
                             <>
-                                <Link href={route('staff.dashboard')} className={mobileNavLinkClasses(route().current('staff.dashboard'))}>
-                                    Staff Dashboard
-                                </Link>
-                                <Link href={route('staff.applications.index')} className={mobileNavLinkClasses(route().current('staff.applications.index'))}>
-                                    All Applications
-                                </Link>
+                                <Link href={route('staff.dashboard')} className={mobileNavLinkClasses(route().current('staff.dashboard'))}>Staff Dashboard</Link>
+                                <Link href={route('staff.applications.index')} className={mobileNavLinkClasses(route().current('staff.applications.index'))}>All Applications</Link>
+                                <Link href={route('staff.reports.index')} className={mobileNavLinkClasses(route().current('staff.reports.*'))}>Reports</Link>
                             </>
                         )}
+                        {/* --- RESTORED ADMIN LINKS (MOBILE) --- */}
                         {isAdmin && (
                             <>
-                                <Link href={route('admin.dashboard')} className={mobileNavLinkClasses(route().current('admin.dashboard'))}>
-                                    Admin Dashboard
-                                </Link>
-                                <Link href={route('admin.applications.index')} className={mobileNavLinkClasses(route().current('admin.applications.*'))}>
-                                    All Applications
-                                </Link>
-                                <Link href={route('admin.reports.index')} className={mobileNavLinkClasses(route().current('admin.reports.*'))}>
-                                    Reports
-                                </Link>
+                                <Link href={route('admin.dashboard')} className={mobileNavLinkClasses(route().current('admin.dashboard'))}>Admin Dashboard</Link>
+                                <Link href={route('admin.applications.index')} className={mobileNavLinkClasses(route().current('admin.applications.*'))}>All Applications</Link>
+                                <Link href={route('admin.reports.index')} className={mobileNavLinkClasses(route().current('admin.reports.*'))}>Reports</Link>
+                                <Link href={route('admin.users.index')} className={mobileNavLinkClasses(route().current('admin.users.*'))}>Manage Users</Link>
+                                <Link href={route('admin.news.index')} className={mobileNavLinkClasses(route().current('admin.news.*'))}>News</Link>
+                                <Link href={route('admin.programs.index')} className={mobileNavLinkClasses(route().current('admin.programs.*'))}>Programs</Link>
+                                <Link href={route('admin.audit-logs')} className={mobileNavLinkClasses(route().current('admin.audit-logs'))}>Audit Logs</Link>
+                                <Link href={route('admin.settings.index')} className={mobileNavLinkClasses(route().current('admin.settings.*'))}>Settings</Link>
                             </>
                         )}
                     </div>
 
-                    <div className="pt-4 pb-4 border-t border-blue-700">
+                    {/* Mobile Profile Section */}
+                    <div className="pt-4 pb-4 border-t border-blue-700 dark:border-gray-700">
                         <div className="px-4 flex items-center">
                             <div className="shrink-0">
                                 <div className="h-10 w-10 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-bold text-lg">

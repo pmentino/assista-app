@@ -19,7 +19,6 @@ export default function Dashboard({ applications = [] }) {
     const user = auth?.user || { name: 'Applicant', id: 0 };
 
     // 2. HELPER FUNCTION: Translate text
-    // We pass this function down to sub-components so they can translate too.
     const __ = (key) => (translations[key] || key);
 
     const [activeTab, setActiveTab] = useState('guidelines');
@@ -45,7 +44,6 @@ export default function Dashboard({ applications = [] }) {
     return (
         <AuthenticatedLayout
             user={user}
-            // Translate the Header
             header={<h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{__('Dashboard')}</h2>}
         >
             <Head title="Applicant Dashboard" />
@@ -54,11 +52,11 @@ export default function Dashboard({ applications = [] }) {
             <div className="py-8 md:py-12 bg-gray-50 dark:bg-gray-900 min-h-screen font-sans transition-colors duration-300">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-                    {/* --- WELCOME CARD --- */}
+                    {/* --- WELCOME CARD (UPDATED WITH FAQ BUTTON) --- */}
                     <div className="bg-gradient-to-r from-blue-900 to-blue-800 rounded-2xl shadow-xl mb-8 overflow-hidden relative mx-4 sm:mx-0">
                         <div className="absolute right-0 top-0 h-full w-1/3 bg-white/5 skew-x-12 transform origin-bottom-left"></div>
                         <div className="p-6 md:p-10 text-white relative z-10">
-                            <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                                 <div>
                                     {/* DYNAMIC WELCOME MESSAGE */}
                                     <h1 className="text-2xl md:text-3xl font-bold mb-2">
@@ -75,14 +73,27 @@ export default function Dashboard({ applications = [] }) {
                                         <span className="font-mono font-bold text-yellow-400">{String(user.id).padStart(6, '0')}</span>
                                     </div>
                                 </div>
-                                <Link
-                                    href={route('applications.create')}
-                                    className="w-full md:w-auto bg-yellow-500 hover:bg-yellow-400 text-blue-900 font-bold py-3 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all flex items-center justify-center border-b-4 border-yellow-600"
-                                >
-                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-                                    {/* DYNAMIC BUTTON TEXT */}
-                                    {__('apply_button')}
-                                </Link>
+
+                                {/* ACTION BUTTONS (Now side-by-side or stacked on mobile) */}
+                                <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                                    {/* FAQ Button (New & Visible) */}
+                                    <Link
+                                        href={route('faqs')}
+                                        className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-6 rounded-xl border border-white/30 backdrop-blur-sm transition-all flex items-center justify-center group"
+                                    >
+                                        <svg className="w-5 h-5 mr-2 text-yellow-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        {__('FAQs') || 'Read FAQs'}
+                                    </Link>
+
+                                    {/* Apply Button */}
+                                    <Link
+                                        href={route('applications.create')}
+                                        className="w-full sm:w-auto bg-yellow-500 hover:bg-yellow-400 text-blue-900 font-bold py-3 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all flex items-center justify-center border-b-4 border-yellow-600"
+                                    >
+                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                                        {__('apply_button')}
+                                    </Link>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -171,11 +182,9 @@ export default function Dashboard({ applications = [] }) {
                             {activeTab !== 'guidelines' && (
                                 <div className="space-y-6">
                                     {filteredApplications.length === 0 ? (
-                                        // Pass the translator to EmptyState
                                         <EmptyState activeTab={activeTab} __={__} />
                                     ) : (
                                         filteredApplications.map((app) => (
-                                            // Pass the translator to ApplicationCard
                                             <ApplicationCard key={app.id} app={app} __={__} />
                                         ))
                                     )}
@@ -187,7 +196,7 @@ export default function Dashboard({ applications = [] }) {
                     {/* --- HELP WIDGET --- */}
                     <div className="mt-8 text-center border-t border-gray-200 dark:border-gray-700 pt-8 pb-4">
                         <p className="text-gray-500 dark:text-gray-400 text-sm">{__('help_title')}</p>
-                        <p className="text-blue-900 dark:text-blue-400 font-bold text-lg mt-1">
+                        <p className="text-blue-900 dark:text-blue-400 font-bold text-lg mt-1 mb-2">
                             <span className="mr-2">📞</span> {__('help_hotline')}: (036) 52026-83
                         </p>
                         <p className="text-gray-400 text-xs mt-2">{__('help_office')}</p>
@@ -227,7 +236,6 @@ function TabButton({ active, onClick, label, count, badgeColor, icon }) {
     );
 }
 
-// NOTE: Added __ prop to support translation inside the card
 function ApplicationCard({ app, __ }) {
     const createdDate = new Date(app.created_at);
     const deadlineDate = new Date(createdDate);

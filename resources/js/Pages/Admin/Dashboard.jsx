@@ -1,13 +1,14 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm, Link } from '@inertiajs/react';
 import {
-  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler,
+  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, BarElement, ArcElement
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import { useState, useEffect, useRef } from 'react';
 import { pickBy } from 'lodash';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
+// Register Chart.js components
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, BarElement, ArcElement);
 
 export default function Dashboard({ auth, stats, budgetStats, chartData, barangayStats, allBarangays, filters, pendingApplications = [], programs, queueFilters = {} }) {
     const user = auth?.user || { name: 'Admin' };
@@ -73,7 +74,9 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
     };
 
     // --- CHART CONFIG ---
-    const data = {
+
+    // Line Chart Data
+    const lineChartData = {
         labels: chartData.labels || [],
         datasets: [{
             label: 'Amount Released (PHP)',
@@ -85,8 +88,41 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
         }],
     };
 
-    const options = {
-        responsive: true, maintainAspectRatio: false,
+    // Bar Chart Data (Top 5 Barangays)
+    const topBarangays = barangayStats.slice(0, 5);
+    const barChartData = {
+        labels: topBarangays.map(b => b.barangay),
+        datasets: [{
+            label: 'Beneficiaries',
+            data: topBarangays.map(b => b.total),
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.7)',
+                'rgba(54, 162, 235, 0.7)',
+                'rgba(255, 206, 86, 0.7)',
+                'rgba(75, 192, 192, 0.7)',
+                'rgba(153, 102, 255, 0.7)',
+            ],
+            borderRadius: 5,
+        }]
+    };
+
+    // Doughnut Chart Data (Application Status)
+    const doughnutChartData = {
+        labels: ['Approved', 'Pending', 'Rejected'],
+        datasets: [{
+            data: [stats.approved, stats.pending, stats.rejected],
+            backgroundColor: [
+                'rgb(34, 197, 94)',  // Green (Approved)
+                'rgb(234, 179, 8)',  // Yellow (Pending)
+                'rgb(239, 68, 68)',  // Red (Rejected)
+            ],
+            hoverOffset: 4
+        }]
+    };
+
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: { position: 'top', labels: { color: '#9ca3af' } },
             tooltip: { callbacks: { label: function(context) { return formatCurrency(context.raw); } } }
@@ -96,6 +132,14 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
             x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(156, 163, 175, 0.1)' } }
         }
     };
+
+    const doughnutOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af' } } },
+        scales: { y: { display: false }, x: { display: false } }
+    };
+
 
     return (
         <AuthenticatedLayout user={user} header={<h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Executive Dashboard</h2>}>
@@ -303,74 +347,71 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                         </div>
                     </div>
 
-                    {/* --- CHART SECTION --- */}
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg mb-8 transition-colors duration-300">
-                        <div className="flex flex-col xl:flex-row justify-between items-center mb-6 gap-4">
-                            <h3 className="text-lg font-bold text-gray-800 dark:text-white">Financial Release Trends</h3>
-                            <div className="flex flex-wrap gap-2 items-center bg-gray-50 dark:bg-gray-700/50 p-2 rounded-md border dark:border-gray-700">
-                                {/* Filters */}
-                                <div className="flex items-center gap-1">
-                                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">From:</span>
-                                    <input type="date" value={filterValues.start_date} onChange={(e) => handleFilterChange('start_date', e.target.value)} className="border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded text-sm py-1 px-2" />
+                    {/* --- NEW: CHARTS ROW (VISUAL CANDY) --- */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+
+                        {/* CHART A: FINANCIAL TRENDS (LINE CHART) - 2/3 Width */}
+                        <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg transition-colors duration-300">
+                            <div className="flex flex-col xl:flex-row justify-between items-center mb-6 gap-4">
+                                <h3 className="text-lg font-bold text-gray-800 dark:text-white">Financial Trends</h3>
+                                {/* Date Filters */}
+                                <div className="flex flex-wrap gap-2 items-center bg-gray-50 dark:bg-gray-700/50 p-2 rounded-md border dark:border-gray-700">
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">From:</span>
+                                        <input type="date" value={filterValues.start_date} onChange={(e) => handleFilterChange('start_date', e.target.value)} className="border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded text-sm py-1 px-2" />
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">To:</span>
+                                        <input type="date" value={filterValues.end_date} onChange={(e) => handleFilterChange('end_date', e.target.value)} className="border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded text-sm py-1 px-2" />
+                                    </div>
+                                    <div className="flex items-center gap-1 border-l dark:border-gray-600 pl-2 ml-2">
+                                        <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Loc:</span>
+                                        <select value={filterValues.barangay} onChange={(e) => handleFilterChange('barangay', e.target.value)} className="border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded text-sm py-1 px-2 cursor-pointer">
+                                            <option value="">All Roxas City</option>
+                                            {allBarangays.map((brgy, index) => (<option key={index} value={brgy}>{brgy}</option>))}
+                                        </select>
+                                    </div>
+                                    {(filterValues.start_date || filterValues.end_date || filterValues.barangay) && (
+                                        <button onClick={() => { setFilterValues({ barangay: '', start_date: '', end_date: '' }); router.get(route('admin.dashboard')); }} className="text-xs text-red-600 dark:text-red-400 font-bold hover:underline ml-2">Clear</button>
+                                    )}
                                 </div>
-                                <div className="flex items-center gap-1">
-                                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">To:</span>
-                                    <input type="date" value={filterValues.end_date} onChange={(e) => handleFilterChange('end_date', e.target.value)} className="border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded text-sm py-1 px-2" />
+                            </div>
+                            <div className="h-64 w-full relative"><Line options={commonOptions} data={lineChartData} /></div>
+                        </div>
+
+                        {/* CHART B: STATUS BREAKDOWN (DOUGHNUT CHART) - 1/3 Width */}
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center justify-center transition-colors duration-300">
+                            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 w-full text-left">Application Status</h3>
+                            <div className="h-56 w-56 relative">
+                                <Doughnut data={doughnutChartData} options={doughnutOptions} />
+                                {/* Center Text Overlay */}
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="text-center mt-2">
+                                        <span className="block text-3xl font-bold text-gray-800 dark:text-white">{stats.total}</span>
+                                        <span className="text-xs text-gray-500 uppercase">Total</span>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-1 border-l dark:border-gray-600 pl-2 ml-2">
-                                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Loc:</span>
-                                    <select value={filterValues.barangay} onChange={(e) => handleFilterChange('barangay', e.target.value)} className="border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded text-sm py-1 px-2 cursor-pointer">
-                                        <option value="">All Roxas City</option>
-                                        {allBarangays.map((brgy, index) => (<option key={index} value={brgy}>{brgy}</option>))}
-                                    </select>
-                                </div>
-                                {(filterValues.start_date || filterValues.end_date || filterValues.barangay) && (
-                                    <button onClick={() => { setFilterValues({ barangay: '', start_date: '', end_date: '' }); router.get(route('admin.dashboard')); }} className="text-xs text-red-600 dark:text-red-400 font-bold hover:underline ml-2">Clear</button>
-                                )}
                             </div>
                         </div>
-                        <div className="h-80 w-full relative"><Line options={options} data={data} /></div>
                     </div>
 
-                    {/* --- BARANGAY STATS SECTION --- */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* LEFT COLUMN: Top Barangays Table */}
-                        <div className="lg:col-span-2 bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg transition-colors duration-300">
-                            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                                <h3 className="text-lg font-bold text-gray-800 dark:text-white">Top Barangays by Allocation</h3>
-                                <button
-                                    onClick={() => setIsBarangayModalOpen(true)}
-                                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-bold hover:underline"
-                                >
-                                    View All Barangays &rarr;
+                    {/* --- SECONDARY CHARTS ROW --- */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+
+                        {/* CHART C: TOP BARANGAYS (BAR CHART) */}
+                        <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg transition-colors duration-300">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-lg font-bold text-gray-800 dark:text-white">Top 5 Barangays (Beneficiaries)</h3>
+                                <button onClick={() => setIsBarangayModalOpen(true)} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-bold hover:underline">
+                                    View Full Data &rarr;
                                 </button>
                             </div>
-                            <div className="p-6">
-                                {barangayStats.length > 0 ? (
-                                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                        <thead className="bg-gray-50 dark:bg-gray-700">
-                                            <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Barangay</th>
-                                                <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Beneficiaries</th>
-                                                <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Released</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                            {/* ONLY SHOW TOP 5 IN DASHBOARD WIDGET */}
-                                            {barangayStats.slice(0, 5).map((item, index) => (
-                                                <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{item.barangay}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">{item.total}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-bold">{formatCurrency(item.amount)}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                ) : <p className="text-gray-500 dark:text-gray-400 italic">No financial data available yet.</p>}
+                            <div className="h-64 w-full relative">
+                                <Bar options={commonOptions} data={barChartData} />
                             </div>
                         </div>
 
-                        {/* RIGHT COLUMN: Program Overview */}
+                        {/* RIGHT COLUMN: Program Overview (Text) */}
                         <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg transition-colors duration-300">
                             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                                 <h3 className="text-lg font-bold text-gray-800 dark:text-white">Program Overview</h3>
@@ -419,7 +460,7 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                         <div className="fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full flex items-center justify-center z-50 px-4">
                             <div className="bg-white dark:bg-gray-800 p-0 rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
                                 {/* Modal Header */}
-                                <div className="p-6 bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700 flex justify-between items-center">
+                                <div className="p-6 bg-gray-5 dark:bg-gray-800 border-b dark:border-gray-700 flex justify-between items-center">
                                     <div>
                                         <h3 className="text-xl font-extrabold text-gray-900 dark:text-white">Barangay Allocation Report</h3>
                                         <p className="text-sm text-gray-500 dark:text-gray-400">Complete breakdown of assistance released by location.</p>
@@ -470,7 +511,7 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                                 </div>
 
                                 {/* Modal Footer */}
-                                <div className="p-4 bg-gray-50 dark:bg-gray-800 border-t dark:border-gray-700 flex justify-end">
+                                <div className="p-4 bg-gray-5 dark:bg-gray-800 border-t dark:border-gray-700 flex justify-end">
                                     <button
                                         onClick={() => setIsBarangayModalOpen(false)}
                                         className="px-6 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-bold rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition shadow-sm"

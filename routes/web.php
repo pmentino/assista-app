@@ -104,6 +104,20 @@ Route::get('language/{locale}', function ($locale) {
     return back();
 })->name('language.switch');
 
+// Add this line inside the middleware group
+Route::get('/faqs', function () {
+    // Manually load translations (The Brute Force Fix for Consistency)
+    $locale = session('locale', 'en');
+    $path = base_path("resources/lang/{$locale}.json");
+    $translations = file_exists($path) ? json_decode(file_get_contents($path), true) : [];
+
+    return Inertia::render('Faqs', [
+        'auth' => ['user' => Auth::user()],
+        'translations' => $translations,
+        'locale' => $locale
+    ]);
+})->name('faqs');
+
     // --- PROFILE ROUTES ---
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
