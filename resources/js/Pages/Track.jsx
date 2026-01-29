@@ -11,20 +11,14 @@ export default function Track({ result }) {
         reference_id: params.get('ref') || '',
         last_name: params.get('name') || '',
         first_name: '',
-        birth_date: '',
+        birth_date: '', // <--- NEW: Required for security check
     });
 
-    // Auto-check for QR codes
-    useEffect(() => {
-        if (!result && data.reference_id && data.last_name) {
-            post(route('track.check'));
-        }
-    }, []);
+    // --- SECURITY UPDATE: Auto-check DISABLED ---
+    // We disabled auto-post because the user MUST enter their birthdate manually.
 
     const submit = (e) => {
         e.preventDefault();
-        // Clear unrelated fields before sending to avoid validation errors?
-        // Actually, Controller handles "if has birth_date" logic, so we just send everything.
         post(route('track.check'));
     };
 
@@ -60,30 +54,36 @@ export default function Track({ result }) {
                             {/* SEARCH METHOD TOGGLE */}
                             {searchMethod === 'id' ? (
                                 <>
+                                    {/* INPUT 1: Reference ID */}
                                     <div>
                                         <label className="block text-sm font-bold text-gray-700 mb-1">Application ID / Queue #</label>
                                         <input
                                             type="number"
-                                            placeholder="e.g. 25"
+                                            placeholder="e.g. 000037"
                                             className="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 py-3"
                                             value={data.reference_id}
                                             onChange={(e) => setData('reference_id', e.target.value)}
                                             required
                                         />
                                     </div>
+
+                                    {/* INPUT 2: BIRTHDATE (Security Key) */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-1">Last Name</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">Birthdate (Kaadlawan)</label>
                                         <input
-                                            type="text"
-                                            placeholder="e.g. Dela Cruz"
+                                            type="date"
                                             className="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 py-3"
-                                            value={data.last_name}
-                                            onChange={(e) => setData('last_name', e.target.value)}
+                                            value={data.birth_date}
+                                            onChange={(e) => setData('birth_date', e.target.value)}
                                             required
                                         />
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Required for verification. (Kinahanglan para sa seguridad)
+                                        </p>
                                     </div>
                                 </>
                             ) : (
+                                // 'Details' Method (Full Name + Bday)
                                 <>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
@@ -122,6 +122,12 @@ export default function Track({ result }) {
                                 </>
                             )}
 
+                            {/* ERROR MESSAGES */}
+                            {errors.reference_id && (
+                                <div className="p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm text-center font-bold">
+                                    {errors.reference_id}
+                                </div>
+                            )}
                             {errors.error && (
                                 <div className="p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm text-center font-bold">
                                     {errors.error}
@@ -133,7 +139,7 @@ export default function Track({ result }) {
                                 disabled={processing}
                                 className="w-full bg-yellow-500 hover:bg-yellow-400 text-blue-900 font-bold py-3 rounded-xl shadow-md transition transform hover:-translate-y-0.5"
                             >
-                                {processing ? 'Searching...' : 'Check Status'}
+                                {processing ? 'Verifying...' : 'Check Status'}
                             </button>
 
                             {/* TOGGLE LINK */}
@@ -150,7 +156,7 @@ export default function Track({ result }) {
                             </div>
                         </form>
                     ) : (
-                        // ... (Result View - Same as before) ...
+                        // RESULT VIEW
                         <div className="animate-fade-in">
                             <div className="text-center mb-6">
                                 <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${

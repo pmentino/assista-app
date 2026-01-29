@@ -20,15 +20,13 @@ use Illuminate\Validation\ValidationException;
 
 class ApplicationController extends Controller
 {
-    // Show form
+    // --- SHOW FORM ---
     public function create()
     {
-        // 1. Fetch Active Programs
         $programs = AssistanceProgram::where('is_active', true)
             ->select('id', 'title', 'requirements')
             ->get();
 
-        // 2. FORCE LOAD TRANSLATIONS
         $locale = session('locale', 'en');
         $path = base_path("resources/lang/{$locale}.json");
         $translations = [];
@@ -45,7 +43,7 @@ class ApplicationController extends Controller
         ]);
     }
 
-    // Submit new application
+    // --- SUBMIT NEW APPLICATION ---
     public function store(Request $request)
     {
         $user = Auth::user();
@@ -73,7 +71,7 @@ class ApplicationController extends Controller
             ]);
         }
 
-        // 2. Validate Data
+        // Validate Data
         $request->validate([
             'program' => 'required|string',
             'date_of_incident' => 'required|date',
@@ -90,7 +88,7 @@ class ApplicationController extends Controller
             'indigency_cert' => 'required|file|max:10240',
         ]);
 
-        // 3. File Uploads
+        // File Uploads
         $paths = [];
         if ($request->hasFile('valid_id')) {
             $paths['valid_id'] = $request->file('valid_id')->store('documents', 'public');
@@ -139,7 +137,7 @@ class ApplicationController extends Controller
         return redirect()->route('dashboard')->with('message', 'Application submitted successfully.');
     }
 
-    // Show details
+    // --- SHOW DETAILS ---
     public function edit(Application $application)
     {
         return Inertia::render('Applications/Edit', [
@@ -148,7 +146,7 @@ class ApplicationController extends Controller
         ]);
     }
 
-    // Update application
+    // --- UPDATE APPLICATION ---
     public function update(Request $request, Application $application)
     {
         $application->fill($request->except(['valid_id', 'indigency_cert', 'attachments']));
@@ -223,7 +221,6 @@ class ApplicationController extends Controller
             ]);
         }
 
-        // 1. UPDATE STATUS & AMOUNT
         $application->update([
             'status' => 'Approved',
             'amount_released' => $request->amount,
@@ -231,25 +228,20 @@ class ApplicationController extends Controller
             'approved_date' => now(),
         ]);
 
-        // 2. CREATE AUDIT LOG
         AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Approved Application',
             'details' => "Approved App #{$application->id} - Amount Released: ₱" . number_format($request->amount, 2)
         ]);
 
-        // 3. TRIGGER BELL NOTIFICATION
         if ($application->user) {
             $application->user->notify(new ApplicationStatusAlert($application));
         }
 
-        // 4. TRIGGER EMAIL
         if ($application->user && $application->user->email) {
             try {
                 Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
-            } catch (\Exception $e) {
-                // Log error silently
-            }
+            } catch (\Exception $e) { }
         }
 
         return redirect()->back()->with('message', 'Application approved, logged, and applicant notified!');
@@ -304,7 +296,6 @@ class ApplicationController extends Controller
             abort(403, 'This application is not approved yet.');
         }
 
-        // Fetch settings (No changes here)
         $signatories = [
             'assessed_by' => Setting::where('key', 'signatory_social_worker')->value('value') ?? 'BIVIEN B. DELA CRUZ, RSW',
             'approved_by' => Setting::where('key', 'signatory_cswdo_head')->value('value') ?? 'PERSEUS L. CORDOVA',
@@ -312,13 +303,11 @@ class ApplicationController extends Controller
             'office_address' => Setting::where('key', 'office_address')->value('value') ?? 'Inzo Arnaldo Village, Roxas City',
         ];
 
-        // --- GENERATE QR CODE ---
         $verificationUrl = route('track.index', [
             'ref' => $application->id,
             'name' => $application->last_name
         ]);
 
-        // FIX: Change format from 'png' to 'svg' to bypass Imagick error
         $qrCode = base64_encode(
             \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
                 ->size(100)
@@ -350,51 +339,60 @@ class ApplicationController extends Controller
         return redirect()->back()->with('message', 'Verification note saved successfully.');
     }
 
-    // --- PUBLIC TRACKING FEATURE ---
+    // ==========================================================
+    //  PUBLIC TRACKING FEATURE (PERMANENTLY FIXED)
+    // ==========================================================
 
     public function showTrack()
     {
+        // Renders resources/js/Pages/Track.jsx
         return Inertia::render('Track');
     }
 
     public function track(Request $request)
     {
-        // 1. Determine which search method is being used
-        if ($request->has('birth_date')) {
-            // SEARCH BY DETAILS
-            $request->validate([
-                'first_name' => 'required|string',
-                'last_name' => 'required|string',
-                'birth_date' => 'required|date',
-            ]);
+        // 1. SMART VALIDATION: Check for 'birth_date' (matches React & Database)
+        $request->validate([
+            'birth_date'   => 'required|date',
+            'reference_id' => 'nullable|numeric',
+            'first_name'   => 'nullable|string',
+            'last_name'    => 'nullable|string',
+        ]);
 
-            $application = \App\Models\Application::where('last_name', 'LIKE', $request->last_name)
-                ->where('first_name', 'LIKE', $request->first_name)
-                ->whereDate('birth_date', $request->birth_date)
-                ->select('id', 'program', 'status', 'created_at', 'updated_at', 'remarks', 'first_name', 'last_name')
-                ->latest() // Get the most recent one if they have multiple
-                ->first();
+        $query = Application::query();
+
+        // 2. SEARCH LOGIC: Determine if searching by ID or Name
+        if ($request->filled('reference_id')) {
+            // Case A: ID Search
+            $query->where('id', $request->reference_id);
+        } elseif ($request->filled('first_name') && $request->filled('last_name')) {
+            // Case B: Name Search (Using 'like' for better matching)
+            $query->where('first_name', 'like', $request->first_name)
+                  ->where('last_name', 'like', $request->last_name);
         } else {
-            // SEARCH BY ID (Standard)
-            $request->validate([
-                'reference_id' => 'required|numeric',
-                'last_name' => 'required|string',
-            ]);
-
-            $application = \App\Models\Application::where('id', intval($request->reference_id))
-                ->where('last_name', 'LIKE', $request->last_name)
-                ->select('id', 'program', 'status', 'created_at', 'updated_at', 'remarks', 'first_name', 'last_name')
-                ->first();
+            // Case C: User sent incomplete data
+            return back()->withErrors(['error' => 'Please enter either an Application ID or your Full Name.']);
         }
+
+        // 3. SECURITY CHECK: Must match the Birthdate
+        // We use 'birth_date' because that is your database column name (from your screenshot)
+        $application = $query->whereDate('birth_date', $request->birth_date)->first();
 
         if (!$application) {
-            return redirect()->back()->withErrors([
-                'error' => 'No record found. Please check your spelling or details.'
-            ]);
+            return back()->withErrors(['error' => 'No record found. Please check your details and birthdate.']);
         }
 
+        // 4. RETURN RESULT
         return Inertia::render('Track', [
-            'result' => $application
+            'result' => [
+                'id' => $application->id,
+                'first_name' => $application->first_name,
+                'last_name' => $application->last_name,
+                'status' => $application->status,
+                'program' => $application->program,
+                'remarks' => $application->remarks,
+                'updated_at' => $application->updated_at,
+            ]
         ]);
     }
 }
