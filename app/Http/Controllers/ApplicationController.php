@@ -28,7 +28,7 @@ class ApplicationController extends Controller
             ->select('id', 'title', 'requirements')
             ->get();
 
-        // 2. FORCE LOAD TRANSLATIONS (The "Brute Force" Fix)
+        // 2. FORCE LOAD TRANSLATIONS
         $locale = session('locale', 'en');
         $path = base_path("resources/lang/{$locale}.json");
         $translations = [];
@@ -40,7 +40,6 @@ class ApplicationController extends Controller
         return Inertia::render('Applications/Create', [
             'auth' => ['user' => Auth::user()],
             'programs' => $programs,
-            // Pass Data to React
             'translations' => $translations,
             'locale' => $locale
         ]);
@@ -59,7 +58,6 @@ class ApplicationController extends Controller
                 ->select('id', 'title', 'requirements')
                 ->get();
 
-            // Load translations for error page too
             $locale = session('locale', 'en');
             $path = base_path("resources/lang/{$locale}.json");
             $translations = file_exists($path) ? json_decode(file_get_contents($path), true) : [];
@@ -306,7 +304,7 @@ class ApplicationController extends Controller
             abort(403, 'This application is not approved yet.');
         }
 
-        // Fetch ALL relevant settings including new address/hotline
+        // Fetch settings (No changes here)
         $signatories = [
             'assessed_by' => Setting::where('key', 'signatory_social_worker')->value('value') ?? 'BIVIEN B. DELA CRUZ, RSW',
             'approved_by' => Setting::where('key', 'signatory_cswdo_head')->value('value') ?? 'PERSEUS L. CORDOVA',
@@ -314,9 +312,24 @@ class ApplicationController extends Controller
             'office_address' => Setting::where('key', 'office_address')->value('value') ?? 'Inzo Arnaldo Village, Roxas City',
         ];
 
+        // --- GENERATE QR CODE ---
+        $verificationUrl = route('track.index', [
+            'ref' => $application->id,
+            'name' => $application->last_name
+        ]);
+
+        // FIX: Change format from 'png' to 'svg' to bypass Imagick error
+        $qrCode = base64_encode(
+            \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
+                ->size(100)
+                ->errorCorrection('H')
+                ->generate($verificationUrl)
+        );
+
         $pdf = Pdf::loadView('pdf.claim_stub', [
             'application' => $application,
-            'signatories' => $signatories
+            'signatories' => $signatories,
+            'qrCode' => $qrCode,
         ]);
 
         $pdf->setPaper([0, 0, 612, 936], 'portrait');
@@ -335,5 +348,53 @@ class ApplicationController extends Controller
         ]);
 
         return redirect()->back()->with('message', 'Verification note saved successfully.');
+    }
+
+    // --- PUBLIC TRACKING FEATURE ---
+
+    public function showTrack()
+    {
+        return Inertia::render('Track');
+    }
+
+    public function track(Request $request)
+    {
+        // 1. Determine which search method is being used
+        if ($request->has('birth_date')) {
+            // SEARCH BY DETAILS
+            $request->validate([
+                'first_name' => 'required|string',
+                'last_name' => 'required|string',
+                'birth_date' => 'required|date',
+            ]);
+
+            $application = \App\Models\Application::where('last_name', 'LIKE', $request->last_name)
+                ->where('first_name', 'LIKE', $request->first_name)
+                ->whereDate('birth_date', $request->birth_date)
+                ->select('id', 'program', 'status', 'created_at', 'updated_at', 'remarks', 'first_name', 'last_name')
+                ->latest() // Get the most recent one if they have multiple
+                ->first();
+        } else {
+            // SEARCH BY ID (Standard)
+            $request->validate([
+                'reference_id' => 'required|numeric',
+                'last_name' => 'required|string',
+            ]);
+
+            $application = \App\Models\Application::where('id', intval($request->reference_id))
+                ->where('last_name', 'LIKE', $request->last_name)
+                ->select('id', 'program', 'status', 'created_at', 'updated_at', 'remarks', 'first_name', 'last_name')
+                ->first();
+        }
+
+        if (!$application) {
+            return redirect()->back()->withErrors([
+                'error' => 'No record found. Please check your spelling or details.'
+            ]);
+        }
+
+        return Inertia::render('Track', [
+            'result' => $application
+        ]);
     }
 }

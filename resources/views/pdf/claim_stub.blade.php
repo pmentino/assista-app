@@ -8,10 +8,10 @@
 
         body { font-family: 'Times New Roman', serif; font-size: 11pt; margin: 0; padding: 0; line-height: 1.15; color: #000; }
 
-        /* --- FIX 1: Special Font for Peso Sign --- */
+        /* Special Font for Peso Sign */
         .peso { font-family: "DejaVu Sans", sans-serif; }
 
-        /* HEADER LAYOUT WITH LOGOS */
+        /* HEADER LAYOUT */
         .header-table { width: 100%; border-collapse: collapse; margin-bottom: 5px; }
         .header-table td { vertical-align: middle; text-align: center; }
 
@@ -37,14 +37,13 @@
         /* Main Body */
         .certify-text { text-align: justify; margin-bottom: 8px; text-indent: 30px; font-size: 11pt; }
 
-        /* --- FIX 2: TIGHTER UNDERLINES & ALIGNMENT --- */
+        /* Underlines & Alignment */
         .details-line {
             border-bottom: 1px solid #000;
             display: inline-block;
             text-align: center;
             font-weight: bold;
             padding: 0 5px;
-            /* 'baseline' aligns text naturally, 'line-height: 1' pulls the border up */
             vertical-align: baseline;
             line-height: 1.0;
         }
@@ -63,20 +62,28 @@
 
         /* Acknowledgement Receipt (Bottom Part) */
         .receipt-section { margin-top: 25px; border-top: 2px dashed #000; padding-top: 15px; page-break-inside: avoid; }
-        .receipt-title { text-align: center; font-weight: bold; font-size: 13pt; margin-bottom: 15px; text-transform: uppercase; }
+
+        /* NEW: Receipt Header Table Layout for QR positioning */
+        .receipt-header-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        .receipt-header-table td { vertical-align: top; }
+        .receipt-title-cell { text-align: left; }
+        .receipt-qr-cell { text-align: right; width: 90px; }
+
+        .receipt-title { font-weight: bold; font-size: 13pt; text-transform: uppercase; margin-bottom: 5px; }
 
         /* Declaration Text */
         .declaration { font-size: 7pt; font-style: italic; text-align: justify; margin-top: 15px; color: #444; width: 90%; margin-left: auto; margin-right: auto; }
+
+        /* QR Code Styling */
+        .qr-img { width: 85px; height: 85px; border: 1px solid #ccc; padding: 2px; }
+        .qr-label { font-size: 8px; font-family: sans-serif; color: #555; display: block; text-align: center; margin-top: 2px; }
     </style>
 </head>
 <body>
 
     <table class="header-table">
         <tr>
-            <td class="logo-left">
-                <img src="{{ public_path('images/cswdo-logo.png') }}" class="logo-img" alt="CSWDO Logo">
-            </td>
-
+            <td class="logo-left"><img src="{{ public_path('images/cswdo-logo.png') }}" class="logo-img" alt="CSWDO Logo"></td>
             <td class="header-text">
                 <h4>Republic of the Philippines</h4>
                 <h3>CITY OF ROXAS</h3>
@@ -84,10 +91,7 @@
                 <h2>Office of the City Social Welfare and Development Officer</h2>
                 <p>{{ $signatories['office_address'] ?? 'Inzo Arnaldo Village, Roxas City' }} | Tel: {{ $signatories['office_hotline'] ?? '(036) 52026-83' }}</p>
             </td>
-
-            <td class="logo-right">
-                <img src="{{ public_path('images/roxas-seal.png') }}" class="logo-img" alt="Roxas Seal">
-            </td>
+            <td class="logo-right"><img src="{{ public_path('images/roxas-seal.png') }}" class="logo-img" alt="Roxas Seal"></td>
         </tr>
     </table>
 
@@ -144,7 +148,6 @@
     </table>
 
     <div class="certify-text">
-        {{-- FIX: Added .peso span, changed Php to symbol, and increased width to 200px --}}
         The above-named client has been found eligible for financial assistance from <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> program. Based on the assessment conducted by the undersigned social worker, it is strongly recommended that the client/beneficiary be extended financial assistance to defray the <span class="details-line" style="min-width: 200px;">{{ $application->program }}</span> expenses in the amount of <strong><span class="peso">&#8369;</span> <span class="details-line" style="min-width: 80px;">{{ number_format($application->amount_released, 2) }}</span></strong>.
     </div>
 
@@ -183,14 +186,24 @@
     </div>
 
     <div class="receipt-section">
-        <div class="receipt-title">ACKNOWLEDGEMENT RECEIPT</div>
+        <table class="receipt-header-table">
+            <tr>
+                <td class="receipt-title-cell">
+                    <div class="receipt-title">ACKNOWLEDGEMENT RECEIPT</div>
+                    <div style="font-size: 9pt;">
+                        NO. <strong>{{ str_pad($application->id, 6, '0', STR_PAD_LEFT) }}</strong>
+                    </div>
+                </td>
+                <td class="receipt-qr-cell">
+                    @if(isset($qrCode))
+                        <img src="data:image/svg+xml;base64, {{ $qrCode }}" class="qr-img" alt="Verification QR">
+                        <span class="qr-label">Scan to Verify</span>
+                    @endif
+                </td>
+            </tr>
+        </table>
 
-        <div style="text-align: right; font-size: 9pt; margin-bottom: 5px;">
-            NO. <strong>{{ str_pad($application->id, 6, '0', STR_PAD_LEFT) }}</strong>
-        </div>
-
-        <div class="certify-text" style="text-indent: 0;">
-            {{-- FIX: Added .peso span, changed Php to symbol --}}
+        <div class="certify-text" style="text-indent: 0; margin-top: 10px;">
             I, <span class="details-line" style="min-width: 250px;">{{ strtoupper($application->first_name . ' ' . $application->last_name) }}</span>, hereby acknowledge the receipt of cash assistance in the amount of <strong><span class="peso">&#8369;</span> <span class="details-line" style="min-width: 80px;">{{ number_format($application->amount_released, 2) }}</span></strong> from the Roxas City Government – Assistance to Individuals in Crisis Situation (AICS) program.
         </div>
 

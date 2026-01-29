@@ -19,7 +19,13 @@ use App\Models\Application as ApplicationModel;
 use App\Models\News;
 use App\Models\AssistanceProgram;
 
-// --- PUBLIC ROUTES ---
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+// --- PUBLIC ROUTES (No Login Required) ---
 
 Route::get('/', function () {
     $news = [];
@@ -38,6 +44,16 @@ Route::get('/', function () {
         }
     } catch (\Exception $e) {}
 
+    // --- MANUAL TRANSLATION LOADER (Added for Welcome Page) ---
+    $locale = session('locale', 'en');
+    $path = resource_path("lang/{$locale}.json");
+    $translations = [];
+
+    if (file_exists($path)) {
+        $translations = json_decode(file_get_contents($path), true) ?? [];
+    }
+    // ----------------------------------------------------------
+
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
@@ -47,9 +63,26 @@ Route::get('/', function () {
         'programs' => $programs,
         'settings' => $settings,
         'auth' => ['user' => Auth::user()],
+        // Pass Translation Data
+        'translations' => $translations,
+        'locale' => $locale
     ]);
 });
 
+// Language Switcher
+    Route::get('language/{locale}', function ($locale) {
+        if (in_array($locale, ['en', 'fil', 'hil'])) {
+            session()->put('locale', $locale);
+            session()->save();
+        }
+        return back();
+    })->name('language.switch');
+
+// Tracking Routes
+Route::get('/track', [ApplicationController::class, 'showTrack'])->name('track.index');
+Route::post('/track', [ApplicationController::class, 'track'])->name('track.check');
+
+// Public News Routes
 Route::get('/news', function () {
     return Inertia::render('News/Index', [
         'news' => News::latest()->get(),
@@ -65,72 +98,62 @@ Route::get('/news/{news}', function (News $news) {
 })->name('news.show');
 
 
-// --- USER AUTHENTICATED ROUTES ---
+// --- AUTHENTICATED ROUTES (Login Required) ---
 
-Route::get('/dashboard', function () {
-    $user = Auth::user();
-    $applications = $user ? $user->applications()->latest()->get() : [];
+Route::middleware(['auth', 'verified'])->group(function () {
 
-    // --- MANUAL TRANSLATION LOADER (Guarantees data availability) ---
-    $locale = session('locale', 'en');
-    $path = resource_path("lang/{$locale}.json");
-    $translations = [];
+    // Dashboard
+    Route::get('/dashboard', function () {
+        $user = Auth::user();
+        $applications = $user ? $user->applications()->latest()->get() : [];
 
-    if (file_exists($path)) {
-        $translations = json_decode(file_get_contents($path), true) ?? [];
-    }
-    // ----------------------------------------------------------------
+        // Manual Translation Loader
+        $locale = session('locale', 'en');
+        $path = resource_path("lang/{$locale}.json");
+        $translations = [];
 
-    return Inertia::render('Dashboard', [
-        'applications' => $applications,
-        'auth' => [
-            'user' => $user,
-            'notifications' => $user ? $user->unreadNotifications : []
-        ],
-        // FORCE PASS DATA
-        'translations' => $translations,
-        'locale' => $locale
-    ]);
-})->middleware(['auth', 'verified'])->name('dashboard');
+        if (file_exists($path)) {
+            $translations = json_decode(file_get_contents($path), true) ?? [];
+        }
 
-Route::middleware('auth')->group(function () {
+        return Inertia::render('Dashboard', [
+            'applications' => $applications,
+            'auth' => [
+                'user' => $user,
+                'notifications' => $user ? $user->unreadNotifications : []
+            ],
+            'translations' => $translations,
+            'locale' => $locale
+        ]);
+    })->name('dashboard');
 
-   // --- LANGUAGE SWITCHER ---
-Route::get('language/{locale}', function ($locale) {
-    if (in_array($locale, ['en', 'fil', 'hil'])) {
-        session()->put('locale', $locale); // Use 'put' instead of array syntax
-        session()->save();                 // <--- THIS IS THE MISSING KEY!
-    }
-    return back();
-})->name('language.switch');
 
-// Add this line inside the middleware group
-Route::get('/faqs', function () {
-    // Manually load translations (The Brute Force Fix for Consistency)
-    $locale = session('locale', 'en');
-    $path = base_path("resources/lang/{$locale}.json");
-    $translations = file_exists($path) ? json_decode(file_get_contents($path), true) : [];
+    // FAQs
+    Route::get('/faqs', function () {
+        $locale = session('locale', 'en');
+        $path = base_path("resources/lang/{$locale}.json");
+        $translations = file_exists($path) ? json_decode(file_get_contents($path), true) : [];
 
-    return Inertia::render('Faqs', [
-        'auth' => ['user' => Auth::user()],
-        'translations' => $translations,
-        'locale' => $locale
-    ]);
-})->name('faqs');
+        return Inertia::render('Faqs', [
+            'auth' => ['user' => Auth::user()],
+            'translations' => $translations,
+            'locale' => $locale
+        ]);
+    })->name('faqs');
 
-    // --- PROFILE ROUTES ---
+    // Profile Routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // --- APPLICATION ROUTES ---
+    // Application Routes
     Route::get('/applications/create', [ApplicationController::class, 'create'])->name('applications.create');
     Route::post('/applications', [ApplicationController::class, 'store'])->name('applications.store');
     Route::get('/applications/{application}/edit', [ApplicationController::class, 'edit'])->name('applications.edit');
     Route::post('/applications/{application}/update', [ApplicationController::class, 'update'])->name('applications.update');
     Route::get('/applications/{application}/claim-stub', [ApplicationController::class, 'generateClaimStub'])->name('applications.claim-stub');
 
-    // --- NOTIFICATION ROUTES ---
+    // Notification Routes
     Route::get('/notifications', function (Request $request) {
         return response()->json([
             'notifications' => $request->user()->notifications()->latest()->take(10)->get(),
@@ -146,7 +169,7 @@ Route::get('/faqs', function () {
     Route::post('/notifications/read-all', function (Request $request) {
         $request->user()->unreadNotifications->markAsRead();
         return response()->noContent();
-    })->name('notifications.readAll');
+    });
 });
 
 
@@ -154,11 +177,11 @@ Route::get('/faqs', function () {
 
 Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
 
-    // 1. ADMIN DASHBOARD ROUTE
+    // Dashboard
     Route::get('/dashboard', function (Request $request) {
         $now = \Carbon\Carbon::now();
 
-        // --- BUDGET LOGIC ---
+        // Budget Logic
         $currentBudget = \App\Models\MonthlyBudget::where('month', $now->month)
             ->where('year', $now->year)
             ->first();
@@ -176,7 +199,7 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
             'percentage' => $budgetAmount > 0 ? ($releasedMonth / $budgetAmount) * 100 : 0,
         ];
 
-        // --- STATS LOGIC ---
+        // Stats Logic
         $stats = [
             'total' => ApplicationModel::count(),
             'pending' => ApplicationModel::where('status', 'Pending')->count(),
@@ -188,7 +211,7 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
             'released_month' => $releasedMonth,
         ];
 
-        // --- CHART LOGIC ---
+        // Chart Logic
         $chartQuery = ApplicationModel::where('status', 'Approved');
         if ($request->has('start_date') && $request->start_date) { $chartQuery->whereDate('updated_at', '>=', $request->start_date); }
         else { $chartQuery->whereDate('updated_at', '>=', $now->copy()->subDays(30)); }
@@ -198,7 +221,7 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         $dailyData = $chartQuery->selectRaw('DATE(updated_at) as date, SUM(amount_released) as total')->groupBy('date')->orderBy('date')->get();
         $chartData = ['labels' => $dailyData->pluck('date'), 'values' => $dailyData->pluck('total')];
 
-        // --- BARANGAY STATS ---
+        // Barangay Stats
         $barangayStats = ApplicationModel::where('status', 'Approved')
             ->select('barangay', \Illuminate\Support\Facades\DB::raw('count(*) as total'), \Illuminate\Support\Facades\DB::raw('sum(amount_released) as amount'))
             ->groupBy('barangay')
@@ -240,10 +263,10 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         ]);
     })->name('dashboard');
 
-    // 2. AUDIT LOGS ROUTE
+    // Audit Logs
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs');
 
-    // 3. BUDGET UPDATE ROUTE
+    // Budget Update
     Route::post('/dashboard/budget', function (Request $request) {
         $request->validate([ 'amount' => 'required|numeric|min:0' ]);
         $now = \Carbon\Carbon::now();
@@ -269,7 +292,7 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         return redirect()->back()->with('message', 'Budget updated successfully.');
     })->name('dashboard.budget');
 
-    // 4. APPLICATIONS ROUTES
+    // Applications Management
     Route::get('/applications', [AidRequestController::class, 'index'])->name('applications.index');
 
     Route::get('/applications/{application}', function (ApplicationModel $application) {
@@ -287,25 +310,25 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
     Route::post('/applications/{application}/remarks', [App\Http\Controllers\ApplicationController::class, 'addRemark'])->name('applications.remarks.store');
     Route::post('/applications/{application}/note', [App\Http\Controllers\ApplicationController::class, 'saveNote'])->name('applications.note.store');
 
-    // 5. REPORTS ROUTES
+    // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
     Route::get('/reports/export-excel', [ReportController::class, 'exportExcel'])->name('reports.export-excel');
 
-    // 6. ADMIN NEWS ROUTES
+    // News
     Route::resource('news', NewsController::class);
 
-    // 7. ASSISTANCE PROGRAMS MANAGEMENT
+    // Programs
     Route::get('/programs', [AssistanceProgramController::class, 'index'])->name('programs.index');
     Route::post('/programs', [AssistanceProgramController::class, 'store'])->name('programs.store');
     Route::put('/programs/{program}', [AssistanceProgramController::class, 'update'])->name('programs.update');
     Route::delete('/programs/{program}', [AssistanceProgramController::class, 'destroy'])->name('programs.destroy');
 
-    // 8. SYSTEM SETTINGS
+    // Settings
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
 
-    // 9. USER MANAGEMENT
+    // Users
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/users/{user}/role', [UserController::class, 'changeRole'])->name('users.role');
     Route::post('/users/{user}/status', [UserController::class, 'toggleStatus'])->name('users.status');
@@ -320,12 +343,10 @@ Route::middleware(['auth', 'verified', 'is_staff'])->prefix('staff')->name('staf
     Route::post('/applications/{application}/remarks', [StaffController::class, 'storeRemark'])->name('applications.remarks.store');
     Route::post('/applications/{application}/reject', [StaffController::class, 'reject'])->name('applications.reject');
 
-    // --- STAFF REPORTS ---
+    // Staff Reports
     Route::get('/reports', [StaffController::class, 'reportsIndex'])->name('reports.index');
     Route::get('/reports/export-pdf', [StaffController::class, 'exportPdf'])->name('reports.export-pdf');
     Route::get('/reports/export-excel', [StaffController::class, 'exportExcel'])->name('reports.export-excel');
 });
-
-
 
 require __DIR__.'/auth.php';

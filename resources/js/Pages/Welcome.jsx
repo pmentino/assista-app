@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, Head, usePage } from '@inertiajs/react';
+import { Link, Head, usePage, router } from '@inertiajs/react';
+import Dropdown from '@/Components/Dropdown';
 
 // --- ICONS ---
 const MenuIcon = () => (<svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" /></svg>);
@@ -10,13 +11,16 @@ const defaultPrograms = [
     { title: 'Laboratory Tests', desc: 'Financial support for required medical laboratory examinations and workups.', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 00-2-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
     { title: 'Anti-Rabies Vaccine', desc: 'Assistance for animal bite treatment and vaccination courses.', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' },
     { title: 'Funeral Assistance', desc: 'Support for burial and funeral expenses for indigent families.', icon: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-    { title: 'Medicine Assistance', desc: 'Provision for prescription medicines and maintenance drugs.', icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z' },
+    { title: 'Medicine Assistance', desc: 'Provision for prescription medicines and maintenance drugs.', icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00-1.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z' },
 ];
 
-export default function Welcome({ news = [], programs = [], settings = {} }) {
+export default function Welcome({ news = [], programs = [], settings = {}, translations = {}, locale = 'en' }) {
     const { auth } = usePage().props;
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+
+    // --- TRANSLATION HELPER ---
+    const __ = (key) => (translations && translations[key]) ? translations[key] : key;
 
     const displayPrograms = programs.length > 0 ? programs : defaultPrograms;
     const announcement = settings.system_announcement;
@@ -27,6 +31,10 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    const switchLanguage = (lang) => {
+        router.get(route('language.switch', lang), {}, { preserveScroll: true, preserveState: true });
+    };
 
     // --- HELPER: DETERMINE DASHBOARD ROUTE ---
     const getDashboardRoute = () => {
@@ -59,19 +67,67 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                             <nav className="hidden md:flex items-center space-x-8 text-sm font-bold tracking-wide">
                                 {['HOME', 'NEWS', 'ASSISTANCE', 'ABOUT'].map((item) => (
                                     <a key={item} href={`#${item.toLowerCase()}`} className="text-gray-300 hover:text-white transition-colors relative group">
-                                        {item}
+                                        {__(item)}
                                         <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-yellow-400 transition-all group-hover:w-full"></span>
                                     </a>
                                 ))}
+
+                                {/* --- ENHANCED LANGUAGE BUTTON --- */}
+                                <Dropdown>
+                                    <Dropdown.Trigger>
+                                        <button className="flex items-center gap-2 bg-blue-800 hover:bg-blue-700 text-white px-4 py-2 rounded-full transition shadow-sm border border-blue-600 ml-4 group focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                                            {/* Universal Globe Icon */}
+                                            <svg className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+
+                                            {/* Clear Label */}
+                                            <span className="font-bold text-sm tracking-wide">
+                                                {locale === 'fil' ? 'Tagalog' : locale === 'hil' ? 'Hiligaynon' : 'English'}
+                                            </span>
+
+                                            {/* Chevron */}
+                                            <svg className="w-4 h-4 text-blue-300 group-hover:text-white transition-transform group-focus:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </button>
+                                    </Dropdown.Trigger>
+
+                                    <Dropdown.Content width="48">
+                                        <div className="p-1">
+                                            <button onClick={() => switchLanguage('en')} className="flex items-center w-full px-4 py-3 text-left text-sm leading-5 text-gray-700 hover:bg-blue-50 focus:outline-none focus:bg-blue-100 transition rounded-md gap-3 group">
+                                                <span className="text-xl">🇺🇸</span>
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-gray-800 group-hover:text-blue-900">English</span>
+                                                    <span className="text-xs text-gray-500">International</span>
+                                                </div>
+                                            </button>
+                                            <button onClick={() => switchLanguage('fil')} className="flex items-center w-full px-4 py-3 text-left text-sm leading-5 text-gray-700 hover:bg-blue-50 focus:outline-none focus:bg-blue-100 transition rounded-md gap-3 group">
+                                                <span className="text-xl">🇵🇭</span>
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-gray-800 group-hover:text-blue-900">Tagalog</span>
+                                                    <span className="text-xs text-gray-500">Filipino</span>
+                                                </div>
+                                            </button>
+                                            <button onClick={() => switchLanguage('hil')} className="flex items-center w-full px-4 py-3 text-left text-sm leading-5 text-gray-700 hover:bg-blue-50 focus:outline-none focus:bg-blue-100 transition rounded-md gap-3 group">
+                                                <span className="text-xl">🏝️</span>
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-gray-800 group-hover:text-blue-900">Hiligaynon</span>
+                                                    <span className="text-xs text-gray-500">Local Dialect</span>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </Dropdown.Content>
+                                </Dropdown>
+
                                 {auth.user ? (
-                                    // --- UPDATED: SMART DASHBOARD LINK ---
                                     <Link href={getDashboardRoute()} className="bg-yellow-500 hover:bg-yellow-400 text-blue-900 px-6 py-2 rounded-full transition-transform hover:scale-105 shadow-lg">
-                                        DASHBOARD
+                                        {__('My Dashboard')}
                                     </Link>
                                 ) : (
                                     <div className="flex gap-4">
-                                        <Link href={route('login')} className="text-white hover:text-yellow-400 transition">LOG IN</Link>
-                                        <Link href={route('register')} className="bg-white text-blue-900 px-5 py-2 rounded-full hover:bg-gray-100 font-bold shadow-md transition-transform hover:scale-105">GET STARTED</Link>
+                                        <Link href={route('login')} className="text-white hover:text-yellow-400 transition">{__('Log In')}</Link>
+                                        <Link href={route('register')} className="bg-white text-blue-900 px-5 py-2 rounded-full hover:bg-gray-100 font-bold shadow-md transition-transform hover:scale-105">{__('Get Started')}</Link>
                                     </div>
                                 )}
                             </nav>
@@ -80,7 +136,7 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                     </header>
                 </div>
 
-                {/* MOBILE MENU */}
+                {/* MOBILE MENU (WITH BIG LANGUAGE BUTTONS) */}
                 {mobileMenuOpen && (
                     <div className="fixed inset-0 z-50 flex justify-end">
                         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
@@ -90,13 +146,33 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                                 <button onClick={() => setMobileMenuOpen(false)} className="text-gray-500 hover:text-red-500"><CloseIcon /></button>
                             </div>
                             <nav className="flex flex-col space-y-4 text-lg font-medium text-gray-700">
-                                <a href="#home" onClick={() => setMobileMenuOpen(false)}>Home</a>
-                                <a href="#news" onClick={() => setMobileMenuOpen(false)}>News & Updates</a>
-                                <a href="#assistance" onClick={() => setMobileMenuOpen(false)}>Assistance Programs</a>
-                                <a href="#about" onClick={() => setMobileMenuOpen(false)}>About Us</a>
+                                <a href="#home" onClick={() => setMobileMenuOpen(false)}>{__('Home')}</a>
+                                <a href="#news" onClick={() => setMobileMenuOpen(false)}>{__('News & Updates')}</a>
+                                <a href="#assistance" onClick={() => setMobileMenuOpen(false)}>{__('Assistance Programs')}</a>
+                                <a href="#about" onClick={() => setMobileMenuOpen(false)}>{__('About Us')}</a>
+
+                                {/* Mobile Language Switcher */}
+                                <div className="border-t border-gray-100 pt-4 mt-2">
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Language / Lengguwahe</p>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <button onClick={() => { switchLanguage('en'); setMobileMenuOpen(false); }} className={`p-2 rounded-lg text-center border ${locale === 'en' ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-300' : 'border-gray-200'}`}>
+                                            <div className="text-2xl">🇺🇸</div>
+                                            <span className="text-xs font-bold text-gray-600 block mt-1">EN</span>
+                                        </button>
+                                        <button onClick={() => { switchLanguage('fil'); setMobileMenuOpen(false); }} className={`p-2 rounded-lg text-center border ${locale === 'fil' ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-300' : 'border-gray-200'}`}>
+                                            <div className="text-2xl">🇵🇭</div>
+                                            <span className="text-xs font-bold text-gray-600 block mt-1">FIL</span>
+                                        </button>
+                                        <button onClick={() => { switchLanguage('hil'); setMobileMenuOpen(false); }} className={`p-2 rounded-lg text-center border ${locale === 'hil' ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-300' : 'border-gray-200'}`}>
+                                            <div className="text-2xl">🏝️</div>
+                                            <span className="text-xs font-bold text-gray-600 block mt-1">HIL</span>
+                                        </button>
+                                    </div>
+                                </div>
+
                                 {auth.user && (
-                                    <Link href={getDashboardRoute()} className="text-blue-600 font-bold" onClick={() => setMobileMenuOpen(false)}>
-                                        Go to Dashboard
+                                    <Link href={getDashboardRoute()} className="text-blue-600 font-bold mt-4 block" onClick={() => setMobileMenuOpen(false)}>
+                                        {__('Go to Dashboard')}
                                     </Link>
                                 )}
                             </nav>
@@ -126,34 +202,36 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
 
                             <div className="space-y-2">
                                 <h1 className="text-4xl md:text-6xl font-extrabold text-white leading-tight drop-shadow-xl tracking-tight">
-                                    Compassionate Service,<br />
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">Accessible to All.</span>
+                                    {__('Compassionate Service')},<br />
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">{__('Accessible to All')}.</span>
                                 </h1>
                                 <p className="text-xl md:text-2xl text-blue-200 font-serif italic opacity-90">"Bulig para sa mga Roxasnon nga ara sa krisis."</p>
                             </div>
 
                             <p className="text-lg text-blue-100 max-w-2xl leading-relaxed font-light border-l-4 border-yellow-500 pl-4 bg-blue-800/30 p-2 rounded-r-lg">
-                                The <strong>Assistance to Individuals in Crisis Situation (AICS)</strong> is a social welfare service providing medical, burial, transportation, education, food, or financial assistance for the distinct needs of a person or family.
+                                {__('The Assistance to Individuals in Crisis Situation (AICS) is a social welfare service providing medical, burial, transportation, education, food, or financial assistance for the distinct needs of a person or family.')}
                             </p>
 
                             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start pt-2">
                                 {isAccepting ? (
                                     <Link href={route('register')} className="bg-yellow-500 text-blue-900 px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:bg-yellow-400 hover:shadow-2xl transition transform hover:-translate-y-1 text-center border-b-4 border-yellow-600 ring-2 ring-yellow-300/50">
-                                        Apply for Assistance
+                                        {__('Apply for Assistance')}
                                     </Link>
                                 ) : (
                                     <button disabled className="bg-gray-400 text-gray-800 px-8 py-4 rounded-xl font-bold text-lg cursor-not-allowed border-b-4 border-gray-500">
-                                        Applications Paused
+                                        {__('Applications Paused')}
                                     </button>
                                 )}
-                                <a href="#assistance" className="px-8 py-4 rounded-xl font-bold text-lg text-white border-2 border-white/20 hover:bg-white/10 transition text-center backdrop-blur-sm">
-                                    View Programs
-                                </a>
+
+                                <Link href={route('track.index')} className="px-8 py-4 rounded-xl font-bold text-lg text-white border-2 border-white/20 hover:bg-white/10 transition text-center backdrop-blur-sm flex items-center justify-center gap-2">
+                                    <svg className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                    {__('Track Status')}
+                                </Link>
                             </div>
 
                             {!isAccepting && (
                                 <p className="mt-4 text-red-200 font-bold bg-red-900/40 border border-red-500/30 inline-block px-4 py-2 rounded-lg text-sm backdrop-blur-sm">
-                                    ⚠️ Online applications are currently paused for maintenance.
+                                    ⚠️ {__('Online applications are currently paused for maintenance.')}
                                 </p>
                             )}
                         </div>
@@ -170,15 +248,15 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                 <section className="py-16 bg-white border-b border-gray-100">
                     <div className="container mx-auto px-4">
                         <div className="text-center mb-10">
-                            <h2 className="text-2xl md:text-3xl font-bold text-blue-900 uppercase tracking-wide">Who Can Avail?</h2>
-                            <p className="text-slate-500 mt-2">Eligibility Criteria for AICS Assistance</p>
+                            <h2 className="text-2xl md:text-3xl font-bold text-blue-900 uppercase tracking-wide">{__('Who Can Avail?')}</h2>
+                            <p className="text-slate-500 mt-2">{__('Eligibility Criteria for AICS Assistance')}</p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
                             {[
-                                { title: 'Indigent Families', desc: 'Families with no regular income or those living below the poverty threshold.', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-                                { title: 'Individuals in Crisis', desc: 'Those facing unexpected life events (fire, calamities, death of family member).', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' },
-                                { title: 'Vulnerable Sectors', desc: 'Senior Citizens, PWDs, Solo Parents, and Out-of-School Youth.', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
-                                { title: 'Roxas City Residents', desc: 'Must be a bona fide resident of Roxas City with valid proof of residency.', icon: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z' },
+                                { title: __('Indigent Families'), desc: __('Families with no regular income or those living below the poverty threshold.'), icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+                                { title: __('Individuals in Crisis'), desc: __('Those facing unexpected life events (fire, calamities, death of family member).'), icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' },
+                                { title: __('Vulnerable Sectors'), desc: __('Senior Citizens, PWDs, Solo Parents, and Out-of-School Youth.'), icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
+                                { title: __('Roxas City Residents'), desc: __('Must be a bona fide resident of Roxas City with valid proof of residency.'), icon: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z' },
                             ].map((item, index) => (
                                 <div key={index} className="bg-slate-50 p-6 rounded-xl border border-slate-100 hover:shadow-md transition text-center">
                                     <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -219,8 +297,8 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                     <section id="news" className="py-24 bg-slate-50 scroll-mt-24">
                         <div className="container mx-auto px-4">
                             <div className="text-center mb-16">
-                                <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Latest Updates</h2>
-                                <p className="text-slate-500 max-w-2xl mx-auto">Official announcements from the City Social Welfare and Development Office.</p>
+                                <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{__('Latest Updates')}</h2>
+                                <p className="text-slate-500 max-w-2xl mx-auto">{__('Official announcements from the City Social Welfare and Development Office.')}</p>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 {news.slice(0, 3).map((article) => (
@@ -238,14 +316,14 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                                         <div className="p-6 flex-1 flex flex-col">
                                             <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-blue-700 transition-colors line-clamp-2">{article.title}</h3>
                                             <p className="text-slate-500 text-sm line-clamp-3 mb-4 flex-1">{article.content}</p>
-                                            <span className="text-blue-600 font-bold text-sm flex items-center group-hover:translate-x-2 transition-transform">Read More &rarr;</span>
+                                            <span className="text-blue-600 font-bold text-sm flex items-center group-hover:translate-x-2 transition-transform">{__('Read More')} &rarr;</span>
                                         </div>
                                     </Link>
                                 ))}
                             </div>
                             <div className="text-center mt-12">
                                 <Link href={route('news.index')} className="inline-block px-8 py-3 border-2 border-blue-600 text-blue-600 font-bold rounded-full hover:bg-blue-600 hover:text-white transition-colors">
-                                    View All News
+                                    {__('View All News')}
                                 </Link>
                             </div>
                         </div>
@@ -256,8 +334,8 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                 <section id="assistance" className="py-24 bg-gray-50 scroll-mt-24">
                     <div className="container mx-auto px-4">
                         <div className="text-center mb-16">
-                            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Assistance Programs</h2>
-                            <p className="text-slate-500 max-w-2xl mx-auto">We provide financial aid for various crisis situations. Check if you are eligible.</p>
+                            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{__('Assistance Programs')}</h2>
+                            <p className="text-slate-500 max-w-2xl mx-auto">{__('We provide financial aid for various crisis situations. Check if you are eligible.')}</p>
                         </div>
                         <div className="flex flex-wrap justify-center gap-6">
                             {displayPrograms.map((item, idx) => (
@@ -280,24 +358,24 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                     <div className="container mx-auto px-4">
                         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
                             <div className="bg-slate-50 rounded-2xl shadow-sm p-8 border border-slate-100 h-full">
-                                <h2 className="text-3xl font-bold text-slate-900 mb-6">About Assista & CSWDO</h2>
+                                <h2 className="text-3xl font-bold text-slate-900 mb-6">{__('About Assista & CSWDO')}</h2>
                                 <p className="text-slate-600 leading-relaxed mb-4 text-lg">
-                                    The <strong>Assista</strong> system is a premier initiative by the Roxas City Government to digitize and streamline the application process for the DSWD's <strong>Assistance to Individuals in Crisis Situation (AICS) </strong> program.
+                                    {__('The Assistance to Individuals in Crisis Situation (AICS) is a social welfare service providing medical, burial, transportation, education, food, or financial assistance for the distinct needs of a person or family.')}
                                 </p>
                                 <p className="text-slate-600 leading-relaxed text-lg">
-                                    Our mission is to provide fast, accessible, and transparent financial assistance to the residents of Roxas City, ensuring that help reaches those who need it most, when they need it most.
+                                    {__('Our mission is to provide fast, accessible, and transparent financial assistance to the residents of Roxas City, ensuring that help reaches those who need it most, when they need it most.')}
                                 </p>
                             </div>
 
                             <div className="bg-blue-900 rounded-2xl shadow-lg p-8 text-white h-full flex flex-col justify-center">
-                                <h2 className="text-3xl font-bold mb-8">Contact Us</h2>
+                                <h2 className="text-3xl font-bold mb-8">{__('Contact Us')}</h2>
                                 <ul className="space-y-8">
                                     <li className="flex items-start gap-5">
                                         <div className="bg-blue-800 p-3 rounded-xl shrink-0">
                                             <svg className="w-6 h-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                                         </div>
                                         <div>
-                                            <p className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-1">Visit our Office</p>
+                                            <p className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-1">{__('Visit our Office')}</p>
                                             <p className="text-xl font-bold leading-snug">{settings.office_address || 'Inzo Arnaldo Village, Roxas City'}</p>
                                         </div>
                                     </li>
@@ -306,7 +384,7 @@ export default function Welcome({ news = [], programs = [], settings = {} }) {
                                             <svg className="w-6 h-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                                         </div>
                                         <div>
-                                            <p className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-1">Call Hotline</p>
+                                            <p className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-1">{__('Call Hotline')}</p>
                                             <p className="text-2xl font-bold tracking-tight">{settings.office_hotline || '(036) 52026-83'}</p>
                                         </div>
                                     </li>
