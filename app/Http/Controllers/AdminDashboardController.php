@@ -8,6 +8,7 @@ use App\Models\Setting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AdminDashboardController extends Controller
 {
@@ -38,7 +39,6 @@ class AdminDashboardController extends Controller
         // 3. Queue Filtering Logic (Verification Queue)
         $queueQuery = Application::where('status', 'Pending')->with('user');
 
-        // Search Filter (Queue Specific)
         if ($request->filled('q_search')) {
             $search = $request->q_search;
             $queueQuery->where(function($q) use ($search) {
@@ -48,42 +48,59 @@ class AdminDashboardController extends Controller
             });
         }
 
-        // Program Filter (Queue Specific)
         if ($request->filled('q_program')) {
             $queueQuery->where('program', $request->q_program);
         }
 
-        // Sorting (Queue Specific)
         if ($request->input('q_sort') === 'newest') {
             $queueQuery->latest();
         } else {
-            $queueQuery->oldest(); // Default: First-In-First-Out (FIFO)
+            $queueQuery->oldest();
         }
 
-        // FIX: Use get() instead of paginate() for Dashboard widgets
         $pendingApplications = $queueQuery->take(10)->get();
 
         // 4. Dropdown Data
         $allBarangays = Application::distinct()->orderBy('barangay')->pluck('barangay');
         $programs = AssistanceProgram::where('is_active', true)->pluck('title');
 
-        // 5. Chart Data (Placeholder structure)
+        // 5. CHART DATA (REAL DATA)
+
+        // A. Financial Trends (Last 6 Months)
+        $chartDataRaw = Application::where('status', 'Approved')
+            ->selectRaw("DATE_FORMAT(approved_date, '%Y-%m') as label, SUM(amount_released) as total")
+            ->groupBy('label')
+            ->orderBy('label')
+            ->limit(6)
+            ->get();
+
         $chartData = [
-            'labels' => ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-            'values' => [0, 0, 0, 0]
+            'labels' => $chartDataRaw->pluck('label')->map(function($d) {
+                return date('M Y', strtotime($d . '-01')); // Format: "Jan 2026"
+            }),
+            'values' => $chartDataRaw->pluck('total'),
         ];
-        $barangayStats = [];
+
+        // B. Top Barangays (Count & Amount)
+        // This fixes the modal empty data issue
+        $barangayStats = Application::select('barangay', DB::raw('count(*) as total'), DB::raw('sum(amount_released) as amount'))
+            ->whereNotNull('barangay')
+            ->groupBy('barangay')
+            ->orderByDesc('total')
+            ->take(10)
+            ->get();
 
         return Inertia::render('Admin/Dashboard', [
-            'stats'               => $stats,
-            'budgetStats'         => $budgetStats,
-            'chartData'           => $chartData,
-            'barangayStats'       => $barangayStats,
-            'allBarangays'        => $allBarangays,
-            'programs'            => $programs, // Pass programs for dropdown
-            'pendingApplications' => $pendingApplications, // Pass the list
-            'filters'             => $request->all(), // Pass all filters back to maintain state
-            'auth'                => ['user' => Auth::user()],
+            'stats'           => $stats,
+            'budgetStats'     => $budgetStats,
+            'chartData'       => $chartData,
+            'barangayStats'   => $barangayStats, // Passed correctly now
+            'allBarangays'    => $allBarangays,
+            'programs'        => $programs,
+            'pendingApplications' => $pendingApplications,
+            'filters'         => $request->all(),
+            'queueFilters'    => $request->only(['q_search', 'q_program', 'q_sort']), // Pass queue filters separately
+            'auth'            => ['user' => Auth::user()],
         ]);
     }
 }
