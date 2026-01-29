@@ -1,21 +1,33 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import TextInput from '@/Components/TextInput';
 
 export default function UsersIndex({ auth, users, filters }) {
     const [search, setSearch] = useState(filters.search || '');
     const [role, setRole] = useState(filters.role || '');
 
+    // Track if this is the initial render to prevent double-fetching
+    const isFirstRender = useRef(true);
+
     // --- DEBOUNCE SEARCH ---
     useEffect(() => {
+        // Skip the first run so we don't reload page on mount
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+
         const timer = setTimeout(() => {
             router.get(
                 route('admin.users.index'),
                 { search, role },
-                { preserveState: true, replace: true }
+                // CRITICAL: preserveState prevents losing scroll position
+                // replace: true prevents cluttering browser history
+                { preserveState: true, preserveScroll: true, replace: true }
             );
         }, 300);
+
         return () => clearTimeout(timer);
     }, [search, role]);
 
@@ -26,29 +38,37 @@ export default function UsersIndex({ auth, users, filters }) {
             : 'Demote';
 
         if (confirm(`Are you sure you want to ${action} ${user.name} to ${newRole.toUpperCase()}?`)) {
-            router.post(route('admin.users.role', user.id), { role: newRole });
+            router.post(route('admin.users.role', user.id), { role: newRole }, { preserveScroll: true });
         }
     };
 
     const toggleStatus = (user) => {
         const action = user.is_active ? 'deactivate' : 'activate';
         if (confirm(`Are you sure you want to ${action} this account?`)) {
-            router.post(route('admin.users.status', user.id));
+            router.post(route('admin.users.status', user.id), {}, { preserveScroll: true });
         }
     };
 
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-blue-900 dark:text-blue-300 leading-tight">User Management</h2>}
+            header={
+                <div className="flex justify-between items-center">
+                    <h2 className="font-semibold text-xl text-blue-900 dark:text-blue-300 leading-tight">User Management</h2>
+                    {/* Optional: Add a subtle badge showing total users */}
+                    <span className="text-xs font-mono bg-blue-100 text-blue-800 py-1 px-2 rounded-full dark:bg-blue-900 dark:text-blue-200">
+                        {users.total} Total Users
+                    </span>
+                </div>
+            }
         >
             <Head title="Manage Users" />
 
-            <div className="py-12 bg-gray-50 dark:bg-gray-900 min-h-screen font-sans transition-colors duration-300">
+            <div className="py-6">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
                     {/* --- HEADER CONTROLS --- */}
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 transition-colors">
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 transition-colors">
                         <div className="w-full md:w-1/3 relative">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -72,7 +92,7 @@ export default function UsersIndex({ auth, users, filters }) {
                                 <option value="">Filter by Role: All</option>
                                 <option value="admin">Administrators</option>
                                 <option value="staff">Staff Members</option>
-                                <option value="user">Public Users</option>
+                                <option value="user">Constituents</option>
                             </select>
                         </div>
                     </div>
@@ -132,7 +152,6 @@ export default function UsersIndex({ auth, users, filters }) {
                                                 <td className="px-6 py-4 whitespace-nowrap text-center">
                                                     {user.id !== auth.user.id && (
                                                         <div className="flex items-center justify-center space-x-2">
-
                                                             {/* LOGIC: Promote/Demote Arrows */}
                                                             {user.type === 'user' && (
                                                                 <ActionButton
@@ -205,10 +224,12 @@ export default function UsersIndex({ auth, users, filters }) {
                                         <Link
                                             key={key}
                                             href={link.url}
+                                            preserveScroll
+                                            preserveState
                                             className={`px-3 py-1.5 border rounded-lg text-xs font-bold shadow-sm transition ${
                                                 link.active
-                                                ? 'bg-blue-800 text-white border-blue-800 dark:bg-blue-600 dark:border-blue-600'
-                                                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 border-gray-300 dark:border-gray-600'
+                                                    ? 'bg-blue-800 text-white border-blue-800 dark:bg-blue-600 dark:border-blue-600'
+                                                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 border-gray-300 dark:border-gray-600'
                                             }`}
                                             dangerouslySetInnerHTML={{ __html: link.label }}
                                         />

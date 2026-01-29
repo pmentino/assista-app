@@ -5,41 +5,24 @@ import { Toaster, toast } from 'react-hot-toast';
 import NotificationBell from '@/Components/NotificationBell';
 
 export default function AuthenticatedLayout({ user, header, children }) {
-    // 1. GET LOCALE & TRANSLATIONS
     const { props } = usePage();
     const { locale = 'en', translations = {} } = props;
-
-    // 2. HELPER FUNCTION
     const __ = (key) => (translations && translations[key]) ? translations[key] : key;
 
-    const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
-
-    // --- ACCESSIBILITY STATES ---
+    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [darkMode, setDarkMode] = useState(localStorage.getItem('theme') === 'dark');
 
-    // Define available sizes
-    const fontSizes = ['text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl'];
-
-    // Track current size index (Default: 1 = text-base)
+    // Font Size Logic
+    const fontSizes = ['text-sm', 'text-base', 'text-lg'];
     const [fontIndex, setFontIndex] = useState(() => {
         const saved = localStorage.getItem('fontSize');
-        const index = fontSizes.indexOf(saved);
-        return index !== -1 ? index : 1;
+        return fontSizes.includes(saved) ? fontSizes.indexOf(saved) : 1;
     });
 
     const currentUser = user || props.auth?.user || {};
     const isAdmin = currentUser?.role === 'admin' || currentUser?.type === 'admin';
     const isStaff = currentUser?.role === 'staff' || currentUser?.type === 'staff';
     const isApplicant = !isAdmin && !isStaff;
-    const showApplicantDashboard = isApplicant;
-
-    // --- LANGUAGE SWITCHER ---
-    const switchLanguage = (lang) => {
-        router.get(route('language.switch', lang), {}, {
-            preserveScroll: true,
-            preserveState: true,
-        });
-    };
 
     // --- EFFECTS ---
     useEffect(() => {
@@ -54,252 +37,204 @@ export default function AuthenticatedLayout({ user, header, children }) {
 
     useEffect(() => {
         document.documentElement.classList.remove(...fontSizes);
-        const newClass = fontSizes[fontIndex];
-        document.documentElement.classList.add(newClass);
-        localStorage.setItem('fontSize', newClass);
+        document.documentElement.classList.add(fontSizes[fontIndex]);
+        localStorage.setItem('fontSize', fontSizes[fontIndex]);
     }, [fontIndex]);
-
-    const toggleTheme = () => setDarkMode(!darkMode);
-    const increaseFont = () => setFontIndex((prev) => (prev < fontSizes.length - 1 ? prev + 1 : prev));
-    const decreaseFont = () => setFontIndex((prev) => (prev > 0 ? prev - 1 : prev));
 
     // --- TOASTS ---
     useEffect(() => {
         if (props.flash?.message) toast.success(props.flash.message);
         if (props.flash?.success) toast.success(props.flash.success);
-        if (props.flash?.error) {
-            toast.error(props.flash.error, {
-                duration: 5000,
-                style: { border: '1px solid #EF4444', color: '#B91C1C', background: '#FEF2F2' },
-            });
-        }
+        if (props.flash?.error) toast.error(props.flash.error);
     }, [props.flash]);
 
-    const navLinkClasses = (isActive) =>
-        isActive
-            ? 'inline-flex items-center px-1 pt-1 border-b-2 border-yellow-400 text-sm font-medium text-white focus:outline-none transition duration-150 ease-in-out'
-            : 'inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-300 hover:text-white hover:border-gray-300 focus:outline-none focus:text-white focus:border-gray-300 transition duration-150 ease-in-out';
+    // --- NAVIGATION ITEMS ---
+    const navItems = [
+        // APPLICANT (Top Bar Items)
+        ...(isApplicant ? [
+            { name: __('My Dashboard'), route: 'dashboard', icon: null },
+        ] : []),
 
-    const mobileNavLinkClasses = (isActive) =>
-        isActive
-            ? 'block pl-3 pr-4 py-2 border-l-4 border-yellow-400 text-base font-medium text-white bg-blue-900 focus:outline-none focus:text-white focus:bg-blue-900 transition duration-150 ease-in-out'
-            : 'block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-300 hover:text-white hover:bg-blue-700 hover:border-gray-300 focus:outline-none focus:text-white focus:bg-blue-700 transition duration-150 ease-in-out';
+        // STAFF (Sidebar Items)
+        ...(isStaff ? [
+            { name: 'Staff Dashboard', route: 'staff.dashboard', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
+            { name: 'All Applications', route: 'staff.applications.index', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+            { name: 'Reports', route: 'staff.reports.index', icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+        ] : []),
+
+        // ADMIN (Sidebar Items)
+        ...(isAdmin ? [
+            { header: 'MAIN MENU' },
+            { name: 'Dashboard', route: 'admin.dashboard', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
+            { name: 'All Applications', route: 'admin.applications.index', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
+            { name: 'Reports', route: 'admin.reports.index', icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+
+            { header: 'MANAGEMENT' },
+            { name: 'Users', route: 'admin.users.index', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
+            { name: 'News & Updates', route: 'admin.news.index', icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z' },
+            { name: 'Programs', route: 'admin.programs.index', icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00-1.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z' },
+
+            { header: 'SYSTEM' },
+            { name: 'Audit Logs', route: 'admin.audit-logs', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+            { name: 'Settings', route: 'admin.settings.index', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
+        ] : []),
+    ];
 
     return (
-        <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'}`}>
+        <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
             <Toaster position="top-right" />
 
-            {/* Error Banner */}
-            {props.flash?.error && (
-                <div className="bg-red-600 text-white px-6 py-4 text-center font-bold text-lg sticky top-0 z-[100] shadow-xl animate-pulse flex items-center justify-center">
-                    <span>{props.flash.error}</span>
-                </div>
-            )}
-
-            {/* ==================================================================================== */}
-            {/* NEW: ELDERLY-FRIENDLY ACCESSIBILITY BAR (Always Visible Top Strip)                   */}
-            {/* ==================================================================================== */}
-            <div className="bg-blue-950 text-white text-xs py-2 px-2 sm:px-4 border-b border-blue-800 relative z-[60]">
-                <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-end gap-3 sm:gap-6">
-
-                    {/* 1. LANGUAGE SWITCHER (With Label) */}
-                    {isApplicant && (
-                        <div className="flex items-center">
-                            <span className="text-gray-400 mr-2 hidden sm:inline font-bold">Language:</span>
-                            <Dropdown>
-                                <Dropdown.Trigger>
-                                    <button className="flex items-center font-bold hover:text-yellow-400 transition bg-blue-900/50 px-2 py-1 rounded">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012 2v1.035M12 21a9 9 0 100-18 9 9 0 000 18z" />
+            <div className="flex flex-1 overflow-hidden">
+                {/* --- SIDEBAR (ONLY FOR ADMIN/STAFF) --- */}
+                {!isApplicant && (
+                    <div className={`fixed inset-y-0 left-0 z-30 w-64 bg-blue-900 text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto ${sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
+                        <div className="flex items-center justify-center h-16 bg-blue-950 border-b border-blue-800">
+                            <Link href="/" className="flex items-center gap-2">
+                                <img src="/images/logo.png" alt="Logo" className="h-8 w-auto" />
+                                <span className="text-xl font-bold tracking-widest">ASSISTA</span>
+                            </Link>
+                        </div>
+                        <nav className="mt-5 px-3 space-y-1 overflow-y-auto h-[calc(100vh-4rem)] custom-scrollbar">
+                            {navItems.map((item, index) => (
+                                item.header ? (
+                                    <div key={index} className="pt-4 pb-1 pl-3 text-xs font-bold text-blue-300 uppercase tracking-wider">{item.header}</div>
+                                ) : (
+                                    <Link
+                                        key={index}
+                                        href={route(item.route)}
+                                        className={`group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all ${
+                                            route().current(item.route) || route().current(item.route + '.*')
+                                                ? 'bg-yellow-500 text-blue-900 shadow-md'
+                                                : 'text-blue-100 hover:bg-blue-800 hover:text-white'
+                                        }`}
+                                    >
+                                        <svg className={`mr-3 h-5 w-5 ${route().current(item.route) ? 'text-blue-900' : 'text-blue-300 group-hover:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon} />
                                         </svg>
-                                        {locale === 'fil' ? 'Filipino' : locale === 'hil' ? 'Hiligaynon' : 'English'}
-                                        <span className="ml-1 text-[10px]">▼</span>
-                                    </button>
-                                </Dropdown.Trigger>
-                                <Dropdown.Content>
-                                    <button onClick={() => switchLanguage('en')} className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100">English</button>
-                                    <button onClick={() => switchLanguage('fil')} className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100">Filipino</button>
-                                    <button onClick={() => switchLanguage('hil')} className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100">Hiligaynon</button>
-                                </Dropdown.Content>
-                            </Dropdown>
-                        </div>
-                    )}
-
-                    {/* 2. TEXT SIZE CONTROLS (With Label) */}
-                    <div className="flex items-center">
-                        <span className="text-gray-400 mr-2 hidden sm:inline font-bold">Text Size:</span>
-                        <div className="flex bg-blue-900/50 rounded overflow-hidden border border-blue-800">
-                            <button onClick={decreaseFont} className="px-3 py-1 hover:bg-blue-700 hover:text-yellow-300 transition border-r border-blue-800 font-bold" title="Make Text Smaller">A-</button>
-                            <button onClick={increaseFont} className="px-3 py-1 hover:bg-blue-700 hover:text-yellow-300 transition font-bold" title="Make Text Bigger">A+</button>
-                        </div>
+                                        {item.name}
+                                    </Link>
+                                )
+                            ))}
+                        </nav>
                     </div>
+                )}
 
-                    {/* 3. DARK MODE (With Label) */}
-                    <div className="flex items-center">
-                        <span className="text-gray-400 mr-2 hidden sm:inline font-bold">Mode:</span>
-                        <button onClick={toggleTheme} className="flex items-center bg-blue-900/50 px-3 py-1 rounded border border-blue-800 hover:bg-blue-700 hover:text-yellow-300 transition">
-                            {darkMode ? (
-                                <><span className="mr-1">🌙</span> <span className="hidden sm:inline">Dark</span></>
-                            ) : (
-                                <><span className="mr-1">☀️</span> <span className="hidden sm:inline">Light</span></>
+                {/* --- MAIN CONTENT AREA --- */}
+                <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+                    {/* TOP HEADER */}
+                    <header className={`h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 shadow-sm relative z-20 ${darkMode ? 'bg-gray-800 border-b border-gray-700' : 'bg-white border-b border-gray-200'}`}>
+
+                        {/* 1. LEFT SIDE CONTROLS */}
+                        <div className="flex items-center gap-4">
+                            {/* Hamburger (Mobile Only OR If Applicant) */}
+                            {!isApplicant && (
+                                <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden text-gray-500 hover:text-gray-700 focus:outline-none">
+                                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                                </button>
                             )}
-                        </button>
-                    </div>
 
-                </div>
-            </div>
+                            {/* APPLICANT LOGO (Since they don't have a sidebar) */}
+                            {isApplicant && (
+                                <Link href="/" className="flex items-center gap-2">
+                                    <img src="/images/logo.png" alt="Logo" className="h-8 w-auto bg-white rounded-full p-1 border border-blue-100" />
+                                    <span className={`text-xl font-bold tracking-widest hidden sm:block ${darkMode ? 'text-white' : 'text-blue-900'}`}>ASSISTA</span>
+                                </Link>
+                            )}
+                        </div>
 
-            <nav className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-blue-800 border-blue-900'} border-b sticky top-0 z-50 transition-colors duration-300 shadow-md`}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-16">
-
-                        {/* LEFT: Logo & Links */}
-                        <div className="flex">
-                            <div className="shrink-0 flex items-center">
-                                <Link href="/">
-                                    <img src="/images/logo.png" alt="Assista Logo" className="block h-10 w-auto" />
+                        {/* 2. APPLICANT NAVIGATION (Desktop) */}
+                        {isApplicant && (
+                            <div className="hidden md:flex space-x-8">
+                                <Link href={route('dashboard')} className={`font-bold border-b-2 px-1 pt-1 text-sm ${route().current('dashboard') ? 'border-blue-500 text-gray-900 dark:text-white' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300'}`}>
+                                    {__('My Dashboard')}
                                 </Link>
                             </div>
+                        )}
 
-                            {/* Desktop Links */}
-                            <div className="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
-                                {showApplicantDashboard && (
-                                    <Link href={route('dashboard')} className={navLinkClasses(route().current('dashboard'))}>
-                                        {__('My Dashboard')}
-                                    </Link>
-                                )}
+                        {/* 3. RIGHT SIDE ACTIONS */}
+                        <div className="flex items-center gap-3 sm:gap-6">
 
-                                {isStaff && (
-                                    <>
-                                        <Link href={route('staff.dashboard')} className={navLinkClasses(route().current('staff.dashboard'))}>Staff Dashboard</Link>
-                                        <Link href={route('staff.applications.index')} className={navLinkClasses(route().current('staff.applications.index'))}>All Applications</Link>
-                                        <Link href={route('staff.reports.index')} className={navLinkClasses(route().current('staff.reports.*'))}>Reports</Link>
-                                    </>
-                                )}
+                            {/* --- SENIOR FRIENDLY LANGUAGE BUTTON (APPLICANT ONLY) --- */}
+                            {isApplicant && (
+                                <Dropdown>
+                                    <Dropdown.Trigger>
+                                        <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-full transition shadow-sm group" title="Change Language">
+                                            {/* Globe Icon */}
+                                            <svg className="w-4 h-4 text-yellow-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
 
-                                {/* --- RESTORED ADMIN LINKS --- */}
-                                {isAdmin && (
-                                    <>
-                                        <Link href={route('admin.dashboard')} className={navLinkClasses(route().current('admin.dashboard'))}>Admin Dashboard</Link>
-                                        <Link href={route('admin.applications.index')} className={navLinkClasses(route().current('admin.applications.*'))}>All Applications</Link>
-                                        <Link href={route('admin.reports.index')} className={navLinkClasses(route().current('admin.reports.*'))}>Reports</Link>
-                                        <Link href={route('admin.users.index')} className={navLinkClasses(route().current('admin.users.*'))}>Manage Users</Link>
-                                        <Link href={route('admin.news.index')} className={navLinkClasses(route().current('admin.news.*'))}>News</Link>
-                                        <Link href={route('admin.programs.index')} className={navLinkClasses(route().current('admin.programs.*'))}>Programs</Link>
-                                        <Link href={route('admin.audit-logs')} className={navLinkClasses(route().current('admin.audit-logs'))}>Audit Logs</Link>
-                                        <Link href={route('admin.settings.index')} className={navLinkClasses(route().current('admin.settings.*'))}>Settings</Link>
-                                    </>
-                                )}
+                                            {/* Current Language Label */}
+                                            <span className="font-bold text-xs tracking-wide uppercase">
+                                                {locale}
+                                            </span>
+                                            <svg className="w-3 h-3 text-blue-200 group-hover:text-white transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                        </button>
+                                    </Dropdown.Trigger>
+                                    <Dropdown.Content>
+                                        <button onClick={() => router.get(route('language.switch', 'en'))} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100">
+                                            <span>🇺🇸</span> English
+                                        </button>
+                                        <button onClick={() => router.get(route('language.switch', 'fil'))} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100">
+                                            <span>🇵🇭</span> Filipino
+                                        </button>
+                                        <button onClick={() => router.get(route('language.switch', 'hil'))} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100">
+                                            <span>🏝️</span> Hiligaynon
+                                        </button>
+                                    </Dropdown.Content>
+                                </Dropdown>
+                            )}
+
+                            {/* Font Size */}
+                            <div className={`hidden sm:flex rounded-lg p-1 ${isApplicant ? 'bg-blue-50 border border-blue-100' : 'bg-gray-100 dark:bg-gray-700'}`}>
+                                <button onClick={() => setFontIndex(Math.max(0, fontIndex - 1))} className={`px-2 text-xs font-bold ${isApplicant ? 'text-blue-600 hover:text-blue-800' : 'text-gray-600 dark:text-gray-300'}`}>A-</button>
+                                <button onClick={() => setFontIndex(Math.min(2, fontIndex + 1))} className={`px-2 text-xs font-bold ${isApplicant ? 'text-blue-600 hover:text-blue-800' : 'text-gray-600 dark:text-gray-300'}`}>A+</button>
                             </div>
-                        </div>
 
-                        {/* RIGHT: Notifications & Profile */}
-                        <div className="flex items-center gap-4">
+                            {/* Theme Toggle */}
+                            <button onClick={() => setDarkMode(!darkMode)} className={`${isApplicant ? 'text-gray-400 hover:text-yellow-500' : 'text-gray-500 hover:text-yellow-500'} transition`}>
+                                {darkMode ? '🌙' : '☀️'}
+                            </button>
 
                             <NotificationBell />
 
-                            {/* Profile Dropdown (Desktop) */}
-                            <div className="hidden sm:flex relative">
-                                <Dropdown>
-                                    <Dropdown.Trigger>
-                                        <span className="inline-flex rounded-md">
-                                            <button type="button" className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-200 bg-transparent hover:text-white focus:outline-none transition ease-in-out duration-150">
-                                                {currentUser.name || 'Account'}
-                                                <svg className="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                                </svg>
-                                            </button>
+                            {/* Profile */}
+                            <Dropdown>
+                                <Dropdown.Trigger>
+                                    <button className="flex items-center gap-2 focus:outline-none group">
+                                        <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold border transition ${isApplicant ? 'bg-blue-600 text-white border-blue-500 shadow-md group-hover:bg-blue-700' : 'bg-white text-blue-900 border-blue-200'}`}>
+                                            {currentUser.name ? currentUser.name.charAt(0) : 'U'}
+                                        </div>
+                                        <span className={`hidden md:block text-sm font-medium ${isApplicant ? 'text-gray-700 dark:text-gray-200' : 'text-gray-700 dark:text-gray-200'}`}>
+                                            {currentUser.name}
                                         </span>
-                                    </Dropdown.Trigger>
-                                    <Dropdown.Content>
-                                        <Dropdown.Link href={route('profile.edit')}>{__('Profile')}</Dropdown.Link>
-                                        <Dropdown.Link href={route('logout')} method="post" as="button">{__('Log Out')}</Dropdown.Link>
-                                    </Dropdown.Content>
-                                </Dropdown>
-                            </div>
-
-                            {/* Hamburger (Mobile) */}
-                            <div className="-mr-2 flex items-center sm:hidden">
-                                <button
-                                    onClick={() => setShowingNavigationDropdown((previousState) => !previousState)}
-                                    className="inline-flex items-center justify-center p-2 rounded-md text-gray-200 hover:text-white hover:bg-blue-700 focus:outline-none transition duration-150 ease-in-out"
-                                >
-                                    <svg className="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                                        <path className={!showingNavigationDropdown ? 'inline-flex' : 'hidden'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                                        <path className={showingNavigationDropdown ? 'inline-flex' : 'hidden'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
+                                    </button>
+                                </Dropdown.Trigger>
+                                <Dropdown.Content>
+                                    <div className="px-4 py-2 border-b text-xs text-gray-500">{currentUser.email}</div>
+                                    <Dropdown.Link href={route('profile.edit')}>Profile</Dropdown.Link>
+                                    <Dropdown.Link href={route('logout')} method="post" as="button" className="text-red-600">Log Out</Dropdown.Link>
+                                </Dropdown.Content>
+                            </Dropdown>
                         </div>
-                    </div>
-                </div>
+                    </header>
 
-                {/* --- MOBILE MENU --- */}
-                <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ` sm:hidden ${darkMode ? 'bg-gray-800' : 'bg-blue-800'} border-t border-blue-900`}>
-                    <div className="pt-2 pb-3 space-y-1">
-                        {showApplicantDashboard && (
-                            <Link href={route('dashboard')} className={mobileNavLinkClasses(route().current('dashboard'))}>
-                                {__('My Dashboard')}
-                            </Link>
-                        )}
-                        {isStaff && (
-                            <>
-                                <Link href={route('staff.dashboard')} className={mobileNavLinkClasses(route().current('staff.dashboard'))}>Staff Dashboard</Link>
-                                <Link href={route('staff.applications.index')} className={mobileNavLinkClasses(route().current('staff.applications.index'))}>All Applications</Link>
-                                <Link href={route('staff.reports.index')} className={mobileNavLinkClasses(route().current('staff.reports.*'))}>Reports</Link>
-                            </>
-                        )}
-                        {/* --- RESTORED ADMIN LINKS (MOBILE) --- */}
-                        {isAdmin && (
-                            <>
-                                <Link href={route('admin.dashboard')} className={mobileNavLinkClasses(route().current('admin.dashboard'))}>Admin Dashboard</Link>
-                                <Link href={route('admin.applications.index')} className={mobileNavLinkClasses(route().current('admin.applications.*'))}>All Applications</Link>
-                                <Link href={route('admin.reports.index')} className={mobileNavLinkClasses(route().current('admin.reports.*'))}>Reports</Link>
-                                <Link href={route('admin.users.index')} className={mobileNavLinkClasses(route().current('admin.users.*'))}>Manage Users</Link>
-                                <Link href={route('admin.news.index')} className={mobileNavLinkClasses(route().current('admin.news.*'))}>News</Link>
-                                <Link href={route('admin.programs.index')} className={mobileNavLinkClasses(route().current('admin.programs.*'))}>Programs</Link>
-                                <Link href={route('admin.audit-logs')} className={mobileNavLinkClasses(route().current('admin.audit-logs'))}>Audit Logs</Link>
-                                <Link href={route('admin.settings.index')} className={mobileNavLinkClasses(route().current('admin.settings.*'))}>Settings</Link>
-                            </>
-                        )}
-                    </div>
-
-                    {/* Mobile Profile Section */}
-                    <div className="pt-4 pb-4 border-t border-blue-700 dark:border-gray-700">
-                        <div className="px-4 flex items-center">
-                            <div className="shrink-0">
-                                <div className="h-10 w-10 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-bold text-lg">
-                                    {currentUser.name ? currentUser.name.charAt(0) : 'U'}
+                    {/* SCROLLABLE CONTENT */}
+                    <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-900">
+                        {header && (
+                            <div className="mb-6">
+                                <div className={`p-4 sm:p-6 rounded-lg shadow-sm ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                                    {header}
                                 </div>
                             </div>
-                            <div className="ml-3">
-                                <div className="font-medium text-base text-white">{currentUser.name}</div>
-                                <div className="font-medium text-sm text-blue-200">{currentUser.email}</div>
-                            </div>
-                        </div>
-                        <div className="mt-3 space-y-1">
-                            <Link href={route('profile.edit')} className="block w-full pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-blue-200 hover:text-white hover:bg-blue-700 transition">
-                                {__('Profile')}
-                            </Link>
-                            <Link href={route('logout')} method="post" as="button" className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-blue-200 hover:text-white hover:bg-blue-700 transition">
-                                {__('Log Out')}
-                            </Link>
-                        </div>
-                    </div>
+                        )}
+                        {children}
+                    </main>
                 </div>
-            </nav>
+            </div>
 
-            {header && (
-                <header className={`${darkMode ? 'bg-gray-800 shadow-gray-900' : 'bg-white'} shadow relative z-10 transition-colors duration-300`}>
-                    <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        <div className={darkMode ? 'text-gray-100' : 'text-gray-800'}>
-                            {header}
-                        </div>
-                    </div>
-                </header>
-            )}
-
-            <main className={darkMode ? 'text-gray-100' : ''}>{children}</main>
+            {sidebarOpen && <div className="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden" onClick={() => setSidebarOpen(false)}></div>}
         </div>
     );
 }

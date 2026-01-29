@@ -12,9 +12,11 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
+        // --- 1. INITIALIZE QUERY ---
         $query = User::query();
 
-        // 1. Search Logic (Name or Email)
+        // --- 2. SEARCH LOGIC ---
+        // We group this so OR logic doesn't mess up other filters
         if ($request->search) {
             $query->where(function($q) use ($request) {
                 $q->where('name', 'like', '%'.$request->search.'%')
@@ -22,13 +24,18 @@ class UserController extends Controller
             });
         }
 
-        // 2. Filter by Role (Admin, Staff, User)
+        // --- 3. FILTER BY ROLE ---
         if ($request->role) {
             $query->where('type', $request->role);
         }
 
-        // 3. Pagination (10 users per page)
-        $users = $query->latest()->paginate(10)->withQueryString();
+        // --- 4. DETERMINISTIC SORTING (CRITICAL FIX) ---
+        // Instead of just 'latest()', we sort by Date AND ID.
+        // This stops the list from "shuffling" when timestamps are identical.
+        $users = $query->orderBy('created_at', 'desc')
+                       ->orderBy('id', 'desc')
+                       ->paginate(10)
+                       ->withQueryString(); // Keeps your search active on Page 2
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
@@ -37,26 +44,22 @@ class UserController extends Controller
         ]);
     }
 
-    // --- REPLACED: Explicit Role Change Logic ---
     public function changeRole(Request $request, User $user)
     {
-        // 1. Validate the input to ensure only valid roles are passed
         $request->validate([
             'role' => 'required|in:admin,staff,user',
         ]);
 
-        // 2. Safety: Admin cannot change their own role
+        // Safety: Admin cannot change their own role
         if ($user->id === Auth::id()) {
             return redirect()->back()->with('error', 'You cannot change your own role.');
         }
 
-        // 3. Update the user
         $user->update(['type' => $request->role]);
 
         return redirect()->back()->with('message', "User role updated to {$request->role}.");
     }
 
-    // --- ACTION: DEACTIVATE / ACTIVATE ---
     public function toggleStatus(User $user)
     {
         // Safety: Admin cannot deactivate themselves
