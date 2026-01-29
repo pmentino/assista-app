@@ -44,7 +44,7 @@ Route::get('/', function () {
         }
     } catch (\Exception $e) {}
 
-    // --- MANUAL TRANSLATION LOADER (Added for Welcome Page) ---
+    // --- MANUAL TRANSLATION LOADER ---
     $locale = session('locale', 'en');
     $path = resource_path("lang/{$locale}.json");
     $translations = [];
@@ -52,7 +52,6 @@ Route::get('/', function () {
     if (file_exists($path)) {
         $translations = json_decode(file_get_contents($path), true) ?? [];
     }
-    // ----------------------------------------------------------
 
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -63,20 +62,19 @@ Route::get('/', function () {
         'programs' => $programs,
         'settings' => $settings,
         'auth' => ['user' => Auth::user()],
-        // Pass Translation Data
         'translations' => $translations,
         'locale' => $locale
     ]);
 });
 
 // Language Switcher
-    Route::get('language/{locale}', function ($locale) {
-        if (in_array($locale, ['en', 'fil', 'hil'])) {
-            session()->put('locale', $locale);
-            session()->save();
-        }
-        return back();
-    })->name('language.switch');
+Route::get('language/{locale}', function ($locale) {
+    if (in_array($locale, ['en', 'fil', 'hil'])) {
+        session()->put('locale', $locale);
+        session()->save();
+    }
+    return back();
+})->name('language.switch');
 
 // Tracking Routes
 Route::get('/track', [ApplicationController::class, 'showTrack'])->name('track.index');
@@ -126,7 +124,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'locale' => $locale
         ]);
     })->name('dashboard');
-
 
     // FAQs
     Route::get('/faqs', function () {
@@ -231,9 +228,32 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         $allBarangays = ApplicationModel::select('barangay')->distinct()->orderBy('barangay')->pluck('barangay');
         $currentFilters = $request->only(['barangay', 'start_date', 'end_date']);
 
-        $pendingApplications = ApplicationModel::where('status', 'Pending')
-            ->orderBy('created_at', 'asc')
-            ->take(5)
+        // --- FIXED: QUEUE LOGIC (Verification Queue with Search) ---
+        $queueQuery = ApplicationModel::where('status', 'Pending');
+
+        // 1. Search Filter
+        if ($request->has('q_search') && $request->q_search) {
+            $search = $request->q_search;
+            $queueQuery->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('id', 'like', "%{$search}%");
+            });
+        }
+
+        // 2. Program Filter
+        if ($request->has('q_program') && $request->q_program) {
+            $queueQuery->where('program', $request->q_program);
+        }
+
+        // 3. Sorting
+        if ($request->has('q_sort') && $request->q_sort === 'newest') {
+            $queueQuery->latest();
+        } else {
+            $queueQuery->oldest(); // FIFO Default
+        }
+
+        $pendingApplications = $queueQuery->take(10)
             ->get()
             ->map(function ($app) {
                 return [
@@ -241,11 +261,14 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
                     'first_name' => $app->first_name,
                     'last_name' => $app->last_name,
                     'barangay' => $app->barangay,
-                    'assistance_type' => $app->program,
+                    'program' => $app->program,
                     'created_at' => $app->created_at,
                 ];
             })
             ->values();
+
+        // Keep existing filters for frontend state
+        $currentQueueFilters = $request->only(['q_search', 'q_program', 'q_sort']);
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => $stats,
@@ -256,6 +279,8 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
             'allBarangays' => $allBarangays,
             'filters' => $currentFilters,
             'pendingApplications' => $pendingApplications,
+            'queueFilters' => $currentQueueFilters, // <--- ADDED THIS FOR SEARCH BAR
+            'programs' => \App\Models\AssistanceProgram::where('is_active', true)->pluck('title'), // <--- ADDED FOR DROPDOWN
             'auth' => [
                 'user' => Auth::user(),
                 'notifications' => Auth::user() ? Auth::user()->unreadNotifications : []
