@@ -81,13 +81,13 @@ export default function AuthenticatedLayout({ user, header, children }) {
     ];
 
     return (
-        <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
+        <div className={`h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
             <Toaster position="top-right" />
 
             <div className="flex flex-1 overflow-hidden">
                 {/* --- SIDEBAR (ONLY FOR ADMIN/STAFF) --- */}
                 {!isApplicant && (
-                    <div className={`fixed inset-y-0 left-0 z-30 w-64 bg-blue-900 text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto ${sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
+                    <div className={`fixed top-0 left-0 z-30 w-64 bg-blue-900 text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto ${sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
                         <div className="flex items-center justify-center h-16 bg-blue-950 border-b border-blue-800">
                             <Link href="/" className="flex items-center gap-2">
                                 <img src="/images/logo.png" alt="Logo" className="h-8 w-auto" />
