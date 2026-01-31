@@ -15,7 +15,7 @@ const REQUIREMENTS_MAP = {
 };
 
 export default function ApplicationShow({ application, programSettings }) {
-    const { auth, flash = {} } = usePage().props;
+    const { auth } = usePage().props; // Flash handled by Layout now
     const user = auth?.user || { name: 'Admin' };
 
     // Form for Remarks (Rejection / Staff Note)
@@ -38,7 +38,7 @@ export default function ApplicationShow({ application, programSettings }) {
             preserveScroll: true,
             onSuccess: () => {
                 setShowRejectModal(false);
-                window.location.reload();
+                // FIX: Removed window.location.reload() to prevent toast from vanishing
             },
         });
     };
@@ -126,18 +126,8 @@ export default function ApplicationShow({ application, programSettings }) {
             <Head title={`Application #${application.id}`} />
 
             <div className="py-6 md:py-10 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
-                <div className="w-full flex justify-center items-center">
-                   {flash.message && (
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-                            <div className="bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded relative flex justify-between items-center shadow-sm">
-                                <div className="flex items-center">
-                                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
-                                    <span className="font-bold">{flash.message}</span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                {/* Note: Flash message handling is now done globally in AuthenticatedLayout via Toast */}
+
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

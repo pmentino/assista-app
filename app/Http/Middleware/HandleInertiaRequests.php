@@ -23,6 +23,7 @@ class HandleInertiaRequests extends Middleware
 
         $path = base_path("resources/lang/{$locale}.json");
         $translations = [];
+
         if (File::exists($path)) {
             $translations = json_decode(File::get($path), true);
         }
@@ -31,17 +32,17 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
-                // 1. ENSURE THIS LINE IS UNCOMMENTED FOR BELL TO WORK
+                // Ensure notifications are passed for the Bell
                 'notifications' => $request->user() ? $request->user()->unreadNotifications : [],
             ],
             'locale' => $locale,
             'translations' => $translations,
-            // 2. ENSURE THIS SECTION IS CORRECT FOR TOASTS
+            // --- FIX: ADDED 'warning' KEY HERE ---
             'flash' => [
                 'message' => fn () => $request->session()->get('message'),
                 'success' => fn () => $request->session()->get('success'),
                 'error'   => fn () => $request->session()->get('error'),
-                'warning' => fn () => $request->session()->get('warning'),
+                'warning' => fn () => $request->session()->get('warning'), // <--- CRITICAL FIX
             ],
         ];
     }

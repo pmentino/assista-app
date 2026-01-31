@@ -3,47 +3,36 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\Application;
 
-class ApplicationStatusAlert extends Notification implements ShouldQueue
+// 1. REMOVED "implements ShouldQueue" so it saves INSTANTLY
+class ApplicationStatusAlert extends Notification
 {
     use Queueable;
 
     protected $application;
 
-    /**
-     * Create a new notification instance.
-     */
     public function __construct(Application $application)
     {
         $this->application = $application;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
     public function via(object $notifiable): array
     {
-        return ['database']; // Stores in the 'notifications' table
+        return ['database'];
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(object $notifiable): array
     {
+        // 2. ADDED these specific keys so your "Detailed Design" works
         return [
             'application_id' => $this->application->id,
-            'status' => $this->application->status,
-            'message' => 'Your application #' . str_pad($this->application->id, 5, '0', STR_PAD_LEFT) . ' has been ' . strtolower($this->application->status) . '.',
-            'link' => route('applications.edit', $this->application->id),
+            'status'         => $this->application->status,
+            'program'        => $this->application->program, // <--- Required for your design
+            'applicant_name' => $this->application->first_name . ' ' . $this->application->last_name, // <--- Required for your design
+            'link'           => route('applications.edit', $this->application->id),
+            'message'        => 'Your application for ' . $this->application->program . ' has been ' . strtolower($this->application->status) . '.',
         ];
     }
 }

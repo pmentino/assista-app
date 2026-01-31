@@ -150,7 +150,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/applications/{application}/update', [ApplicationController::class, 'update'])->name('applications.update');
     Route::get('/applications/{application}/claim-stub', [ApplicationController::class, 'generateClaimStub'])->name('applications.claim-stub');
 
-    // Notification Routes
+    // --- NOTIFICATION ROUTES ---
     Route::get('/notifications', function (Request $request) {
         return response()->json([
             'notifications' => $request->user()->notifications()->latest()->take(10)->get(),
@@ -166,8 +166,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/notifications/read-all', function (Request $request) {
         $request->user()->unreadNotifications->markAsRead();
         return response()->noContent();
-    });
-});
+    })->name('notifications.read-all');
+
+}); // <--- THIS WAS MISSING AND CAUSED THE CRASH
 
 
 // --- ADMIN ROUTES ---
@@ -228,10 +229,9 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         $allBarangays = ApplicationModel::select('barangay')->distinct()->orderBy('barangay')->pluck('barangay');
         $currentFilters = $request->only(['barangay', 'start_date', 'end_date']);
 
-        // --- FIXED: QUEUE LOGIC (Verification Queue with Search) ---
+        // Queue Logic
         $queueQuery = ApplicationModel::where('status', 'Pending');
 
-        // 1. Search Filter
         if ($request->has('q_search') && $request->q_search) {
             $search = $request->q_search;
             $queueQuery->where(function($q) use ($search) {
@@ -241,16 +241,14 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
             });
         }
 
-        // 2. Program Filter
         if ($request->has('q_program') && $request->q_program) {
             $queueQuery->where('program', $request->q_program);
         }
 
-        // 3. Sorting
         if ($request->has('q_sort') && $request->q_sort === 'newest') {
             $queueQuery->latest();
         } else {
-            $queueQuery->oldest(); // FIFO Default
+            $queueQuery->oldest();
         }
 
         $pendingApplications = $queueQuery->take(10)
@@ -267,7 +265,6 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
             })
             ->values();
 
-        // Keep existing filters for frontend state
         $currentQueueFilters = $request->only(['q_search', 'q_program', 'q_sort']);
 
         return Inertia::render('Admin/Dashboard', [
@@ -279,8 +276,8 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
             'allBarangays' => $allBarangays,
             'filters' => $currentFilters,
             'pendingApplications' => $pendingApplications,
-            'queueFilters' => $currentQueueFilters, // <--- ADDED THIS FOR SEARCH BAR
-            'programs' => \App\Models\AssistanceProgram::where('is_active', true)->pluck('title'), // <--- ADDED FOR DROPDOWN
+            'queueFilters' => $currentQueueFilters,
+            'programs' => \App\Models\AssistanceProgram::where('is_active', true)->pluck('title'),
             'auth' => [
                 'user' => Auth::user(),
                 'notifications' => Auth::user() ? Auth::user()->unreadNotifications : []
@@ -288,10 +285,8 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         ]);
     })->name('dashboard');
 
-    // Audit Logs
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs');
 
-    // Budget Update
     Route::post('/dashboard/budget', function (Request $request) {
         $request->validate([ 'amount' => 'required|numeric|min:0' ]);
         $now = \Carbon\Carbon::now();
@@ -335,25 +330,20 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
     Route::post('/applications/{application}/remarks', [App\Http\Controllers\ApplicationController::class, 'addRemark'])->name('applications.remarks.store');
     Route::post('/applications/{application}/note', [App\Http\Controllers\ApplicationController::class, 'saveNote'])->name('applications.note.store');
 
-    // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
     Route::get('/reports/export-excel', [ReportController::class, 'exportExcel'])->name('reports.export-excel');
 
-    // News
     Route::resource('news', NewsController::class);
 
-    // Programs
     Route::get('/programs', [AssistanceProgramController::class, 'index'])->name('programs.index');
     Route::post('/programs', [AssistanceProgramController::class, 'store'])->name('programs.store');
     Route::put('/programs/{program}', [AssistanceProgramController::class, 'update'])->name('programs.update');
     Route::delete('/programs/{program}', [AssistanceProgramController::class, 'destroy'])->name('programs.destroy');
 
-    // Settings
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
 
-    // Users
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/users/{user}/role', [UserController::class, 'changeRole'])->name('users.role');
     Route::post('/users/{user}/status', [UserController::class, 'toggleStatus'])->name('users.status');
@@ -368,7 +358,6 @@ Route::middleware(['auth', 'verified', 'is_staff'])->prefix('staff')->name('staf
     Route::post('/applications/{application}/remarks', [StaffController::class, 'storeRemark'])->name('applications.remarks.store');
     Route::post('/applications/{application}/reject', [StaffController::class, 'reject'])->name('applications.reject');
 
-    // Staff Reports
     Route::get('/reports', [StaffController::class, 'reportsIndex'])->name('reports.index');
     Route::get('/reports/export-pdf', [StaffController::class, 'exportPdf'])->name('reports.export-pdf');
     Route::get('/reports/export-excel', [StaffController::class, 'exportExcel'])->name('reports.export-excel');
