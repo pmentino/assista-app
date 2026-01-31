@@ -50,7 +50,7 @@
         <tr>
             <td class="logo-col text-right">
                 {{-- Ensure these images exist in public/images folder --}}
-                <img src="{{ public_path('images/cswdo-logo.png') }}" class="logo-img" alt="CSWDO Logo">
+                <img src="{{ public_path('images/cswdo-logo.webp') }}" class="logo-img" alt="CSWDO Logo">
             </td>
             <td class="text-col header-text">
                 <h4>Republic of the Philippines</h4>
@@ -60,7 +60,7 @@
                 <div class="report-title">REPORT OF ASSISTANCE RELEASED (AICS)</div>
             </td>
             <td class="logo-col text-left">
-                <img src="{{ public_path('images/roxas-seal.png') }}" class="logo-img" alt="Roxas Seal">
+                <img src="{{ public_path('images/roxas-seal.webp') }}" class="logo-img" alt="Roxas Seal">
             </td>
         </tr>
     </table>

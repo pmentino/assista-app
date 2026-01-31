@@ -94,7 +94,7 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
         }
     };
 
-    // 2. BAR CHART (Count Data - FIX APPLIED)
+    // 2. BAR CHART (Count Data)
     const topBarangays = barangayStats.slice(0, 5);
     const barChartData = {
         labels: topBarangays.map(b => b.barangay),
@@ -168,7 +168,7 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                         </div>
                     </div>
 
-                    {/* --- ACTION CENTER (MOVED TO TOP) --- */}
+                    {/* --- ACTION CENTER (TOP) --- */}
                     <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-8 border border-amber-200 dark:border-amber-900/50 transition-colors duration-300">
                         <div className="bg-amber-50 dark:bg-amber-900/20 px-6 py-4 border-b border-amber-200 dark:border-amber-800/50 flex flex-col md:flex-row justify-between items-center gap-4">
                             <div className="flex-1">
@@ -275,7 +275,6 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                         <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
                             <div className="flex flex-col xl:flex-row justify-between items-center mb-6 gap-4">
                                 <h3 className="text-lg font-bold text-gray-800 dark:text-white">Financial Trends</h3>
-                                {/* Date Filters */}
                                 <div className="flex flex-wrap gap-2 items-center bg-gray-50 dark:bg-gray-700/50 p-2 rounded-md border dark:border-gray-700">
                                     <input type="date" value={filterValues.start_date} onChange={(e) => handleFilterChange('start_date', e.target.value)} className="border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded text-sm py-1 px-2" />
                                     <input type="date" value={filterValues.end_date} onChange={(e) => handleFilterChange('end_date', e.target.value)} className="border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded text-sm py-1 px-2" />
@@ -342,22 +341,90 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                         )}
                     </div>
 
-                    {/* MODALS */}
+                    {/* --- PROFESSIONAL BUDGET MODAL --- */}
                     {isBudgetModalOpen && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                            <div className="bg-white p-6 rounded shadow-lg w-96">
-                                <h3 className="font-bold mb-4">Set Monthly Budget</h3>
-                                <form onSubmit={handleBudgetSubmit}>
-                                    <input type="number" value={budgetForm.data.amount} onChange={e => budgetForm.setData('amount', e.target.value)} className="w-full border p-2 mb-4 rounded" />
-                                    <div className="flex justify-end gap-2">
-                                        <button type="button" onClick={() => setIsBudgetModalOpen(false)} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
-                                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+                        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full flex items-center justify-center z-50 backdrop-blur-sm px-4">
+                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md border dark:border-gray-700 overflow-hidden transform transition-all scale-100">
+                                {/* Modal Header */}
+                                <div className="bg-indigo-600 px-6 py-4 flex justify-between items-center">
+                                    <h3 className="text-lg font-bold text-white uppercase tracking-wider">
+                                        Update Monthly Allocation
+                                    </h3>
+                                    <button onClick={() => setIsBudgetModalOpen(false)} className="text-white hover:text-gray-200 transition">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                </div>
+
+                                {/* Modal Body */}
+                                <form onSubmit={handleBudgetSubmit} className="p-6">
+                                    <div className="mb-6">
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                                            Current Budget Limit
+                                        </label>
+                                        <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 mb-4">
+                                            <span className="text-gray-500 dark:text-gray-400 text-sm">Active Limit</span>
+                                            <span className="font-mono font-bold text-gray-800 dark:text-white text-lg">
+                                                {formatCurrency(budgetStats?.total_budget)}
+                                            </span>
+                                        </div>
+
+                                        <label className="block text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase mb-2">
+                                            New Allocation Amount
+                                        </label>
+                                        <div className="relative rounded-md shadow-sm">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <span className="text-gray-500 dark:text-gray-400 sm:text-lg font-bold">₱</span>
+                                            </div>
+                                            <input
+                                                type="number"
+                                                className="block w-full pl-8 pr-12 py-3 border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-lg font-bold"
+                                                placeholder="0.00"
+                                                value={budgetForm.data.amount}
+                                                onChange={(e) => budgetForm.setData('amount', e.target.value)}
+                                                required
+                                                min="0"
+                                                step="0.01"
+                                            />
+                                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                <span className="text-gray-500 sm:text-sm">PHP</span>
+                                            </div>
+                                        </div>
+                                        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                            This amount will limit the total approvals for {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}.
+                                        </p>
+                                    </div>
+
+                                    {/* Modal Footer */}
+                                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsBudgetModalOpen(false)}
+                                            className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={budgetForm.processing}
+                                            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-lg shadow-md transition disabled:opacity-50 flex items-center"
+                                        >
+                                            {budgetForm.processing ? (
+                                                <span className="flex items-center">
+                                                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    Updating...
+                                                </span>
+                                            ) : 'Confirm Allocation'}
+                                        </button>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     )}
 
+                    {/* --- BARANGAY REPORT MODAL (FIXED LINKS) --- */}
                     {isBarangayModalOpen && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                             <div className="bg-white dark:bg-gray-800 p-0 rounded-lg shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[80vh]">
@@ -381,7 +448,15 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                                                     <td className="px-6 py-4 text-sm text-gray-500">#{index + 1}</td>
                                                     <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-white">{item.barangay}</td>
                                                     <td className="px-6 py-4 text-center text-sm">
-                                                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-bold">{item.total}</span>
+                                                        <Link
+                                                            href={route('admin.applications.index', { barangay: item.barangay, status: 'Approved' })}
+                                                            className="inline-block bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-800 text-blue-800 dark:text-blue-300 px-3 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer"
+                                                            onClick={(e) => {
+                                                                setIsBarangayModalOpen(false); // Close modal on click
+                                                            }}
+                                                        >
+                                                            {item.total}
+                                                        </Link>
                                                     </td>
                                                     <td className="px-6 py-4 text-right text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(item.amount)}</td>
                                                 </tr>

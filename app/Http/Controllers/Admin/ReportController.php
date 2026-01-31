@@ -56,7 +56,7 @@ class ReportController extends Controller
 
         // --- NEW: Fetch Dropdown Data ---
         $allBarangays = Application::select('barangay')->distinct()->orderBy('barangay')->pluck('barangay');
-        $programs = \App\Models\AssistanceProgram::pluck('title'); // Get all programs (even inactive ones for reports)
+        $programs = \App\Models\AssistanceProgram::pluck('title');
 
         return Inertia::render('Admin/Reports/Index', [
             'applications' => $applications,

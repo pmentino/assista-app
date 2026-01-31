@@ -89,14 +89,14 @@ export default function ApplicationShow({ application: initialApplication }) {
                         </span>
                     </div>
 
-                    {/* --- REJECT BUTTON (Only if Pending) --- */}
+                    {/* --- REJECT BUTTON (MATCHING ADMIN DESIGN) --- */}
                     {application.status === 'Pending' && (
-                        <div>
+                        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                             <button
                                 onClick={() => setShowRejectModal(true)}
-                                className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest focus:outline-none focus:border-red-900 focus:ring ring-red-300 disabled:opacity-25 transition ease-in-out duration-150"
+                                className="w-full sm:w-auto justify-center px-4 py-3 bg-white dark:bg-gray-800 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-400 font-bold rounded-lg shadow-sm hover:bg-red-50 dark:hover:bg-red-900/20 transition flex items-center"
                             >
-                                <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                                 Reject / Return
