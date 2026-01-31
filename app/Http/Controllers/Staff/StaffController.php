@@ -8,24 +8,23 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Application;
 use App\Models\AssistanceProgram;
-use App\Models\AuditLog; // <--- CRITICAL IMPORT
+use App\Models\AuditLog;
 use App\Models\Setting;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ApplicationStatusUpdated;
 
 class StaffController extends Controller
 {
-    // ... (dashboard, applicationsIndex, applicationsShow methods remain the same) ...
     public function dashboard(Request $request)
     {
-        // 1. Get Stats
         $stats = [
             'total'   => Application::count(),
             'pending' => Application::where('status', 'Pending')->count(),
             'today'   => Application::whereDate('created_at', \Carbon\Carbon::today())->count(),
         ];
 
-        // 2. Queue Logic
         $query = Application::where('status', 'Pending')->with('user');
 
         if ($request->search) {
@@ -40,15 +39,10 @@ class StaffController extends Controller
             $query->where('program', $request->program);
         }
 
-        if ($request->sort === 'newest') {
-            $query->latest();
-        } else {
-            $query->oldest();
-        }
+        $query->oldest(); // FIFO: First-In, First-Out for fairness
 
         $queue = $query->take(10)->get();
 
-        // 3. Get Programs (Safely)
         $programs = AssistanceProgram::where('is_active', true)
                     ->orderBy('title')
                     ->pluck('title');
@@ -114,52 +108,26 @@ class StaffController extends Controller
         ]);
     }
 
-    // --- ACTIONS (Now with Audit Logging) ---
+    // --- STAFF ACTIONS (VERIFICATION ONLY) ---
 
+    // 1. Verify / Add Note (Does NOT Approve)
     public function storeRemark(Request $request, Application $application)
     {
         $request->validate([ 'remarks' => 'required|string|max:1000' ]);
 
         $application->update([ 'remarks' => $request->remarks ]);
 
-        // LOGGING
         AuditLog::create([
             'user_id' => Auth::id(),
-            'action'  => 'Added Note',
-            'details' => "Added internal note to App #{$application->id}",
+            'action'  => 'Verified Application',
+            'details' => "Staff verification complete for App #{$application->id}. Note: {$request->remarks}",
             'ip_address' => $request->ip()
         ]);
 
-        return redirect()->back()->with('message', 'Remark saved successfully.');
+        return redirect()->back()->with('message', 'Verification assessment recorded. Forwarded for Admin approval.');
     }
 
-    // Ensure you have an approve method for Staff if they are allowed to approve
-    // If Admin handles strict approval, this might not be needed, but good to have if Staff can approve.
-    public function approve(Request $request, Application $application)
-    {
-        $request->validate(['amount' => 'required|numeric|min:0']);
-
-        $application->update([
-            'status' => 'Approved',
-            'amount_released' => $request->amount,
-            'approved_date' => now(),
-        ]);
-
-        if ($application->user) {
-            $application->user->notify(new ApplicationStatusAlert($application));
-        }
-
-        // LOGGING
-        AuditLog::create([
-            'user_id' => Auth::id(),
-            'action'  => 'Approved Application',
-            'details' => "Staff approved App #{$application->id} for ₱" . number_format($request->amount, 2),
-            'ip_address' => $request->ip()
-        ]);
-
-        return redirect()->back()->with('message', 'Application approved successfully.');
-    }
-
+    // 2. Reject / Return (If documents are invalid)
     public function reject(Request $request, Application $application)
     {
         $request->validate([ 'remarks' => 'required|string|max:1000' ]);
@@ -169,26 +137,22 @@ class StaffController extends Controller
             'remarks' => $request->remarks,
         ]);
 
-        if ($application->user) {
-            $application->user->notify(new ApplicationStatusAlert($application));
-        }
+        // ... (Notification code) ...
 
-        // LOGGING
         AuditLog::create([
             'user_id' => Auth::id(),
-            'action'  => 'Rejected Application',
-            'details' => "Staff returned/rejected App #{$application->id}. Reason: {$request->remarks}",
+            'action'  => 'Returned Application',
+            'details' => "Staff returned App #{$application->id}. Reason: {$request->remarks}",
             'ip_address' => $request->ip()
         ]);
 
-        return redirect()->back()->with('message', 'Application returned/rejected successfully.');
+        // FIX: Change 'message' to 'warning'
+        return redirect()->back()->with('warning', 'Application returned to applicant for correction.');
     }
 
-    // ... (reportsIndex, exportPdf, exportExcel methods remain the same) ...
-    public function reportsIndex(Request $request)
-    {
+    // ... (Reports and Exports remain unchanged below) ...
+    public function reportsIndex(Request $request) {
         $query = Application::query();
-
         if ($request->filled('status')) $query->where('status', $request->status);
         if ($request->filled('program')) $query->where('program', $request->program);
         if ($request->filled('barangay')) $query->where('barangay', $request->barangay);
@@ -196,14 +160,12 @@ class StaffController extends Controller
         if ($request->filled('end_date')) $query->whereDate('created_at', '<=', $request->end_date);
 
         $applications = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
-
         $stats = [
             'total' => Application::count(),
             'approved' => Application::where('status', 'Approved')->count(),
             'pending' => Application::where('status', 'Pending')->count(),
             'rejected' => Application::where('status', 'Rejected')->count(),
         ];
-
         $allBarangays = Application::distinct()->orderBy('barangay')->pluck('barangay');
 
         return Inertia::render('Staff/Reports/Index', [
@@ -215,10 +177,8 @@ class StaffController extends Controller
         ]);
     }
 
-    public function exportPdf(Request $request)
-    {
+    public function exportPdf(Request $request) {
         $query = Application::query();
-
         if ($request->filled('status')) $query->where('status', $request->status);
         if ($request->filled('program')) $query->where('program', $request->program);
         if ($request->filled('barangay')) $query->where('barangay', $request->barangay);
@@ -226,7 +186,6 @@ class StaffController extends Controller
         if ($request->filled('end_date')) $query->whereDate('created_at', '<=', $request->end_date);
 
         $applications = $query->orderBy('created_at', 'desc')->get();
-
         $signatories = [
             'prepared_by' => Auth::user()->name,
             'reviewed_by' => Setting::where('key', 'signatory_social_worker')->value('value') ?? 'SOCIAL WORKER',
@@ -238,15 +197,12 @@ class StaffController extends Controller
             'filters' => $request->all(),
             'signatories' => $signatories
         ]);
-
         return $pdf->download('Staff_Report_' . date('Y-m-d') . '.pdf');
     }
 
-    public function exportExcel(Request $request)
-    {
+    public function exportExcel(Request $request) {
         $fileName = 'Staff_Report_' . date('Y-m-d_H-i') . '.csv';
         $query = Application::query();
-
         if ($request->filled('status')) $query->where('status', $request->status);
         if ($request->filled('program')) $query->where('program', $request->program);
         if ($request->filled('barangay')) $query->where('barangay', $request->barangay);
@@ -254,22 +210,13 @@ class StaffController extends Controller
         if ($request->filled('end_date')) $query->whereDate('created_at', '<=', $request->end_date);
 
         $applications = $query->orderBy('created_at', 'desc')->get();
-
-        $headers = [
-            "Content-type"        => "text/csv",
-            "Content-Disposition" => "attachment; filename=$fileName",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
-        ];
-
+        $headers = [ "Content-type" => "text/csv", "Content-Disposition" => "attachment; filename=$fileName", "Pragma" => "no-cache", "Cache-Control" => "must-revalidate, post-check=0, pre-check=0", "Expires" => "0" ];
         $columns = ['Application ID', 'Applicant Name', 'Program Type', 'Status', 'Amount Released', 'Date Submitted', 'Date Approved', 'Contact Number', 'Barangay'];
 
         $callback = function() use($applications, $columns) {
             $file = fopen('php://output', 'w');
             fputs($file, "\xEF\xBB\xBF");
             fputcsv($file, $columns);
-
             foreach ($applications as $app) {
                 fputcsv($file, [
                     $app->id,
@@ -285,7 +232,6 @@ class StaffController extends Controller
             }
             fclose($file);
         };
-
         return response()->stream($callback, 200, $headers);
     }
 }

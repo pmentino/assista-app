@@ -16,9 +16,28 @@ const REQUIREMENTS_MAP = {
 };
 
 export default function ApplicationShow({ application: initialApplication }) {
-    const { auth } = usePage().props;
+    // 1. Get Global Props (including Flash)
+    const { auth, flash } = usePage().props;
     const [application, setApplication] = useState(initialApplication);
     const [showRejectModal, setShowRejectModal] = useState(false);
+
+    // 2. Success Message State
+    const [visibleSuccess, setVisibleSuccess] = useState(null);
+
+    // 3. Watch for Flash Messages
+    useEffect(() => {
+        if (flash?.message) {
+            setVisibleSuccess(flash.message);
+            const timer = setTimeout(() => setVisibleSuccess(null), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [flash]);
+
+    // Update local state when prop changes
+    useEffect(() => {
+        setApplication(initialApplication);
+        setData('remarks', initialApplication.remarks || '');
+    }, [initialApplication]);
 
     // Form for Staff Remarks (General Notes)
     const { data, setData, post, processing, errors, recentlySuccessful } = useForm({
@@ -29,11 +48,6 @@ export default function ApplicationShow({ application: initialApplication }) {
     const rejectForm = useForm({
         remarks: '',
     });
-
-    useEffect(() => {
-        setApplication(initialApplication);
-        setData('remarks', initialApplication.remarks || '');
-    }, [initialApplication]);
 
     // Save General Note
     const submitRemark = (e) => {
@@ -50,6 +64,7 @@ export default function ApplicationShow({ application: initialApplication }) {
             preserveScroll: true,
             onSuccess: () => {
                 setShowRejectModal(false);
+                rejectForm.reset();
             },
         });
     };
@@ -89,7 +104,7 @@ export default function ApplicationShow({ application: initialApplication }) {
                         </span>
                     </div>
 
-                    {/* --- REJECT BUTTON (MATCHING ADMIN DESIGN) --- */}
+                    {/* --- REJECT BUTTON --- */}
                     {application.status === 'Pending' && (
                         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                             <button
@@ -107,6 +122,26 @@ export default function ApplicationShow({ application: initialApplication }) {
             }
         >
             <Head title={`Application #${application.id}`} />
+
+            {/* --- SUCCESS TOAST NOTIFICATION (Fixed Z-Index & Visibility) --- */}
+            {visibleSuccess && (
+                <div className="fixed top-24 right-5 z-[100] flex flex-col gap-2 w-full max-w-sm pointer-events-none">
+                    <div className="bg-white dark:bg-gray-800 border-l-8 border-green-500 rounded-lg shadow-2xl p-4 flex items-start animate-fade-in-left pointer-events-auto ring-1 ring-black/5 dark:ring-white/10">
+                        <div className="flex-shrink-0 text-green-500">
+                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div className="ml-3 w-0 flex-1">
+                            <h3 className="text-sm font-bold text-green-900 dark:text-green-300">Success</h3>
+                            <p className="text-sm text-green-700 dark:text-green-400 mt-1">{visibleSuccess}</p>
+                        </div>
+                        <button onClick={() => setVisibleSuccess(null)} className="ml-4 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <div className="py-6 md:py-10 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -248,9 +283,9 @@ export default function ApplicationShow({ application: initialApplication }) {
                 </div>
             </div>
 
-            {/* --- REJECTION MODAL --- */}
+            {/* --- REJECTION MODAL (Added Error Display) --- */}
             {showRejectModal && (
-                <div className="fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full flex items-center justify-center z-50 backdrop-blur-sm p-4">
+                <div className="fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full flex items-center justify-center z-[100] backdrop-blur-sm p-4">
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-md border dark:border-gray-700">
                         <h3 className="text-lg font-bold mb-2 text-red-700 dark:text-red-400">Reject / Return Application</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
@@ -258,13 +293,17 @@ export default function ApplicationShow({ application: initialApplication }) {
                         </p>
                         <form onSubmit={submitReject}>
                             <textarea
-                                className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:border-red-500 focus:ring-red-500 mb-4"
+                                className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:border-red-500 focus:ring-red-500 mb-2"
                                 rows="4"
                                 value={rejectForm.data.remarks}
                                 onChange={(e) => rejectForm.setData('remarks', e.target.value)}
                                 placeholder="Reason for rejection (e.g., ID is blurry)..."
                                 required
                             ></textarea>
+
+                            {/* FIX: SHOW VALIDATION ERROR HERE */}
+                            <InputError message={rejectForm.errors.remarks} className="mb-4" />
+
                             <div className="flex justify-end gap-2">
                                 <button
                                     type="button"

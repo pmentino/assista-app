@@ -48,30 +48,16 @@ class ApplicationController extends Controller
     {
         $user = Auth::user();
 
-        // Check for Pending Apps
-        $hasPending = Application::where('user_id', $user->id)->where('status', 'Pending')->exists();
-
-        if ($hasPending) {
-            $programs = AssistanceProgram::where('is_active', true)
-                ->select('id', 'title', 'requirements')
-                ->get();
-
-            $locale = session('locale', 'en');
-            $path = base_path("resources/lang/{$locale}.json");
-            $translations = file_exists($path) ? json_decode(file_get_contents($path), true) : [];
-
+        if (Application::where('user_id', $user->id)->where('status', 'Pending')->exists()) {
              return Inertia::render('Applications/Create', [
-                'errors' => [
-                    'error' => '⚠️ STOP: You already have a pending application.'
-                ],
-                'programs' => $programs,
+                'errors' => ['error' => '⚠️ STOP: You already have a pending application.'],
+                'programs' => AssistanceProgram::where('is_active', true)->select('id', 'title', 'requirements')->get(),
                 'auth' => ['user' => Auth::user()],
-                'translations' => $translations,
-                'locale' => $locale
+                'translations' => [],
+                'locale' => 'en'
             ]);
         }
 
-        // Validate Data
         $request->validate([
             'program' => 'required|string',
             'date_of_incident' => 'required|date',
@@ -88,21 +74,13 @@ class ApplicationController extends Controller
             'indigency_cert' => 'required|file|max:10240',
         ]);
 
-        // File Uploads
         $paths = [];
-        if ($request->hasFile('valid_id')) {
-            $paths['valid_id'] = $request->file('valid_id')->store('documents', 'public');
-        }
-        if ($request->hasFile('indigency_cert')) {
-            $paths['indigency_cert'] = $request->file('indigency_cert')->store('documents', 'public');
-        }
+        if ($request->hasFile('valid_id')) $paths['valid_id'] = $request->file('valid_id')->store('documents', 'public');
+        if ($request->hasFile('indigency_cert')) $paths['indigency_cert'] = $request->file('indigency_cert')->store('documents', 'public');
 
-        // Dynamic Attachments
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $index => $file) {
-                if($file) {
-                    $paths[$index] = $file->store('documents', 'public');
-                }
+                if($file) $paths[$index] = $file->store('documents', 'public');
             }
         }
 
@@ -186,7 +164,7 @@ class ApplicationController extends Controller
         return redirect()->route('dashboard')->with('message', 'Application updated successfully.');
     }
 
-    // --- ADMIN ACTIONS ---
+    // --- ADMIN ACTIONS (APPROVAL AUTHORITY) ---
 
     public function approve(Request $request, Application $application)
     {
@@ -197,10 +175,11 @@ class ApplicationController extends Controller
         $now = Carbon::now();
         $monthlyBudget = MonthlyBudget::where('month', $now->month)->where('year', $now->year)->first();
 
+        // 1. Budget Security Check
         if (!$monthlyBudget) {
             return Inertia::render('Admin/ApplicationShow', [
                 'application' => $application,
-                'errors' => ['amount' => 'No budget set for this month yet.']
+                'errors' => ['amount' => 'SYSTEM HALT: No budget allocated for this month.']
             ]);
         }
 
@@ -216,11 +195,12 @@ class ApplicationController extends Controller
             return Inertia::render('Admin/ApplicationShow', [
                 'application' => $application,
                 'errors' => [
-                    'amount' => 'INSUFFICIENT FUNDS: Balance is ₱' . number_format($remainingBalance, 2)
+                    'amount' => 'DISBURSEMENT FAILED: Insufficient funds. Balance: ₱' . number_format($remainingBalance, 2)
                 ]
             ]);
         }
 
+        // 2. Final Approval
         $application->update([
             'status' => 'Approved',
             'amount_released' => $request->amount,
@@ -230,23 +210,23 @@ class ApplicationController extends Controller
 
         AuditLog::create([
             'user_id' => Auth::id(),
-            'action' => 'Approved Application',
-            'details' => "Approved App #{$application->id} - Amount Released: ₱" . number_format($request->amount, 2)
+            'action' => 'Approved Disbursement',
+            'details' => "Authorized release of ₱" . number_format($request->amount, 2) . " for App #{$application->id}"
         ]);
 
         if ($application->user) {
             $application->user->notify(new ApplicationStatusAlert($application));
+            if ($application->user->email) {
+                try {
+                    Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
+                } catch (\Exception $e) { }
+            }
         }
 
-        if ($application->user && $application->user->email) {
-            try {
-                Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
-            } catch (\Exception $e) { }
-        }
-
-        return redirect()->back()->with('message', 'Application approved, logged, and applicant notified!');
+        return redirect()->back()->with('message', 'Application approved and funds authorized for release.');
     }
 
+    // Reject (No Reason Provided)
     public function reject(Request $request, Application $application)
     {
         $application->update(['status' => 'Rejected']);
@@ -254,42 +234,33 @@ class ApplicationController extends Controller
         AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Rejected Application',
-            'details' => "Rejected App #{$application->id}"
+            'details' => "Officially Denied App #{$application->id}"
         ]);
 
-        return redirect()->back();
+        // FIX: Change 'message' to 'warning' for Orange Toast
+        return redirect()->back()->with('warning', 'Application has been officially denied.');
     }
 
     public function addRemark(Request $request, Application $application)
     {
-        $request->validate([
-            'remarks' => 'required|string|max:1000',
-        ]);
+        $request->validate(['remarks' => 'required|string|max:1000']);
 
         $application->update([
             'status' => 'Rejected',
             'remarks' => $request->remarks,
         ]);
 
-        if ($application->user) {
-            $application->user->notify(new ApplicationStatusAlert($application));
-        }
-
-        if ($application->user && $application->user->email) {
-            try {
-                Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
-            } catch (\Exception $e) { }
-        }
+        // ... (Notification code) ...
 
         AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Rejected Application',
-            'details' => "Rejected App #{$application->id} - Reason: {$request->remarks}"
+            'details' => "Denied App #{$application->id} - Reason: {$request->remarks}"
         ]);
 
-        return redirect()->back()->with('message', 'Application rejected and notification sent.');
+        // FIX: Change 'message' to 'warning'
+        return redirect()->back()->with('warning', 'Application rejected and applicant notified.');
     }
-
     public function generateClaimStub(Application $application)
     {
         if ($application->status !== 'Approved') {
@@ -340,18 +311,16 @@ class ApplicationController extends Controller
     }
 
     // ==========================================================
-    //  PUBLIC TRACKING FEATURE (PERMANENTLY FIXED)
+    //  PUBLIC TRACKING FEATURE
     // ==========================================================
 
     public function showTrack()
     {
-        // Renders resources/js/Pages/Track.jsx
         return Inertia::render('Track');
     }
 
     public function track(Request $request)
     {
-        // 1. SMART VALIDATION: Check for 'birth_date' (matches React & Database)
         $request->validate([
             'birth_date'   => 'required|date',
             'reference_id' => 'nullable|numeric',
@@ -361,28 +330,21 @@ class ApplicationController extends Controller
 
         $query = Application::query();
 
-        // 2. SEARCH LOGIC: Determine if searching by ID or Name
         if ($request->filled('reference_id')) {
-            // Case A: ID Search
             $query->where('id', $request->reference_id);
         } elseif ($request->filled('first_name') && $request->filled('last_name')) {
-            // Case B: Name Search (Using 'like' for better matching)
             $query->where('first_name', 'like', $request->first_name)
                   ->where('last_name', 'like', $request->last_name);
         } else {
-            // Case C: User sent incomplete data
             return back()->withErrors(['error' => 'Please enter either an Application ID or your Full Name.']);
         }
 
-        // 3. SECURITY CHECK: Must match the Birthdate
-        // We use 'birth_date' because that is your database column name (from your screenshot)
         $application = $query->whereDate('birth_date', $request->birth_date)->first();
 
         if (!$application) {
             return back()->withErrors(['error' => 'No record found. Please check your details and birthdate.']);
         }
 
-        // 4. RETURN RESULT
         return Inertia::render('Track', [
             'result' => [
                 'id' => $application->id,

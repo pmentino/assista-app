@@ -4,47 +4,46 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Models\Application;
 
-class ApplicationStatusAlert extends Notification
+class ApplicationStatusAlert extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public $application;
+    protected $application;
 
-    public function __construct($application)
+    /**
+     * Create a new notification instance.
+     */
+    public function __construct(Application $application)
     {
         $this->application = $application;
     }
 
-    // --- THIS WAS MISSING ---
-    // This tells Laravel to store the notification in the 'notifications' table
-    public function via($notifiable)
+    /**
+     * Get the notification's delivery channels.
+     *
+     * @return array<int, string>
+     */
+    public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database']; // Stores in the 'notifications' table
     }
 
-    // This defines the data saved in the database
-    public function toArray($notifiable)
+    /**
+     * Get the array representation of the notification.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(object $notifiable): array
     {
-        // Smart Link Logic
-        $actionLink = $this->application->status === 'Rejected'
-            ? route('applications.edit', $this->application->id)
-            : route('dashboard');
-
         return [
-            'id' => $this->application->id,
-
-            // --- DATA FOR TRANSLATION ---
+            'application_id' => $this->application->id,
             'status' => $this->application->status,
-            'program' => $this->application->program,
-            'applicant_name' => $this->application->first_name . ' ' . $this->application->last_name,
-
-            // --- FALLBACK MESSAGES (For Email or plain text) ---
-            'message' => "Application {$this->application->status}",
-            'description' => "The {$this->application->program} request for {$this->application->first_name} {$this->application->last_name} has been processed.",
-
-            'link' => $actionLink,
+            'message' => 'Your application #' . str_pad($this->application->id, 5, '0', STR_PAD_LEFT) . ' has been ' . strtolower($this->application->status) . '.',
+            'link' => route('applications.edit', $this->application->id),
         ];
     }
 }
