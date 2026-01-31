@@ -29,7 +29,7 @@ export default function NotificationBell() {
         }
     };
 
-    // Poll every 5 seconds to ensure instant updates
+    // Poll every 5 seconds
     useEffect(() => {
         fetchNotifications();
         const interval = setInterval(fetchNotifications, 5000);
@@ -49,8 +49,8 @@ export default function NotificationBell() {
     const markAsRead = async (id, link) => {
         try {
             await axios.post(route('notifications.read', id));
-            fetchNotifications(); // Refresh list immediately
-            setIsOpen(false); // Close dropdown
+            fetchNotifications();
+            setIsOpen(false);
         } catch (error) { console.error(error); }
     };
 
@@ -110,7 +110,6 @@ export default function NotificationBell() {
                                         </div>
 
                                         <div className="flex-1">
-                                            {/* --- PREFERRED DESIGN: "The request for [Program]..." --- */}
                                             {notif.data.program ? (
                                                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-0.5 leading-snug">
                                                     {__('The request for')}{' '}

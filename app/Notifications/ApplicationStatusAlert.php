@@ -6,7 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use App\Models\Application;
 
-// 1. REMOVED "implements ShouldQueue" so it saves INSTANTLY
+// FIX: Removed "implements ShouldQueue" to force instant database save
 class ApplicationStatusAlert extends Notification
 {
     use Queueable;
@@ -25,12 +25,12 @@ class ApplicationStatusAlert extends Notification
 
     public function toArray(object $notifiable): array
     {
-        // 2. ADDED these specific keys so your "Detailed Design" works
+        // FIX: Added 'program' and 'applicant_name' for your custom design
         return [
             'application_id' => $this->application->id,
-            'status'         => $this->application->status,
-            'program'        => $this->application->program, // <--- Required for your design
-            'applicant_name' => $this->application->first_name . ' ' . $this->application->last_name, // <--- Required for your design
+            'status'         => $this->application->status, // 'Approved' or 'Rejected'
+            'program'        => $this->application->program,
+            'applicant_name' => $this->application->first_name . ' ' . $this->application->last_name,
             'link'           => route('applications.edit', $this->application->id),
             'message'        => 'Your application for ' . $this->application->program . ' has been ' . strtolower($this->application->status) . '.',
         ];

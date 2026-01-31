@@ -231,13 +231,17 @@ class ApplicationController extends Controller
     {
         $application->update(['status' => 'Rejected']);
 
+        // FIX: Trigger the notification!
+        if ($application->user) {
+            $application->user->notify(new ApplicationStatusAlert($application));
+        }
+
         AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Rejected Application',
             'details' => "Officially Denied App #{$application->id}"
         ]);
 
-        // FIX: Change 'message' to 'warning' for Orange Toast
         return redirect()->back()->with('warning', 'Application has been officially denied.');
     }
 
@@ -250,7 +254,10 @@ class ApplicationController extends Controller
             'remarks' => $request->remarks,
         ]);
 
-        // ... (Notification code) ...
+        // FIX: Trigger the notification!
+        if ($application->user) {
+            $application->user->notify(new ApplicationStatusAlert($application));
+        }
 
         AuditLog::create([
             'user_id' => Auth::id(),
@@ -258,9 +265,9 @@ class ApplicationController extends Controller
             'details' => "Denied App #{$application->id} - Reason: {$request->remarks}"
         ]);
 
-        // FIX: Change 'message' to 'warning'
         return redirect()->back()->with('warning', 'Application rejected and applicant notified.');
     }
+
     public function generateClaimStub(Application $application)
     {
         if ($application->status !== 'Approved') {

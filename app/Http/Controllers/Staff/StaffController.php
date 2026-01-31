@@ -39,7 +39,7 @@ class StaffController extends Controller
             $query->where('program', $request->program);
         }
 
-        $query->oldest(); // FIFO: First-In, First-Out for fairness
+        $query->oldest();
 
         $queue = $query->take(10)->get();
 
@@ -137,7 +137,10 @@ class StaffController extends Controller
             'remarks' => $request->remarks,
         ]);
 
-        // ... (Notification code) ...
+        // FIX: Trigger the notification!
+        if ($application->user) {
+            $application->user->notify(new ApplicationStatusAlert($application));
+        }
 
         AuditLog::create([
             'user_id' => Auth::id(),
@@ -146,11 +149,10 @@ class StaffController extends Controller
             'ip_address' => $request->ip()
         ]);
 
-        // FIX: Change 'message' to 'warning'
         return redirect()->back()->with('warning', 'Application returned to applicant for correction.');
     }
 
-    // ... (Reports and Exports remain unchanged below) ...
+    // ... (Reports and Exports) ...
     public function reportsIndex(Request $request) {
         $query = Application::query();
         if ($request->filled('status')) $query->where('status', $request->status);

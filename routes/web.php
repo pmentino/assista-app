@@ -168,7 +168,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return response()->noContent();
     })->name('notifications.read-all');
 
-}); // <--- THIS WAS MISSING AND CAUSED THE CRASH
+}); // <--- FIX: Added closing bracket and parenthesis here!
 
 
 // --- ADMIN ROUTES ---
