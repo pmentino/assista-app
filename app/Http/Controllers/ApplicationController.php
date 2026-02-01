@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ApplicationStatusUpdated;
 use App\Notifications\ApplicationStatusAlert;
+use App\Notifications\ApplicationResubmitted; // <--- NEW IMPORT
 use App\Models\Setting;
 use App\Models\Application;
+use App\Models\User; // <--- NEW IMPORT
 use App\Models\AuditLog;
 use App\Models\AssistanceProgram;
 use Illuminate\Http\Request;
@@ -20,7 +22,7 @@ use Illuminate\Validation\ValidationException;
 
 class ApplicationController extends Controller
 {
-    // ... (create, store, edit, update methods remain the same) ...
+    // ... (create, store, edit methods remain the same) ...
     public function create()
     {
         $programs = AssistanceProgram::where('is_active', true)
@@ -145,6 +147,7 @@ class ApplicationController extends Controller
             $application->attachments = $currentAttachments;
         }
 
+        // --- RESUBMISSION LOGIC START ---
         if ($application->status === 'Rejected') {
             $application->status = 'Pending';
             $application->remarks = null;
@@ -154,7 +157,21 @@ class ApplicationController extends Controller
                 'action' => 'Resubmitted Application',
                 'details' => "Resubmitted App #{$application->id} for review"
             ]);
+
+            // FIX: Notify all Admins and Staff about the resubmission
+            try {
+                $recipients = User::whereIn('role', ['admin', 'staff'])
+                                  ->orWhereIn('type', ['admin', 'staff']) // Check 'type' if your user model uses it
+                                  ->get();
+
+                foreach ($recipients as $recipient) {
+                    $recipient->notify(new ApplicationResubmitted($application));
+                }
+            } catch (\Exception $e) {
+                // Keep silent if notification fails so user flow isn't interrupted
+            }
         }
+        // --- RESUBMISSION LOGIC END ---
 
         $application->save();
 
