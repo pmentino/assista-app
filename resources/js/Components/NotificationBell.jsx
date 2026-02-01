@@ -11,11 +11,14 @@ export default function NotificationBell() {
     const [unreadCount, setUnreadCount] = useState(0);
     const dropdownRef = useRef(null);
 
+    // FIX: Redirect applicants to the "History" tab
     const getActivityRoute = () => {
         const role = auth?.user?.role || auth?.user?.type;
         if (role === 'admin') return route('admin.audit-logs');
         if (role === 'staff') return route('staff.applications.index');
-        return route('dashboard');
+
+        // Pass the 'tab' parameter so the Dashboard opens the correct tab
+        return route('dashboard', { tab: 'history' });
     };
 
     const fetchNotifications = async () => {
@@ -29,7 +32,6 @@ export default function NotificationBell() {
         }
     };
 
-    // Poll every 5 seconds
     useEffect(() => {
         fetchNotifications();
         const interval = setInterval(fetchNotifications, 5000);

@@ -65,8 +65,9 @@ export default function Welcome({ news = [], programs = [], settings = {}, trans
                                 <span className="text-xl md:text-2xl font-extrabold text-white tracking-wide">ASSISTA</span>
                             </a>
                             <nav className="hidden md:flex items-center space-x-8 text-sm font-bold tracking-wide">
-                                {['HOME', 'NEWS', 'ASSISTANCE', 'ABOUT'].map((item) => (
-                                    <a key={item} href={`#${item.toLowerCase()}`} className="text-gray-300 hover:text-white transition-colors relative group">
+                                {/* FIX: CHANGED TO Title Case ('Home', 'News') to match JSON keys */}
+                                {['Home', 'News', 'Assistance', 'About'].map((item) => (
+                                    <a key={item} href={`#${item.toLowerCase()}`} className="text-gray-300 hover:text-white transition-colors relative group uppercase">
                                         {__(item)}
                                         <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-yellow-400 transition-all group-hover:w-full"></span>
                                     </a>

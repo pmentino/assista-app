@@ -17,6 +17,7 @@ use App\Mail\ApplicationStatusUpdated;
 
 class StaffController extends Controller
 {
+    // ... (dashboard, applicationsIndex, applicationsShow, storeRemark methods remain same) ...
     public function dashboard(Request $request)
     {
         $stats = [
@@ -108,8 +109,6 @@ class StaffController extends Controller
         ]);
     }
 
-    // --- STAFF ACTIONS (VERIFICATION ONLY) ---
-
     // 1. Verify / Add Note (Does NOT Approve)
     public function storeRemark(Request $request, Application $application)
     {
@@ -137,11 +136,6 @@ class StaffController extends Controller
             'remarks' => $request->remarks,
         ]);
 
-        // FIX: Trigger the notification!
-        if ($application->user) {
-            $application->user->notify(new ApplicationStatusAlert($application));
-        }
-
         AuditLog::create([
             'user_id' => Auth::id(),
             'action'  => 'Returned Application',
@@ -149,10 +143,22 @@ class StaffController extends Controller
             'ip_address' => $request->ip()
         ]);
 
+        // FIX: Send Email & Notification for Rejection
+        if ($application->user) {
+            $application->user->notify(new ApplicationStatusAlert($application));
+
+            if ($application->user->email) {
+                // Send Rejection Email
+                try {
+                    Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
+                } catch (\Exception $e) { }
+            }
+        }
+
         return redirect()->back()->with('warning', 'Application returned to applicant for correction.');
     }
 
-    // ... (Reports and Exports) ...
+    // ... (Reports and Exports remain the same) ...
     public function reportsIndex(Request $request) {
         $query = Application::query();
         if ($request->filled('status')) $query->where('status', $request->status);

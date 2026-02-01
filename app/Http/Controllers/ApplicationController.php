@@ -20,7 +20,7 @@ use Illuminate\Validation\ValidationException;
 
 class ApplicationController extends Controller
 {
-    // --- SHOW FORM ---
+    // ... (create, store, edit, update methods remain the same) ...
     public function create()
     {
         $programs = AssistanceProgram::where('is_active', true)
@@ -43,7 +43,6 @@ class ApplicationController extends Controller
         ]);
     }
 
-    // --- SUBMIT NEW APPLICATION ---
     public function store(Request $request)
     {
         $user = Auth::user();
@@ -115,7 +114,6 @@ class ApplicationController extends Controller
         return redirect()->route('dashboard')->with('message', 'Application submitted successfully.');
     }
 
-    // --- SHOW DETAILS ---
     public function edit(Application $application)
     {
         return Inertia::render('Applications/Edit', [
@@ -124,7 +122,6 @@ class ApplicationController extends Controller
         ]);
     }
 
-    // --- UPDATE APPLICATION ---
     public function update(Request $request, Application $application)
     {
         $application->fill($request->except(['valid_id', 'indigency_cert', 'attachments']));
@@ -175,7 +172,6 @@ class ApplicationController extends Controller
         $now = Carbon::now();
         $monthlyBudget = MonthlyBudget::where('month', $now->month)->where('year', $now->year)->first();
 
-        // 1. Budget Security Check
         if (!$monthlyBudget) {
             return Inertia::render('Admin/ApplicationShow', [
                 'application' => $application,
@@ -200,7 +196,6 @@ class ApplicationController extends Controller
             ]);
         }
 
-        // 2. Final Approval
         $application->update([
             'status' => 'Approved',
             'amount_released' => $request->amount,
@@ -214,9 +209,12 @@ class ApplicationController extends Controller
             'details' => "Authorized release of ₱" . number_format($request->amount, 2) . " for App #{$application->id}"
         ]);
 
+        // Send Email & Notification
         if ($application->user) {
             $application->user->notify(new ApplicationStatusAlert($application));
+
             if ($application->user->email) {
+                // Send Email for Approval
                 try {
                     Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
                 } catch (\Exception $e) { }
@@ -231,16 +229,23 @@ class ApplicationController extends Controller
     {
         $application->update(['status' => 'Rejected']);
 
-        // FIX: Trigger the notification!
-        if ($application->user) {
-            $application->user->notify(new ApplicationStatusAlert($application));
-        }
-
         AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Rejected Application',
             'details' => "Officially Denied App #{$application->id}"
         ]);
+
+        // FIX: Send Email & Notification for Rejection
+        if ($application->user) {
+            $application->user->notify(new ApplicationStatusAlert($application));
+
+            if ($application->user->email) {
+                // Send Email for Rejection
+                try {
+                    Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
+                } catch (\Exception $e) { }
+            }
+        }
 
         return redirect()->back()->with('warning', 'Application has been officially denied.');
     }
@@ -254,16 +259,23 @@ class ApplicationController extends Controller
             'remarks' => $request->remarks,
         ]);
 
-        // FIX: Trigger the notification!
-        if ($application->user) {
-            $application->user->notify(new ApplicationStatusAlert($application));
-        }
-
         AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Rejected Application',
             'details' => "Denied App #{$application->id} - Reason: {$request->remarks}"
         ]);
+
+        // FIX: Send Email & Notification for Rejection
+        if ($application->user) {
+            $application->user->notify(new ApplicationStatusAlert($application));
+
+            if ($application->user->email) {
+                // Send Email for Rejection
+                try {
+                    Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
+                } catch (\Exception $e) { }
+            }
+        }
 
         return redirect()->back()->with('warning', 'Application rejected and applicant notified.');
     }

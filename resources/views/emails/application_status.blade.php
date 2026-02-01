@@ -4,121 +4,85 @@
     <meta charset="utf-8">
     <title>Application Status Update</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
-        .email-container { max-width: 600px; margin: 20px auto; background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #f3f4f6; padding-bottom: 20px; }
-        .header h1 { color: #1e3a8a; margin: 0; font-size: 24px; }
-        .logo { font-size: 28px; font-weight: bold; color: #1e3a8a; text-decoration: none; }
+        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; background-color: #f4f6f8; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-top: 6px solid #1e3a8a; }
+        .header { background-color: #ffffff; padding: 20px; text-align: center; border-bottom: 1px solid #e5e7eb; }
+        .header h1 { margin: 0; font-size: 22px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; letter-spacing: 1px; }
+        .header p { margin: 5px 0 0; font-size: 13px; color: #64748b; font-weight: 500; }
+        .content { padding: 30px; }
+        .status-box { text-align: center; margin: 25px 0; padding: 15px; background: #f8fafc; border-radius: 8px; }
+        .status-badge { display: inline-block; padding: 8px 20px; border-radius: 50px; font-weight: bold; font-size: 16px; letter-spacing: 0.5px; }
+        .status-Approved { background-color: #d1fae5; color: #065f46; border: 1px solid #34d399; }
+        .status-Rejected { background-color: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
 
-        .content { color: #374151; line-height: 1.6; font-size: 16px; }
-        .status-box { text-align: center; margin: 25px 0; padding: 20px; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb; }
+        .requirements-section { background-color: #fffbeb; border: 1px solid #fcd34d; padding: 20px; border-radius: 8px; margin-top: 25px; }
+        .requirements-section h3 { margin-top: 0; color: #92400e; font-size: 16px; display: flex; align-items: center; }
+        .requirements-section ul { margin: 10px 0 0; padding-left: 20px; }
+        .requirements-section li { margin-bottom: 6px; color: #78350f; font-size: 14px; }
 
-        .badge { display: inline-block; padding: 8px 16px; border-radius: 99px; font-weight: bold; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; }
-        .approved { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-        .rejected { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .btn { display: block; width: fit-content; margin: 25px auto; background-color: #2563eb; color: white !important; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; text-align: center; }
+        .btn:hover { background-color: #1d4ed8; }
 
-        .details-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        .details-table td { padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
-        .details-table td:first-child { color: #6b7280; width: 40%; }
-        .details-table td:last-child { font-weight: bold; color: #111827; }
-
-        /* NEW: Requirements Box Style */
-        .requirements-box { background-color: #eff6ff; padding: 15px; border-radius: 6px; border-left: 4px solid #3b82f6; margin-top: 20px; font-size: 14px; }
-        .requirements-box ul { margin: 10px 0 0 0; padding-left: 20px; }
-        .requirements-box li { margin-bottom: 5px; }
-
-        .schedule-info { margin-top: 15px; font-size: 14px; color: #4b5563; border-top: 1px dashed #d1d5db; padding-top: 15px; }
-
-        .footer { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 30px; border-top: 1px solid #f3f4f6; padding-top: 20px; }
-
-        .button { display: inline-block; background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px; }
-        .button:hover { background-color: #1d4ed8; }
+        .footer { background: #f1f5f9; padding: 20px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
     </style>
 </head>
 <body>
-    <div class="email-container">
+    <div class="container">
         <div class="header">
-            <div class="logo">ASSISTA</div>
-            <p>City Social Welfare and Development Office</p>
+            <h1>CSWDO Roxas City</h1>
+            <p>Assistance to Individuals in Crisis Situation (AICS)</p>
         </div>
 
         <div class="content">
-            <p>Hello <strong>{{ $application->first_name }}</strong>,</p>
+            <p>Dear <strong>{{ $application->first_name }} {{ $application->last_name }}</strong>,</p>
 
-            <p>This is an notification regarding your application for <strong>{{ $application->program }}</strong> assistance.</p>
+            <p>This is an official notification regarding your application for <strong>{{ $application->program }}</strong>.</p>
 
             <div class="status-box">
-                <p style="margin-bottom: 10px; font-size: 14px; color: #6b7280;">Application Status</p>
-                <span class="badge {{ strtolower($application->status) }}">
-                    {{ $application->status }}
+                <span class="status-badge status-{{ $application->status }}">
+                    {{ strtoupper($application->status) }}
                 </span>
             </div>
 
             @if($application->status === 'Approved')
-                <p>We are pleased to inform you that your request has been approved.</p>
+                <p>We are pleased to inform you that your request has been <strong>approved</strong>. The authorized assistance amount is <strong>₱{{ number_format($application->amount_released, 2) }}</strong>.</p>
 
-                <table class="details-table">
-                    <tr>
-                        <td>Amount Approved:</td>
-                        <td style="color: #059669;">₱{{ number_format($application->amount_released, 2) }}</td>
-                    </tr>
-                    <tr>
-                        <td>Reference ID:</td>
-                        <td>#{{ str_pad($application->id, 6, '0', STR_PAD_LEFT) }}</td>
-                    </tr>
-                </table>
-
-                <div class="requirements-box">
-                    <strong>📋 IMPORTANT: What to Bring</strong>
-                    <p style="margin: 5px 0;">Please bring the <strong>HARD COPIES (Original/Photocopy)</strong> of the following documents you uploaded:</p>
+                <div class="requirements-section">
+                    <h3>📂 Requirements for Claiming:</h3>
+                    <p style="font-size: 13px; margin-bottom: 10px; color: #92400e;">Please present the original copies of the following at the CSWDO Office:</p>
                     <ul>
-                        <li><strong>Valid Government ID</strong> (Original for verification)</li>
-                        <li><strong>Barangay Certificate of Indigency</strong></li>
-                        @if(in_array($application->program, ['Hospitalization', 'Medical Assistance', 'Laboratory Tests', 'Chemotherapy', 'Anti-Rabies Vaccine', 'Diagnostic Blood Tests']))
-                            <li>Medical Certificate / Abstract</li>
-                            <li>Prescription / Hospital Bill / Quotation</li>
-                        @elseif($application->program === 'Funeral Assistance')
-                            <li>Death Certificate (Certified True Copy)</li>
-                            <li>Funeral Contract</li>
-                        @elseif($application->program === 'Educational Assistance')
-                            <li>Certificate of Enrollment / Registration Form</li>
-                            <li>School ID</li>
-                        @else
-                            <li>All other supporting documents for {{ $application->program }}</li>
-                        @endif
+                        @foreach($requirements as $req)
+                            <li>{{ $req }}</li>
+                        @endforeach
+                        <li><strong>Valid Government ID</strong></li>
+                        <li><strong>Printed Claim Stub</strong> (Button below)</li>
                     </ul>
                 </div>
 
-                <div class="schedule-info">
-                    <p><strong>📍 Where to Go:</strong><br>
-                    CSWDO Office, Inzo Arnaldo Village, Roxas City</p>
-
-                    <p><strong>🕒 When to Claim:</strong><br>
-                    Monday to Friday (except Holidays)<br>
-                    8:00 AM - 11:30 AM | 1:00 PM - 4:00 PM</p>
-
-                    <p style="color: #ef4444; font-weight: bold; font-size: 13px;">
-                        NOTE: Please present this email or your printed Claim Stub to the officer in charge.
-                    </p>
-                </div>
+                <a href="{{ route('applications.claim-stub', $application->id) }}" class="btn">Download Claim Stub</a>
 
             @elseif($application->status === 'Rejected')
-                <p>After careful review, we regret to inform you that your request could not be processed at this time.</p>
-                <div style="background-color: #fff1f2; padding: 15px; border-left: 4px solid #e11d48; margin: 15px 0; border-radius: 4px;">
-                    <strong>Reason for Rejection:</strong><br>
-                    {{ $application->remarks ?? 'Documents did not meet the criteria.' }}
+                <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; border-radius: 4px; color: #991b1b;">
+                    <strong>⚠️ Application Returned for Correction</strong><br><br>
+                    <strong>Reason:</strong><br>
+                    {{ $application->remarks }}
                 </div>
-                <p>You may edit your application and resubmit once you have the correct requirements.</p>
+
+                <p style="margin-top: 20px;"><strong>Action Required:</strong> Please update your application details or documents based on the remarks above and resubmit it for verification.</p>
+
+                <a href="{{ route('applications.edit', $application->id) }}" class="btn" style="background-color: #ef4444;">Edit & Resubmit Application</a>
+
+                <p style="font-size: 13px; color: #64748b; text-align: center;">(Clicking the button will take you to your dashboard to edit the form)</p>
             @endif
 
-            <div style="text-align: center;">
-                <a href="{{ url('/dashboard') }}" class="button">View Application Details</a>
-            </div>
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+            <p style="font-size: 13px; color: #64748b;">For inquiries, contact our hotline: <strong>(036) 52026-83</strong></p>
         </div>
 
         <div class="footer">
-            <p>&copy; {{ date('Y') }} City Social Welfare and Development Office (CSWDO).<br>Roxas City Government. All rights reserved.</p>
-            <p>Hotline: (036) 52026-83</p>
+            <p>&copy; {{ date('Y') }} City Social Welfare and Development Office. All rights reserved.</p>
+            <p>Inzo Arnaldo Village, Roxas City, Capiz, Philippines</p>
+            <p>This is an automated system-generated message.</p>
         </div>
     </div>
 </body>
