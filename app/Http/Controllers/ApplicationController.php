@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ApplicationStatusUpdated;
 use App\Notifications\ApplicationStatusAlert;
-use App\Notifications\ApplicationResubmitted; // <--- NEW IMPORT
+use App\Notifications\ApplicationResubmitted;
+use App\Services\TextBeeService; // <--- NEW: Import TextBee Service
 use App\Models\Setting;
 use App\Models\Application;
-use App\Models\User; // <--- NEW IMPORT
+use App\Models\User;
 use App\Models\AuditLog;
 use App\Models\AssistanceProgram;
 use Illuminate\Http\Request;
@@ -22,7 +23,14 @@ use Illuminate\Validation\ValidationException;
 
 class ApplicationController extends Controller
 {
-    // ... (create, store, edit methods remain the same) ...
+    protected $smsService; // <--- NEW: Property for SMS
+
+    // <--- NEW: Constructor to inject the service
+    public function __construct(TextBeeService $smsService)
+    {
+        $this->smsService = $smsService;
+    }
+
     public function create()
     {
         $programs = AssistanceProgram::where('is_active', true)
@@ -158,17 +166,16 @@ class ApplicationController extends Controller
                 'details' => "Resubmitted App #{$application->id} for review"
             ]);
 
-            // FIX: Notify all Admins and Staff about the resubmission
             try {
                 $recipients = User::whereIn('role', ['admin', 'staff'])
-                                  ->orWhereIn('type', ['admin', 'staff']) // Check 'type' if your user model uses it
+                                  ->orWhereIn('type', ['admin', 'staff'])
                                   ->get();
 
                 foreach ($recipients as $recipient) {
                     $recipient->notify(new ApplicationResubmitted($application));
                 }
             } catch (\Exception $e) {
-                // Keep silent if notification fails so user flow isn't interrupted
+                // Keep silent if notification fails
             }
         }
         // --- RESUBMISSION LOGIC END ---
@@ -236,6 +243,16 @@ class ApplicationController extends Controller
                     Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
                 } catch (\Exception $e) { }
             }
+
+            // <--- NEW: Send SMS (Hiligaynon)
+            if ($application->contact_number) {
+                $smsMessage = "Maayong adlaw, {$application->first_name}! \n\n" .
+                              "Ang imo ASSISTA application na-approve na. " .
+                              "Palihog kadto sa CSWDO office para makuha ang assistance. \n" .
+                              "Magdala sang Valid ID. Salamat!";
+
+                $this->smsService->sendSms($application->contact_number, $smsMessage);
+            }
         }
 
         return redirect()->back()->with('message', 'Application approved and funds authorized for release.');
@@ -252,7 +269,6 @@ class ApplicationController extends Controller
             'details' => "Officially Denied App #{$application->id}"
         ]);
 
-        // FIX: Send Email & Notification for Rejection
         if ($application->user) {
             $application->user->notify(new ApplicationStatusAlert($application));
 
@@ -261,6 +277,15 @@ class ApplicationController extends Controller
                 try {
                     Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
                 } catch (\Exception $e) { }
+            }
+
+            // <--- NEW: Send SMS (Rejected)
+            if ($application->contact_number) {
+                $smsMessage = "Maayong adlaw, {$application->first_name}. \n\n" .
+                              "Ang imo ASSISTA application wala na-approve. \n" .
+                              "Palihog mag-login sa system ukon magkadto sa opisina para sa dugang nga impormasyon.";
+
+                $this->smsService->sendSms($application->contact_number, $smsMessage);
             }
         }
 
@@ -282,7 +307,6 @@ class ApplicationController extends Controller
             'details' => "Denied App #{$application->id} - Reason: {$request->remarks}"
         ]);
 
-        // FIX: Send Email & Notification for Rejection
         if ($application->user) {
             $application->user->notify(new ApplicationStatusAlert($application));
 
@@ -291,6 +315,16 @@ class ApplicationController extends Controller
                 try {
                     Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
                 } catch (\Exception $e) { }
+            }
+
+            // <--- NEW: Send SMS (Rejected with Reason)
+            if ($application->contact_number) {
+                $smsMessage = "Maayong adlaw, {$application->first_name}. \n\n" .
+                              "Ang imo ASSISTA application wala na-approve. \n" .
+                              "Rason: {$request->remarks} \n\n" .
+                              "Pwede ka mag-login sa system para mag-resubmit sang imo application. Salamat.";
+
+                $this->smsService->sendSms($application->contact_number, $smsMessage);
             }
         }
 
