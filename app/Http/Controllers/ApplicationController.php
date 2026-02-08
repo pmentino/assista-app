@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\ApplicationStatusUpdated;
 use App\Notifications\ApplicationStatusAlert;
 use App\Notifications\ApplicationResubmitted;
-use App\Services\TextBeeService; // <--- NEW: Import TextBee Service
+use App\Services\TextBeeService; // <--- Import TextBee Service
 use App\Models\Setting;
 use App\Models\Application;
 use App\Models\User;
@@ -23,9 +23,9 @@ use Illuminate\Validation\ValidationException;
 
 class ApplicationController extends Controller
 {
-    protected $smsService; // <--- NEW: Property for SMS
+    protected $smsService; // <--- Property for SMS
 
-    // <--- NEW: Constructor to inject the service
+    // <--- Constructor to inject the service
     public function __construct(TextBeeService $smsService)
     {
         $this->smsService = $smsService;
@@ -244,12 +244,17 @@ class ApplicationController extends Controller
                 } catch (\Exception $e) { }
             }
 
-            // <--- NEW: Send SMS (Hiligaynon)
+            // <--- NEW: Send SMS (Approved with Instructions)
             if ($application->contact_number) {
                 $smsMessage = "Maayong adlaw, {$application->first_name}! \n\n" .
-                              "Ang imo ASSISTA application na-approve na. " .
-                              "Palihog kadto sa CSWDO office para makuha ang assistance. \n" .
-                              "Magdala sang Valid ID. Salamat!";
+                              "Ang imo aplikasyon sa ASSISTA na-approve na. \n\n" .
+                              "DIIN MAGKADTO (Where):\n" .
+                              "CSWDO Office, Inzo Arnaldo Village, Roxas City \n\n" .
+                              "SAN-O (When):\n" .
+                              "Lunes - Biyernes (8:00 AM - 5:00 PM) \n\n" .
+                              "MGA KINAHANGLAN DAL-ON (Requirements):\n" .
+                              "Palihog dal-a ang ORIGINAL copy sang Valid Government ID. \n\n" .
+                              "- CSWDO Roxas City";
 
                 $this->smsService->sendSms($application->contact_number, $smsMessage);
             }
@@ -279,11 +284,12 @@ class ApplicationController extends Controller
                 } catch (\Exception $e) { }
             }
 
-            // <--- NEW: Send SMS (Rejected)
+            // <--- NEW: Send SMS (Simple Return/Reject)
             if ($application->contact_number) {
                 $smsMessage = "Maayong adlaw, {$application->first_name}. \n\n" .
-                              "Ang imo ASSISTA application wala na-approve. \n" .
-                              "Palihog mag-login sa system ukon magkadto sa opisina para sa dugang nga impormasyon.";
+                              "MAY KULANG / BALIK-REVIEW \n" .
+                              "Gin-balik ang imo aplikasyon. \n" .
+                              "Palihog mag-login sa system para makita ang rason kag ma-edit ang imo aplikasyon.";
 
                 $this->smsService->sendSms($application->contact_number, $smsMessage);
             }
@@ -292,6 +298,7 @@ class ApplicationController extends Controller
         return redirect()->back()->with('warning', 'Application has been officially denied.');
     }
 
+    // Reject (With Remarks/Reason)
     public function addRemark(Request $request, Application $application)
     {
         $request->validate(['remarks' => 'required|string|max:1000']);
@@ -317,12 +324,13 @@ class ApplicationController extends Controller
                 } catch (\Exception $e) { }
             }
 
-            // <--- NEW: Send SMS (Rejected with Reason)
+            // <--- NEW: Send SMS (Return with Reason)
             if ($application->contact_number) {
                 $smsMessage = "Maayong adlaw, {$application->first_name}. \n\n" .
-                              "Ang imo ASSISTA application wala na-approve. \n" .
+                              "MAY KULANG / BALIK-REVIEW \n" .
+                              "Gin-balik ang imo aplikasyon kay may dapat kay-uhon. \n\n" .
                               "Rason: {$request->remarks} \n\n" .
-                              "Pwede ka mag-login sa system para mag-resubmit sang imo application. Salamat.";
+                              "Palihog mag-login sa system, i-edit ang imo form, kag i-resubmit ini.";
 
                 $this->smsService->sendSms($application->contact_number, $smsMessage);
             }
