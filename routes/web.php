@@ -313,14 +313,26 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         return redirect()->back()->with('message', 'Budget updated successfully.');
     })->name('dashboard.budget');
 
-    // Applications Management
+   // Applications Management
     Route::get('/applications', [AidRequestController::class, 'index'])->name('applications.index');
 
     Route::get('/applications/{application}', function (ApplicationModel $application) {
         $programSettings = \App\Models\AssistanceProgram::where('title', $application->program)->first();
+
+        // --- ADDED THIS: Calculate Remaining Budget ---
+        $now = \Carbon\Carbon::now();
+        $monthlyBudget = \App\Models\MonthlyBudget::where('month', $now->month)->where('year', $now->year)->first();
+        $totalReleased = ApplicationModel::where('status', 'Approved')
+            ->whereMonth('approved_date', $now->month)
+            ->whereYear('approved_date', $now->year)
+            ->sum('amount_released');
+        $remainingBalance = ($monthlyBudget->amount ?? 0) - $totalReleased;
+        // ---------------------------------------------
+
         return Inertia::render('Admin/ApplicationShow', [
             'application' => $application->load('user'),
             'programSettings' => $programSettings,
+            'remainingBalance' => $remainingBalance, // <-- Pass it to React
             'auth' => [ 'user' => Auth::user() ]
         ]);
     })->name('applications.show');

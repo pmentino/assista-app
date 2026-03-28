@@ -14,7 +14,7 @@ const REQUIREMENTS_MAP = {
     'Diagnostic Blood Tests': ['Personal Letter to Mayor', 'Diagnostic Request', 'Medical Certificate']
 };
 
-export default function ApplicationShow({ application, programSettings }) {
+export default function ApplicationShow({ application, programSettings, remainingBalance }) {
     const { auth } = usePage().props; // Flash handled by Layout now
     const user = auth?.user || { name: 'Admin' };
 
@@ -372,7 +372,16 @@ export default function ApplicationShow({ application, programSettings }) {
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Enter amount to release.</p>
                                 <form onSubmit={submitApprove}>
                                     <div className="mb-4">
-                                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Amount (PHP)</label>
+
+                                        {/* --- NEW: REMAINING BUDGET DISPLAY --- */}
+                                        <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 flex justify-between items-center">
+                                            <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Remaining Budget:</span>
+                                            <span className={`text-lg font-bold ${remainingBalance < approveForm.data.amount ? 'text-red-600' : 'text-green-600 dark:text-green-400'}`}>
+                                                ₱{Number(remainingBalance).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                            </span>
+                                        </div>
+
+                                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Amount to Release (PHP)</label>
 
                                         {/* SMART TIP: Show Default Amount if available */}
                                         {programSettings?.default_amount && (
