@@ -1,6 +1,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
+import TextInput from '@/Components/TextInput';
+import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import InputError from '@/Components/InputError';
 
@@ -39,9 +41,10 @@ export default function ApplicationShow({ application: initialApplication }) {
         setData('remarks', initialApplication.remarks || '');
     }, [initialApplication]);
 
-    // Form for Staff Remarks (General Notes)
-    const { data, setData, post, processing, errors, recentlySuccessful } = useForm({
-        remarks: application.remarks || '',
+    // Form for Staff Remarks AND Recommended Amount
+    const { data, setData, put, post, processing, errors, recentlySuccessful } = useForm({
+        remarks: '',
+        recommended_amount: '', // <--- NEW: For the budget feature
     });
 
     // Form for Rejection (Specific Return Reason)
@@ -55,6 +58,16 @@ export default function ApplicationShow({ application: initialApplication }) {
         post(route('staff.applications.remarks.store', application.id), {
             preserveScroll: true,
         });
+    };
+
+    // --- NEW: Submit Verification ---
+    const submitVerify = (e) => {
+        e.preventDefault();
+        if(confirm('Are you sure you want to verify this application and recommend this amount to the Admin?')) {
+            put(route('staff.applications.verify', application.id), {
+                preserveScroll: true,
+            });
+        }
     };
 
     // Submit Rejection
@@ -79,10 +92,12 @@ export default function ApplicationShow({ application: initialApplication }) {
         return (programReqs && programReqs[index]) ? programReqs[index] : `Supporting Document #${index + 1}`;
     };
 
+    // Added Blue for Verified status
     const statusColors = {
         'Approved': 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800',
         'Rejected': 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800',
         'Pending': 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800',
+        'Verified': 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800', // <--- NEW COLOR
     };
 
     return (
@@ -104,7 +119,7 @@ export default function ApplicationShow({ application: initialApplication }) {
                         </span>
                     </div>
 
-                    {/* --- REJECT BUTTON --- */}
+                    {/* --- REJECT BUTTON (Only if Pending) --- */}
                     {application.status === 'Pending' && (
                         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                             <button
@@ -123,7 +138,7 @@ export default function ApplicationShow({ application: initialApplication }) {
         >
             <Head title={`Application #${application.id}`} />
 
-            {/* --- SUCCESS TOAST NOTIFICATION (Fixed Z-Index & Visibility) --- */}
+            {/* --- SUCCESS TOAST NOTIFICATION --- */}
             {visibleSuccess && (
                 <div className="fixed top-24 right-5 z-[100] flex flex-col gap-2 w-full max-w-sm pointer-events-none">
                     <div className="bg-white dark:bg-gray-800 border-l-8 border-green-500 rounded-lg shadow-2xl p-4 flex items-start animate-fade-in-left pointer-events-auto ring-1 ring-black/5 dark:ring-white/10">
@@ -213,6 +228,46 @@ export default function ApplicationShow({ application: initialApplication }) {
                         {/* RIGHT COLUMN */}
                         <div className="space-y-6">
 
+                            {/* --- NEW: STAFF VERIFICATION ACTION (Prioritized at the top) --- */}
+                            {application.status === 'Pending' && (
+                                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-blue-300 dark:border-blue-700 overflow-hidden transition-colors">
+                                    <div className="bg-blue-50 dark:bg-blue-900/40 px-6 py-4 border-b border-blue-100 dark:border-blue-800">
+                                        <h3 className="font-bold text-blue-900 dark:text-blue-300 flex items-center">
+                                            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Staff Verification
+                                        </h3>
+                                    </div>
+                                    <div className="p-6">
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                            If all documents are valid, verify this application and recommend a budget for the Admin to approve.
+                                        </p>
+                                        <form onSubmit={submitVerify}>
+                                            <div className="mb-4">
+                                                <InputLabel htmlFor="recommended_amount" value="Recommended Amount (₱)" className="font-bold" />
+                                                <TextInput
+                                                    id="recommended_amount"
+                                                    type="number"
+                                                    className="mt-1 block w-full text-lg font-bold border-blue-300 focus:border-blue-500 focus:ring-blue-500"
+                                                    placeholder="e.g. 3000"
+                                                    value={data.recommended_amount}
+                                                    onChange={(e) => setData('recommended_amount', e.target.value)}
+                                                    required
+                                                />
+                                                <InputError message={errors.recommended_amount} className="mt-2" />
+                                            </div>
+                                            <PrimaryButton
+                                                className="w-full justify-center py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 text-md"
+                                                disabled={processing || !data.recommended_amount}
+                                            >
+                                                Mark as Verified
+                                            </PrimaryButton>
+                                        </form>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Profile Card */}
                             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
                                 <div className="bg-gray-50 dark:bg-gray-800/50 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
@@ -244,24 +299,23 @@ export default function ApplicationShow({ application: initialApplication }) {
                                 </div>
                             </div>
 
-                            {/* STAFF VERIFICATION ACTION */}
+                            {/* Internal Notes */}
                             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
-                                <div className="bg-blue-50 dark:bg-blue-900/20 px-6 py-4 border-b border-blue-100 dark:border-blue-800">
-                                    <h3 className="font-bold text-blue-800 dark:text-blue-300">Internal Notes</h3>
+                                <div className="bg-gray-50 dark:bg-gray-800/50 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+                                    <h3 className="font-bold text-gray-800 dark:text-white">Internal Notes</h3>
                                 </div>
                                 <div className="p-6">
                                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                                        Add internal verification notes for the Admin (not visible to applicant).
+                                        Add notes for the Admin (not visible to applicant).
                                     </p>
                                     <form onSubmit={submitRemark}>
-                                        <label htmlFor="remarks" className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Remarks</label>
                                         <textarea
                                             id="remarks"
                                             value={data.remarks}
                                             onChange={(e) => setData('remarks', e.target.value)}
                                             className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white focus:border-blue-500 focus:ring-blue-500 rounded-lg shadow-sm"
                                             rows="4"
-                                            placeholder="e.g., Documents checked and valid. Recommended for approval."
+                                            placeholder="e.g., Documents checked and valid."
                                         ></textarea>
                                         <InputError message={errors.remarks} className="mt-2" />
 
@@ -270,7 +324,7 @@ export default function ApplicationShow({ application: initialApplication }) {
                                                 <span className="text-sm text-green-600 dark:text-green-400 font-bold animate-pulse">✓ Saved</span>
                                             )}
                                             {!recentlySuccessful && <span></span>}
-                                            <PrimaryButton disabled={processing} className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
+                                            <PrimaryButton disabled={processing} className="bg-gray-800">
                                                 Save Note
                                             </PrimaryButton>
                                         </div>
@@ -283,7 +337,7 @@ export default function ApplicationShow({ application: initialApplication }) {
                 </div>
             </div>
 
-            {/* --- REJECTION MODAL (Added Error Display) --- */}
+            {/* --- REJECTION MODAL --- */}
             {showRejectModal && (
                 <div className="fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full flex items-center justify-center z-[100] backdrop-blur-sm p-4">
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-md border dark:border-gray-700">
@@ -301,7 +355,6 @@ export default function ApplicationShow({ application: initialApplication }) {
                                 required
                             ></textarea>
 
-                            {/* FIX: SHOW VALIDATION ERROR HERE */}
                             <InputError message={rejectForm.errors.remarks} className="mb-4" />
 
                             <div className="flex justify-end gap-2">

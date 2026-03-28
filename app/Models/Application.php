@@ -33,6 +33,7 @@ class Application extends Model
         'status',
         'remarks',
         'amount_released',
+        'recommended_amount',
         'approved_date'
     ];
 

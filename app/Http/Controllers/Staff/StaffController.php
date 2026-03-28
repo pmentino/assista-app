@@ -17,7 +17,6 @@ use App\Mail\ApplicationStatusUpdated;
 
 class StaffController extends Controller
 {
-    // ... (dashboard, applicationsIndex, applicationsShow, storeRemark methods remain same) ...
     public function dashboard(Request $request)
     {
         $stats = [
@@ -109,6 +108,32 @@ class StaffController extends Controller
         ]);
     }
 
+    // --- NEW: VERIFY WITH RECOMMENDED AMOUNT ---
+    public function verify(Request $request, Application $application)
+    {
+        // 1. Validate the Staff's recommended amount
+        $request->validate([
+            'recommended_amount' => 'required|numeric|min:1'
+        ]);
+
+        // 2. Update the status and save the recommended amount
+        $application->update([
+            'status' => 'Verified',
+            'recommended_amount' => $request->recommended_amount,
+            'remarks' => null, // Clear any previous rejection remarks
+        ]);
+
+        // 3. Log the action for auditing
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Verified Application',
+            'details' => "Verified App #{$application->id} and recommended ₱" . number_format($request->recommended_amount, 2),
+            'ip_address' => $request->ip()
+        ]);
+
+        return redirect()->back()->with('message', 'Application verified and amount recommended to Admin.');
+    }
+
     // 1. Verify / Add Note (Does NOT Approve)
     public function storeRemark(Request $request, Application $application)
     {
@@ -158,7 +183,6 @@ class StaffController extends Controller
         return redirect()->back()->with('warning', 'Application returned to applicant for correction.');
     }
 
-    // ... (Reports and Exports remain the same) ...
     public function reportsIndex(Request $request) {
         $query = Application::query();
         if ($request->filled('status')) $query->where('status', $request->status);

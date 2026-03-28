@@ -185,6 +185,32 @@ class ApplicationController extends Controller
         return redirect()->route('dashboard')->with('message', 'Application updated successfully.');
     }
 
+    // --- STAFF ACTIONS ---
+
+    public function verify(Request $request, Application $application)
+    {
+        // 1. Validate the Staff's recommended amount
+        $request->validate([
+            'recommended_amount' => 'required|numeric|min:1'
+        ]);
+
+        // 2. Update the status and save the recommended amount
+        $application->update([
+            'status' => 'Verified',
+            'recommended_amount' => $request->recommended_amount,
+            'remarks' => null, // Clear any previous rejection remarks
+        ]);
+
+        // 3. Log the action for auditing
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Verified Application',
+            'details' => "Verified App #{$application->id} and recommended ₱" . number_format($request->recommended_amount, 2)
+        ]);
+
+        return redirect()->back()->with('message', 'Application verified and amount recommended to Admin.');
+    }
+
     // --- ADMIN ACTIONS (APPROVAL AUTHORITY) ---
 
     public function approve(Request $request, Application $application)

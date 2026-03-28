@@ -168,7 +168,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return response()->noContent();
     })->name('notifications.read-all');
 
-}); // <--- FIX: Added closing bracket and parenthesis here!
+});
 
 
 // --- ADMIN ROUTES ---
@@ -200,7 +200,8 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         // Stats Logic
         $stats = [
             'total' => ApplicationModel::count(),
-            'pending' => ApplicationModel::where('status', 'Pending')->count(),
+            // --- UPDATED: Include 'Verified' in pending stats ---
+            'pending' => ApplicationModel::whereIn('status', ['Pending', 'Verified'])->count(),
             'approved' => ApplicationModel::where('status', 'Approved')->count(),
             'rejected' => ApplicationModel::where('status', 'Rejected')->count(),
             'total_released' => ApplicationModel::where('status', 'Approved')->sum('amount_released'),
@@ -229,8 +230,8 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         $allBarangays = ApplicationModel::select('barangay')->distinct()->orderBy('barangay')->pluck('barangay');
         $currentFilters = $request->only(['barangay', 'start_date', 'end_date']);
 
-        // Queue Logic
-        $queueQuery = ApplicationModel::where('status', 'Pending');
+        // --- UPDATED: Include 'Verified' in the Dashboard Queue ---
+        $queueQuery = ApplicationModel::whereIn('status', ['Pending', 'Verified']);
 
         if ($request->has('q_search') && $request->q_search) {
             $search = $request->q_search;
@@ -361,6 +362,9 @@ Route::middleware(['auth', 'verified', 'is_staff'])->prefix('staff')->name('staf
     Route::get('/reports', [StaffController::class, 'reportsIndex'])->name('reports.index');
     Route::get('/reports/export-pdf', [StaffController::class, 'exportPdf'])->name('reports.export-pdf');
     Route::get('/reports/export-excel', [StaffController::class, 'exportExcel'])->name('reports.export-excel');
+
+    // --- UPDATED: Ensure it points to StaffController ---
+    Route::put('/applications/{application}/verify', [StaffController::class, 'verify'])->name('applications.verify');
 });
 
 require __DIR__.'/auth.php';

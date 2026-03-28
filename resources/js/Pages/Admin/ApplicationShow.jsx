@@ -21,9 +21,9 @@ export default function ApplicationShow({ application, programSettings }) {
     // Form for Remarks (Rejection / Staff Note)
     const { data, setData, post, processing, recentlySuccessful } = useForm({ remarks: application.remarks || '' });
 
-    // Form for Approval (Amount) - Initialize with Default Amount
+    // Form for Approval (Amount) - Initialize with Recommended Amount -> Default Amount -> Empty
     const approveForm = useForm({
-        amount: programSettings?.default_amount || ''
+        amount: application.recommended_amount || programSettings?.default_amount || ''
     });
 
     // Modals State
@@ -79,6 +79,7 @@ export default function ApplicationShow({ application, programSettings }) {
         'Approved': 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800',
         'Rejected': 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800',
         'Pending': 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800',
+        'Verified': 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800', // ADDED VERIFIED COLOR
     };
 
     return (
@@ -100,8 +101,8 @@ export default function ApplicationShow({ application, programSettings }) {
                         </span>
                     </div>
 
-                    {/* Approve / Reject Buttons */}
-                    {application.status === 'Pending' && (
+                    {/* Approve / Reject Buttons - NOW SHOWS FOR PENDING AND VERIFIED */}
+                    {(application.status === 'Pending' || application.status === 'Verified') && (
                         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                             <button
                                 onClick={() => setShowRejectModal(true)}
@@ -151,6 +152,21 @@ export default function ApplicationShow({ application, programSettings }) {
                                             <p className="text-gray-900 dark:text-white mt-1">{new Date(application.created_at).toLocaleDateString()}</p>
                                         </div>
                                     </div>
+
+                                    {/* --- NEW: STAFF RECOMMENDATION BANNER --- */}
+                                    {application.status === 'Verified' && application.recommended_amount && (
+                                        <div className="mt-6 bg-purple-50 dark:bg-purple-900/20 border-l-4 border-purple-500 p-4 rounded-r-lg shadow-sm">
+                                            <div className="flex items-center">
+                                                <svg className="w-6 h-6 text-purple-600 dark:text-purple-400 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-purple-800 dark:text-purple-300">Staff Verified</h3>
+                                                    <p className="text-sm text-purple-700 dark:text-purple-400 mt-1">
+                                                        The staff has reviewed these documents and recommends releasing a budget of <strong>₱{new Intl.NumberFormat('en-PH').format(application.recommended_amount)}</strong>.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {application.status === 'Approved' && (
                                         <>
