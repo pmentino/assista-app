@@ -175,6 +175,7 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
         switch (status) {
             case 'Approved': return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800';
             case 'Rejected': return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800';
+            case 'Verified': return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800';
             default: return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800';
         }
     };
@@ -228,6 +229,7 @@ export default function ApplicationsIndex({ auth, applications, filters: initial
                                 <select name="status" value={filters.status} onChange={handleFilterChange} className="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm cursor-pointer h-10">
                                     <option value="">All Statuses</option>
                                     <option value="Pending">Pending Review</option>
+                                    <option value="Verified">Verified (Ready)</option>
                                     <option value="Approved">Approved</option>
                                     <option value="Rejected">Rejected</option>
                                 </select>

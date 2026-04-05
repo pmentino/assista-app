@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Dropdown from '@/Components/Dropdown';
 import { Link, usePage, router } from '@inertiajs/react';
-import { Toaster, toast } from 'react-hot-toast'; // We use custom toast, but keeping import for compatibility
+import { Toaster, toast } from 'react-hot-toast';
 import NotificationBell from '@/Components/NotificationBell';
 
 export default function AuthenticatedLayout({ user, header, children }) {
@@ -11,9 +11,6 @@ export default function AuthenticatedLayout({ user, header, children }) {
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [darkMode, setDarkMode] = useState(localStorage.getItem('theme') === 'dark');
-
-    // --- 1. TOAST BUFFER STATE ---
-    const [toastInfo, setToastInfo] = useState(null);
 
     // Font Size Logic
     const fontSizes = ['text-sm', 'text-base', 'text-lg'];
@@ -44,17 +41,23 @@ export default function AuthenticatedLayout({ user, header, children }) {
         localStorage.setItem('fontSize', fontSizes[fontIndex]);
     }, [fontIndex]);
 
-    // --- 2. SMART TOAST LOGIC ---
+    // --- SMART TOAST LOGIC (THE ULTIMATE BOUNCER) ---
+    const lastToast = useRef(''); // Ito ang bouncer natin
+
     useEffect(() => {
-        if (flash.message || flash.success || flash.warning || flash.error) {
-            setToastInfo({
-                message: flash.message,
-                success: flash.success,
-                warning: flash.warning,
-                error: flash.error
-            });
-            const timer = setTimeout(() => setToastInfo(null), 5000);
-            return () => clearTimeout(timer);
+        const successMsg = flash?.message || flash?.success;
+        const errorMsg = flash?.error || flash?.warning;
+
+        if (successMsg && lastToast.current !== successMsg) {
+            toast.success(successMsg, { id: successMsg, duration: 4000 });
+            lastToast.current = successMsg; // I-lock ang pinto
+            setTimeout(() => { lastToast.current = ''; }, 3000); // Buksan ulit after 3 secs
+        }
+
+        if (errorMsg && lastToast.current !== errorMsg) {
+            toast.error(errorMsg, { id: errorMsg, duration: 5000 });
+            lastToast.current = errorMsg; // I-lock ang pinto
+            setTimeout(() => { lastToast.current = ''; }, 3000); // Buksan ulit after 3 secs
         }
     }, [flash]);
 
@@ -90,60 +93,6 @@ export default function AuthenticatedLayout({ user, header, children }) {
     return (
         <div className={`h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
             <Toaster position="top-right" />
-
-            {/* --- SMART TOAST RENDER --- */}
-            {toastInfo && (
-                <div className="fixed top-24 right-5 z-[100] flex flex-col gap-2 w-full max-w-sm pointer-events-none">
-
-                    {/* SUCCESS */}
-                    {(toastInfo.message || toastInfo.success) && (
-                        <div className="bg-white dark:bg-gray-800 border-l-4 border-green-500 rounded-lg shadow-2xl p-4 flex items-start animate-fade-in-left pointer-events-auto ring-1 ring-black/5 dark:ring-white/10">
-                            <div className="flex-shrink-0 text-green-500">
-                                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            </div>
-                            <div className="ml-3 w-0 flex-1">
-                                <h3 className="text-sm font-bold text-green-900 dark:text-green-300">Success</h3>
-                                <p className="text-sm text-green-700 dark:text-green-400 mt-1">{toastInfo.message || toastInfo.success}</p>
-                            </div>
-                            <button onClick={() => setToastInfo(null)} className="ml-4 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
-                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                            </button>
-                        </div>
-                    )}
-
-                    {/* WARNING */}
-                    {toastInfo.warning && (
-                        <div className="bg-white dark:bg-gray-800 border-l-4 border-orange-500 rounded-lg shadow-2xl p-4 flex items-start animate-fade-in-left pointer-events-auto ring-1 ring-black/5 dark:ring-white/10">
-                            <div className="flex-shrink-0 text-orange-500">
-                                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                            </div>
-                            <div className="ml-3 w-0 flex-1">
-                                <h3 className="text-sm font-bold text-orange-800 dark:text-orange-300">Attention</h3>
-                                <p className="text-sm text-orange-700 dark:text-orange-200 mt-1">{toastInfo.warning}</p>
-                            </div>
-                            <button onClick={() => setToastInfo(null)} className="ml-4 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
-                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                            </button>
-                        </div>
-                    )}
-
-                    {/* ERROR */}
-                    {toastInfo.error && (
-                        <div className="bg-white dark:bg-gray-800 border-l-4 border-red-600 rounded-lg shadow-2xl p-4 flex items-start animate-fade-in-left pointer-events-auto ring-1 ring-black/5 dark:ring-white/10">
-                            <div className="flex-shrink-0 text-red-600">
-                                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            </div>
-                            <div className="ml-3 w-0 flex-1">
-                                <h3 className="text-sm font-bold text-red-800 dark:text-red-300">System Error</h3>
-                                <p className="text-sm text-red-700 dark:text-red-200 mt-1">{toastInfo.error}</p>
-                            </div>
-                            <button onClick={() => setToastInfo(null)} className="ml-4 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
-                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                            </button>
-                        </div>
-                    )}
-                </div>
-            )}
 
             <div className="flex flex-1 overflow-hidden">
                 {/* --- SIDEBAR (ONLY FOR ADMIN/STAFF) --- */}
@@ -195,17 +144,16 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                 </button>
                             )}
 
-                            {/* APPLICANT LOGO (Since they don't have a sidebar) */}
+                            {/* APPLICANT LOGO */}
                             {isApplicant && (
                                 <Link href="/" className="flex items-center gap-2">
                                     <img src="/images/logo.png" alt="Logo" className="h-8 w-auto bg-white rounded-full p-1 border border-blue-100" />
-                                    {/* FIX: Hidden on mobile to prevent overflow, shown on SM+ */}
                                     <span className={`text-xl font-bold tracking-widest hidden sm:block ${darkMode ? 'text-white' : 'text-blue-900'}`}>ASSISTA</span>
                                 </Link>
                             )}
                         </div>
 
-                        {/* 2. APPLICANT NAVIGATION (Desktop) */}
+                        {/* 2. APPLICANT NAVIGATION */}
                         {isApplicant && (
                             <div className="hidden md:flex space-x-8">
                                 <Link href={route('dashboard')} className={`font-bold border-b-2 px-1 pt-1 text-sm ${route().current('dashboard') ? 'border-blue-500 text-gray-900 dark:text-white' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300'}`}>
@@ -217,20 +165,15 @@ export default function AuthenticatedLayout({ user, header, children }) {
                         {/* 3. RIGHT SIDE ACTIONS */}
                         <div className="flex items-center gap-3 sm:gap-6">
 
-                            {/* --- SENIOR FRIENDLY LANGUAGE BUTTON (APPLICANT ONLY) --- */}
+                            {/* LANGUAGE BUTTON */}
                             {isApplicant && (
                                 <Dropdown>
                                     <Dropdown.Trigger>
                                         <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-full transition shadow-sm group" title="Change Language">
-                                            {/* Globe Icon */}
                                             <svg className="w-4 h-4 text-yellow-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-
-                                            {/* FIX: Hide Label on Mobile, Show on Tablet/Desktop */}
-                                            <span className="font-bold text-xs tracking-wide uppercase hidden sm:block">
-                                                {locale}
-                                            </span>
+                                            <span className="font-bold text-xs tracking-wide uppercase hidden sm:block">{locale}</span>
                                             <svg className="w-3 h-3 text-blue-200 group-hover:text-white transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                                         </button>
                                     </Dropdown.Trigger>
@@ -248,7 +191,7 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                 </Dropdown>
                             )}
 
-                            {/* Font Size - FIX: Removed 'hidden sm:flex', made visible always */}
+                            {/* Font Size */}
                             <div className={`flex rounded-lg p-1 ${isApplicant ? 'bg-blue-50 border border-blue-100' : 'bg-gray-100 dark:bg-gray-700'}`}>
                                 <button onClick={() => setFontIndex(Math.max(0, fontIndex - 1))} className={`px-2 text-xs font-bold ${isApplicant ? 'text-blue-600 hover:text-blue-800' : 'text-gray-600 dark:text-gray-300'}`}>A-</button>
                                 <button onClick={() => setFontIndex(Math.min(2, fontIndex + 1))} className={`px-2 text-xs font-bold ${isApplicant ? 'text-blue-600 hover:text-blue-800' : 'text-gray-600 dark:text-gray-300'}`}>A+</button>
@@ -299,4 +242,4 @@ export default function AuthenticatedLayout({ user, header, children }) {
             {sidebarOpen && <div className="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden" onClick={() => setSidebarOpen(false)}></div>}
         </div>
     );
-} 
+}

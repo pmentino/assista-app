@@ -185,9 +185,10 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
             ->first();
         $budgetAmount = $currentBudget ? $currentBudget->amount : 0;
 
+        // BAGONG CODE: Gamitin ang approved_date sa halip na updated_at
         $releasedMonth = ApplicationModel::where('status', 'Approved')
-            ->whereMonth('updated_at', $now->month)
-            ->whereYear('updated_at', $now->year)
+            ->whereMonth('approved_date', $now->month)
+            ->whereYear('approved_date', $now->year)
             ->sum('amount_released');
 
         $budgetStats = [
@@ -205,8 +206,8 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
             'approved' => ApplicationModel::where('status', 'Approved')->count(),
             'rejected' => ApplicationModel::where('status', 'Rejected')->count(),
             'total_released' => ApplicationModel::where('status', 'Approved')->sum('amount_released'),
-            'released_today' => ApplicationModel::where('status', 'Approved')->whereDate('updated_at', $now->today())->sum('amount_released'),
-            'released_week' => ApplicationModel::where('status', 'Approved')->whereBetween('updated_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()])->sum('amount_released'),
+            'released_today' => ApplicationModel::where('status', 'Approved')->whereDate('approved_date', $now->today())->sum('amount_released'),
+            'released_week' => ApplicationModel::where('status', 'Approved')->whereBetween('approved_date', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()])->sum('amount_released'),
             'released_month' => $releasedMonth,
         ];
 

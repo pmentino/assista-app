@@ -14,9 +14,16 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ApplicationStatusUpdated;
+use App\Services\TextBeeService;
 
 class StaffController extends Controller
 {
+    protected $smsService;
+
+    public function __construct(TextBeeService $smsService)
+    {
+        $this->smsService = $smsService;
+    }
     public function dashboard(Request $request)
     {
         $stats = [
@@ -39,7 +46,12 @@ class StaffController extends Controller
             $query->where('program', $request->program);
         }
 
-        $query->oldest();
+        // --- FIX PARA SA SORTING (OLDEST/NEWEST) ---
+        if ($request->sort === 'newest') {
+            $query->latest();
+        } else {
+            $query->oldest(); // Default: Oldest First (FIFO)
+        }
 
         $queue = $query->take(10)->get();
 
@@ -120,7 +132,6 @@ class StaffController extends Controller
         $application->update([
             'status' => 'Verified',
             'recommended_amount' => $request->recommended_amount,
-            'remarks' => null, // Clear any previous rejection remarks
         ]);
 
         // 3. Log the action for auditing
@@ -168,19 +179,31 @@ class StaffController extends Controller
             'ip_address' => $request->ip()
         ]);
 
-        // FIX: Send Email & Notification for Rejection
-        if ($application->user) {
-            $application->user->notify(new ApplicationStatusAlert($application));
-
-            if ($application->user->email) {
-                // Send Rejection Email
-                try {
-                    Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
-                } catch (\Exception $e) { }
-            }
+        // 1. ALWAYS SEND EMAIL (Kahit Walk-in)
+        if ($application->email) {
+            try {
+                Mail::to($application->email)->send(new ApplicationStatusUpdated($application));
+            } catch (\Exception $e) { }
         }
 
-        return redirect()->back()->with('warning', 'Application returned to applicant for correction.');
+        // 2. ALWAYS SEND SMS (Kahit Walk-in)
+        if ($application->contact_number) {
+            $smsMessage = "Maayong adlaw, {$application->first_name}. \n\n" .
+                          "MAY KULANG / BALIK-REVIEW \n" .
+                          "Gin-balik sang Staff ang imo aplikasyon kay may dapat kay-uhon. \n\n" .
+                          "Rason: {$request->remarks} \n\n" .
+                          "Palihog mag-login sa system, i-edit ang imo form, kag i-resubmit ini.";
+            try {
+                $this->smsService->sendSms($application->contact_number, $smsMessage);
+            } catch (\Exception $e) { }
+        }
+
+        // 3. System Notification
+        if ($application->user) {
+            $application->user->notify(new ApplicationStatusAlert($application));
+        }
+
+        return redirect()->back()->with('error', 'Application returned to applicant for correction.');
     }
 
     public function reportsIndex(Request $request) {

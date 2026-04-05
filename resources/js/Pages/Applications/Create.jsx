@@ -369,7 +369,12 @@ export default function Create({ auth, programs = [] }) {
 
                             {/* --- SUBMIT --- */}
                             <div className="flex items-center justify-end pt-6 border-t border-gray-100 dark:border-gray-700">
-                                <Link href={route('dashboard')} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium mr-6 transition-colors">Cancel</Link>
+                                <Link
+                                    href={(auth?.user?.role === 'staff' || auth?.user?.type === 'staff') ? route('staff.dashboard') : route('dashboard')}
+                                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium mr-6 transition-colors"
+                                >
+                                    Cancel
+                                </Link>
                                 <PrimaryButton className={`px-8 py-4 text-lg shadow-xl transition-all transform hover:-translate-y-1 ${!agreedToPrivacy ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-800 hover:bg-blue-900 dark:bg-blue-600 dark:hover:bg-blue-700'}`} disabled={processing || !agreedToPrivacy}>
                                     {__('submit_btn')}
                                 </PrimaryButton>

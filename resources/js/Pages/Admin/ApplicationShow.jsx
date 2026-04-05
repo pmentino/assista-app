@@ -2,6 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, usePage, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import PrimaryButton from '@/Components/PrimaryButton';
+import { toast } from 'react-hot-toast';
 
 // --- CONFIGURATION ---
 const REQUIREMENTS_MAP = {
@@ -31,14 +32,13 @@ export default function ApplicationShow({ application, programSettings, remainin
     const [showApproveModal, setShowApproveModal] = useState(false);
 
     // --- HANDLERS ---
-
     const submitReject = (e) => {
         e.preventDefault();
         post(route('admin.applications.remarks.store', application.id), {
             preserveScroll: true,
             onSuccess: () => {
                 setShowRejectModal(false);
-                // FIX: Removed window.location.reload() to prevent toast from vanishing
+                toast.error('Application rejected and applicant notified.', { duration: 5000, id: 'admin-reject' });
             },
         });
     };
@@ -47,10 +47,11 @@ export default function ApplicationShow({ application, programSettings, remainin
         e.preventDefault();
         approveForm.post(route('admin.applications.approve', application.id), {
             preserveScroll: true,
-            onSuccess: (response) => {
+            onSuccess: (page) => {
                 if (Object.keys(approveForm.errors).length > 0) return;
                 setShowApproveModal(false);
                 approveForm.reset();
+                toast.success('Application approved and funds authorized for release.', { duration: 4000, id: 'admin-approve' });
             },
             onError: (errors) => console.log(errors),
         });

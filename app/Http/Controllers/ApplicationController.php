@@ -56,17 +56,20 @@ class ApplicationController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
+        $isStaff = $user->role === 'staff' || $user->type === 'staff';
 
-        if (Application::where('user_id', $user->id)->where('status', 'Pending')->exists()) {
+        // Block regular users if they already have a pending application
+        if (!$isStaff && Application::where('user_id', $user->id)->whereIn('status', ['Pending', 'Verified'])->exists()) {
              return Inertia::render('Applications/Create', [
                 'errors' => ['error' => '⚠️ STOP: You already have a pending application.'],
-                'programs' => AssistanceProgram::where('is_active', true)->select('id', 'title', 'requirements')->get(),
+                'programs' => \App\Models\AssistanceProgram::where('is_active', true)->select('id', 'title', 'requirements')->get(),
                 'auth' => ['user' => Auth::user()],
                 'translations' => [],
-                'locale' => 'en'
+                'locale' => session('locale', 'en')
             ]);
         }
 
+        // Validate inputs
         $request->validate([
             'program' => 'required|string',
             'date_of_incident' => 'required|date',
@@ -83,6 +86,7 @@ class ApplicationController extends Controller
             'indigency_cert' => 'required|file|max:10240',
         ]);
 
+        // Save files
         $paths = [];
         if ($request->hasFile('valid_id')) $paths['valid_id'] = $request->file('valid_id')->store('documents', 'public');
         if ($request->hasFile('indigency_cert')) $paths['indigency_cert'] = $request->file('indigency_cert')->store('documents', 'public');
@@ -93,32 +97,33 @@ class ApplicationController extends Controller
             }
         }
 
-        try {
-            Application::create([
-                'user_id' => Auth::id(),
-                'program' => $request->program,
-                'date_of_incident' => $request->date_of_incident,
-                'first_name' => $request->first_name,
-                'middle_name' => $request->middle_name,
-                'last_name' => $request->last_name,
-                'suffix_name' => $request->suffix_name,
-                'sex' => $request->sex,
-                'civil_status' => $request->civil_status,
-                'birth_date' => $request->birth_date,
-                'house_no' => $request->house_no,
-                'barangay' => $request->barangay,
-                'city' => $request->city ?? 'Roxas City',
-                'contact_number' => $request->contact_number,
-                'email' => $request->email,
-                'facebook_link' => $request->facebook_link,
-                'valid_id' => $paths['valid_id'] ?? null,
-                'indigency_cert' => $paths['indigency_cert'] ?? null,
-                'attachments' => $paths,
-                'status' => 'Pending',
-            ]);
+        // Save to database
+        Application::create([
+            'user_id' => Auth::id(),
+            'program' => $request->program,
+            'date_of_incident' => $request->date_of_incident,
+            'first_name' => $request->first_name,
+            'middle_name' => $request->middle_name,
+            'last_name' => $request->last_name,
+            'suffix_name' => $request->suffix_name,
+            'sex' => $request->sex,
+            'civil_status' => $request->civil_status,
+            'birth_date' => $request->birth_date,
+            'house_no' => $request->house_no,
+            'barangay' => $request->barangay,
+            'city' => $request->city ?? 'Roxas City',
+            'contact_number' => $request->contact_number,
+            'email' => $request->email,
+            'facebook_link' => $request->facebook_link,
+            'valid_id' => $paths['valid_id'] ?? null,
+            'indigency_cert' => $paths['indigency_cert'] ?? null,
+            'attachments' => $paths,
+            'status' => 'Pending',
+        ]);
 
-        } catch (\Exception $e) {
-            return redirect()->route('applications.create')->with('error', 'Error creating application: ' . $e->getMessage());
+        // Redirect appropriately
+        if ($isStaff) {
+            return redirect()->route('staff.dashboard')->with('message', 'Walk-in Application submitted successfully.');
         }
 
         return redirect()->route('dashboard')->with('message', 'Application submitted successfully.');
@@ -243,7 +248,7 @@ class ApplicationController extends Controller
             if ($application->user->email) {
                 // Send Email for Approval
                 try {
-                    Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
+                    Mail::to($application->email)->send(new ApplicationStatusUpdated($application));
                 } catch (\Exception $e) { }
             }
 
@@ -283,7 +288,7 @@ class ApplicationController extends Controller
             if ($application->user->email) {
                 // Send Email for Rejection
                 try {
-                    Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
+                    Mail::to($application->email)->send(new ApplicationStatusUpdated($application));
                 } catch (\Exception $e) { }
             }
 
@@ -298,7 +303,7 @@ class ApplicationController extends Controller
             }
         }
 
-        return redirect()->back()->with('warning', 'Application has been officially denied.');
+        return redirect()->back()->with('error', 'Application has been officially denied.');
     }
 
     // Reject (With Remarks/Reason)
@@ -323,7 +328,7 @@ class ApplicationController extends Controller
             if ($application->user->email) {
                 // Send Email for Rejection
                 try {
-                    Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
+                    Mail::to($application->email)->send(new ApplicationStatusUpdated($application));
                 } catch (\Exception $e) { }
             }
 
@@ -339,7 +344,7 @@ class ApplicationController extends Controller
             }
         }
 
-        return redirect()->back()->with('warning', 'Application rejected and applicant notified.');
+        return redirect()->back()->with('error', 'Application rejected and applicant notified.');
     }
 
     public function generateClaimStub(Application $application)

@@ -32,17 +32,15 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
-                // Ensure notifications are passed for the Bell
                 'notifications' => $request->user() ? $request->user()->unreadNotifications : [],
             ],
             'locale' => $locale,
             'translations' => $translations,
-            // --- FIX: ADDED 'warning' KEY HERE ---
             'flash' => [
                 'message' => fn () => $request->session()->get('message'),
                 'success' => fn () => $request->session()->get('success'),
                 'error'   => fn () => $request->session()->get('error'),
-                'warning' => fn () => $request->session()->get('warning'), // <--- CRITICAL FIX
+                'warning' => fn () => $request->session()->get('warning'),
             ],
         ];
     }

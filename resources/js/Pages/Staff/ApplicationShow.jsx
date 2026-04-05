@@ -5,6 +5,7 @@ import TextInput from '@/Components/TextInput';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import InputError from '@/Components/InputError';
+import { toast } from 'react-hot-toast';
 
 // --- CONFIGURATION ---
 const REQUIREMENTS_MAP = {
@@ -26,14 +27,6 @@ export default function ApplicationShow({ application: initialApplication }) {
     // 2. Success Message State
     const [visibleSuccess, setVisibleSuccess] = useState(null);
 
-    // 3. Watch for Flash Messages
-    useEffect(() => {
-        if (flash?.message) {
-            setVisibleSuccess(flash.message);
-            const timer = setTimeout(() => setVisibleSuccess(null), 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [flash]);
 
     // Update local state when prop changes
     useEffect(() => {
@@ -65,7 +58,7 @@ export default function ApplicationShow({ application: initialApplication }) {
         e.preventDefault();
         if(confirm('Are you sure you want to verify this application and recommend this amount to the Admin?')) {
             put(route('staff.applications.verify', application.id), {
-                preserveScroll: true,
+                preserveScroll: true
             });
         }
     };
@@ -78,10 +71,10 @@ export default function ApplicationShow({ application: initialApplication }) {
             onSuccess: () => {
                 setShowRejectModal(false);
                 rejectForm.reset();
+                toast.error('Application returned to applicant for correction.', { duration: 5000, id: 'reject-toast' });
             },
         });
     };
-
     const getAttachmentLabel = (key) => {
         const labels = { valid_id: 'Valid Government ID', indigency_cert: 'Certificate of Indigency' };
         if (labels[key]) return labels[key];

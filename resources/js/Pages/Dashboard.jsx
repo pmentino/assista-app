@@ -31,13 +31,13 @@ export default function Dashboard({ applications = [] }) {
     }, []);
 
     const filteredApplications = applications.filter(app => {
-        if (activeTab === 'ongoing') return app.status === 'Pending';
+        if (activeTab === 'ongoing') return ['Pending', 'Verified'].includes(app.status); // FIX
         if (activeTab === 'approved') return app.status === 'Approved';
         if (activeTab === 'history') return ['Approved', 'Rejected'].includes(app.status);
         return true;
     });
 
-    const pendingCount = applications.filter(a => a.status === 'Pending').length;
+    const pendingCount = applications.filter(a => ['Pending', 'Verified'].includes(a.status)).length; // FIX
     const approvedCount = applications.filter(a => a.status === 'Approved').length;
     const rejectedCount = applications.filter(a => a.status === 'Rejected').length;
 

@@ -88,6 +88,17 @@ export default function Dashboard({ auth, stats, queue, filters, programs }) {
                         </div>
                     </div>
 
+                    {/* ---> BAGONG BUTTON PARA SA STAFF WALK-IN <--- */}
+                    <div className="mb-6 flex justify-end">
+                        <Link
+                            href={route('applications.create')}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition duration-200 flex items-center gap-2"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+                            Encode Walk-in Application
+                        </Link>
+                    </div>
+
                     {/* --- VERIFICATION QUEUE --- */}
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
 
