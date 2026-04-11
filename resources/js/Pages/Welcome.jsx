@@ -371,13 +371,27 @@ export default function Welcome({ news = [], programs = [], settings = {}, trans
                             <div className="bg-blue-900 rounded-2xl shadow-lg p-8 text-white h-full flex flex-col justify-center">
                                 <h2 className="text-3xl font-bold mb-8">{__('Contact Us')}</h2>
                                 <ul className="space-y-8">
-                                    <li className="flex items-start gap-5">
-                                        <div className="bg-blue-800 p-3 rounded-xl shrink-0">
-                                            <svg className="w-6 h-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                    <li className="flex items-start gap-5 group">
+                                        <div className="bg-blue-800 p-3 rounded-xl shrink-0 group-hover:bg-yellow-400 transition-colors duration-300">
+                                            <svg className="w-6 h-6 text-yellow-400 group-hover:text-blue-900 transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
                                         </div>
                                         <div>
                                             <p className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-1">{__('Visit our Office')}</p>
-                                            <p className="text-xl font-bold leading-snug">{settings.office_address || 'Inzo Arnaldo Village, Roxas City'}</p>
+                                            <a
+                                                href="https://www.google.com/maps/place/City+Social+Welfare+and+Development+Office/@11.5851332,122.751856,17z/data=!3m1!4b1!4m6!3m5!1s0x33a5f2f19c696ccb:0x5cdc51692e16b34c!8m2!3d11.585128!4d122.7544363!16s%2Fg%2F1hc7gvqbj?entry=ttu&g_ep=EgoyMDI2MDQwOC4wIKXMDSoASAFQAw%3D%3D"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-xl font-bold leading-snug hover:text-yellow-400 hover:underline flex items-center transition-colors"
+                                                title="Open in Google Maps"
+                                            >
+                                                {settings.office_address || 'Inzo Arnaldo Village, Roxas City'}
+                                                <svg className="w-4 h-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                </svg>
+                                            </a>
                                         </div>
                                     </li>
                                     <li className="flex items-start gap-5">

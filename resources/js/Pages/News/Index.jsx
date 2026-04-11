@@ -1,6 +1,10 @@
 import { Head, Link } from '@inertiajs/react';
+import { useState } from 'react'; // Added useState
 
 export default function Index({ news = [], auth }) {
+    // --- 1. NEW: STATE FOR IMAGE PREVIEW ---
+    const [previewImage, setPreviewImage] = useState(null);
+
     return (
         <div className="min-h-screen bg-gray-50 font-sans text-gray-900 antialiased">
             <Head title="News & Updates" />
@@ -54,7 +58,12 @@ export default function Index({ news = [], auth }) {
                                             <img
                                                 src={`/storage/${item.image_path}`}
                                                 alt={item.title}
-                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                // --- 2. NEW: ONCLICK HANDLER FOR IMAGE ---
+                                                onClick={(e) => {
+                                                    e.preventDefault(); // Pipigilan nito ang Link na lumipat ng page
+                                                    setPreviewImage(`/storage/${item.image_path}`);
+                                                }}
+                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 cursor-pointer"
                                             />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
@@ -93,6 +102,40 @@ export default function Index({ news = [], auth }) {
                     )}
                 </div>
             </main>
+
+            {/* --- 3. NEW: IMAGE PREVIEW MODAL (UNIFORM SIZE & FIXED CLOSE BUTTON) --- */}
+            {previewImage && (
+                <div
+                    className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 sm:p-8 cursor-pointer transition-opacity"
+                    onClick={() => setPreviewImage(null)}
+                >
+                    {/* Uniform Frame Container - Ito yung magpapapantay sa lahat ng previews */}
+                    <div
+                        className="relative w-full max-w-5xl h-[70vh] sm:h-[85vh] bg-gray-900/80 rounded-2xl shadow-2xl flex items-center justify-center border border-gray-700/50 overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Bulletproof Close Button - Nakadikit sa loob ng frame */}
+                        <button
+                            onClick={() => setPreviewImage(null)}
+                            className="absolute top-4 right-4 z-50 bg-black/60 hover:bg-red-600 text-white rounded-full p-2 backdrop-blur transition-all duration-200 focus:outline-none group"
+                            title="Close Preview"
+                        >
+                            <svg className="w-6 h-6 transform group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+
+                        {/* Image - Mag-a-adjust para sumakto sa frame nang hindi nasisira */}
+                        <div className="w-full h-full p-4 sm:p-8 flex items-center justify-center">
+                            <img
+                                src={previewImage}
+                                className="w-full h-full object-contain drop-shadow-2xl"
+                                alt="News Preview Fullscreen"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -293,14 +293,24 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         $request->validate([ 'amount' => 'required|numeric|min:0' ]);
         $now = \Carbon\Carbon::now();
 
+        // 1. KUNIN MUNA ANG LUMANG BUDGET BAGO I-OVERWRITE
+        $currentBudget = \App\Models\MonthlyBudget::where('month', $now->month)
+            ->where('year', $now->year)
+            ->first();
+
+        $previousAmount = $currentBudget ? $currentBudget->amount : 0;
+
+        // 2. I-UPDATE O I-CREATE ANG BAGONG BUDGET
         \App\Models\MonthlyBudget::updateOrCreate(
             ['month' => $now->month, 'year' => $now->year],
             ['amount' => $request->amount]
         );
 
+        // 3. I-SAVE SA LOGS (KASAMA NA ANG LUMANG AMOUNT)
         \App\Models\BudgetLog::create([
             'user_id' => Auth::id(),
             'action' => 'Budget Update',
+            'previous_amount' => $previousAmount, // Eto yung idinagdag natin
             'amount' => $request->amount,
             'balance_after' => $request->amount,
         ]);
@@ -308,7 +318,7 @@ Route::middleware(['auth', 'verified', 'is_admin'])->prefix('admin')->name('admi
         \App\Models\AuditLog::create([
             'user_id' => Auth::id(),
             'action' => 'Updated Monthly Budget',
-            'details' => "Updated budget for " . $now->format('F Y') . " to ₱" . number_format($request->amount, 2),
+            'details' => "Updated budget for " . $now->format('F Y') . " from ₱" . number_format($previousAmount, 2) . " to ₱" . number_format($request->amount, 2),
         ]);
 
         return redirect()->back()->with('message', 'Budget updated successfully.');

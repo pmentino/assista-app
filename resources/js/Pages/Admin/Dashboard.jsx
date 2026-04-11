@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm, Link } from '@inertiajs/react';
 import {
-  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, BarElement, ArcElement
+    Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, BarElement, ArcElement
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import { useState, useEffect, useRef } from 'react';
@@ -10,7 +10,7 @@ import { pickBy } from 'lodash';
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, BarElement, ArcElement);
 
-export default function Dashboard({ auth, stats, budgetStats, chartData, barangayStats, allBarangays, filters, pendingApplications = [], programs, queueFilters = {} }) {
+export default function Dashboard({ auth, stats, budgetStats, budgetLogs = [], chartData, barangayStats, allBarangays, filters, pendingApplications = [], programs, queueFilters = {} }) {
     const user = auth?.user || { name: 'Admin' };
 
     // --- STATE MANAGEMENT ---
@@ -341,6 +341,68 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                         )}
                     </div>
 
+                    {/* --- NEW: BUDGET UPDATE HISTORY --- */}
+                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-8 border border-gray-200 dark:border-gray-700 transition-colors duration-300">
+                        <div className="bg-gray-50 dark:bg-gray-800/50 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                            <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                                <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                Budget Allocation History
+                            </h3>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead className="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Date & Time</th>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Admin User</th>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Action</th>
+                                        {/* BAGONG COLUMN */}
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">Previous Amount</th>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase">New Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                                    {budgetLogs && budgetLogs.length > 0 ? (
+                                        budgetLogs.map((log) => (
+                                            <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                                    {new Date(log.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="flex items-center">
+                                                        <div className="flex-shrink-0 h-6 w-6 bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                                                            {log.user?.name?.[0] || 'A'}
+                                                        </div>
+                                                        <span className="ml-2 text-sm font-medium text-gray-900 dark:text-white">{log.user?.name || 'System Admin'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                                    <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-md bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300">
+                                                        {log.action}
+                                                    </span>
+                                                </td>
+                                                {/* PREVIOUS AMOUNT DISPLAY (Naka-strikethrough para halatang luma) */}
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-400 dark:text-gray-500 line-through">
+                                                    ₱{Number(log.previous_amount || 0).toLocaleString('en-PH', {minimumFractionDigits: 2})}
+                                                </td>
+                                                {/* NEW AMOUNT DISPLAY */}
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600 dark:text-green-400">
+                                                    ₱{Number(log.amount).toLocaleString('en-PH', {minimumFractionDigits: 2})}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="5" className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400 italic">
+                                                No budget modifications have been recorded yet.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     {/* --- PROFESSIONAL BUDGET MODAL --- */}
                     {isBudgetModalOpen && (
                         <div className="fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full flex items-center justify-center z-50 backdrop-blur-sm px-4">
@@ -423,6 +485,8 @@ export default function Dashboard({ auth, stats, budgetStats, chartData, baranga
                             </div>
                         </div>
                     )}
+
+
 
                     {/* --- BARANGAY REPORT MODAL (FIXED LINKS) --- */}
                     {isBarangayModalOpen && (

@@ -23,12 +23,19 @@ export default function Dashboard({ applications = [] }) {
 
     const [activeTab, setActiveTab] = useState('guidelines');
 
+    // --- FIX: Dynamic Tab Selection from URL ---
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
-        if (params.get('tab') === 'history') {
+        const requestedTab = params.get('tab');
+
+        if (requestedTab === 'history') {
             setActiveTab('history');
+        } else if (requestedTab === 'approved') {
+            setActiveTab('approved');
+        } else if (requestedTab === 'ongoing') {
+            setActiveTab('ongoing');
         }
-    }, []);
+    }, [window.location.search]); // Listens for URL changes even without full reload
 
     const filteredApplications = applications.filter(app => {
         if (activeTab === 'ongoing') return ['Pending', 'Verified'].includes(app.status); // FIX

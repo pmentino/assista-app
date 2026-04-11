@@ -11,14 +11,42 @@ export default function NotificationBell() {
     const [unreadCount, setUnreadCount] = useState(0);
     const dropdownRef = useRef(null);
 
-    // FIX: Redirect applicants to the "History" tab
+    // FIX: Redirect applicants to the "History" tab for View All Activity
     const getActivityRoute = () => {
         const role = auth?.user?.role || auth?.user?.type;
         if (role === 'admin') return route('admin.audit-logs');
         if (role === 'staff') return route('staff.applications.index');
 
-        // Pass the 'tab' parameter so the Dashboard opens the correct tab
         return route('dashboard', { tab: 'history' });
+    };
+
+    // --- FIX: Dynamic Redirect based on Notification Status ---
+    const getNotificationLink = (notification) => {
+        const role = auth?.user?.role || auth?.user?.type;
+
+        // FOR ADMIN OR STAFF
+        if (role === 'admin' || role === 'staff') {
+            const status = notification.data?.status;
+
+            // If the notification explicitly states it's Approved, Rejected, or Returned
+            // Redirect them to their full list/history page
+            if (status === 'Approved' || status === 'Rejected' || status === 'Returned' || status === 'Verified') {
+                 return role === 'admin'
+                    ? route('admin.applications.index')
+                    : route('staff.applications.index');
+            }
+
+            // Otherwise, fall back to the default link provided by the backend (if any)
+            return notification.data.link || '#';
+        }
+
+        // FOR APPLICANTS (Regular Users)
+        const status = notification.data?.status || 'Pending';
+        let targetTab = 'ongoing';
+        if (status === 'Approved') targetTab = 'approved';
+        if (status === 'Rejected' || status === 'Returned') targetTab = 'history';
+
+        return route('dashboard', { _query: { tab: targetTab } });
     };
 
     const fetchNotifications = async () => {
@@ -92,8 +120,9 @@ export default function NotificationBell() {
                         {notifications.length > 0 ? (
                             notifications.map((notif) => (
                                 <li key={notif.id} className={`border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition ${!notif.read_at ? 'bg-blue-50/40 dark:bg-blue-900/10' : ''}`}>
+                                    {/* --- FIX APPLIED HERE: Using getNotificationLink --- */}
                                     <Link
-                                        href={notif.data.link || '#'}
+                                        href={getNotificationLink(notif)}
                                         onClick={() => markAsRead(notif.id, notif.data.link)}
                                         className="p-4 flex gap-3 w-full text-left"
                                     >

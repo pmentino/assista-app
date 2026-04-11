@@ -81,12 +81,15 @@ export default function AuditLogsIndex({ auth, logs }) {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
+                                                    {/* --- FIX: IDINAGDAG ANG VERIFIED COLOR (PURPLE) DITO --- */}
                                                     <span className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full border ${
                                                         log.action.includes('Approved')
                                                             ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800'
-                                                            : log.action.includes('Rejected')
+                                                            : log.action.includes('Rejected') || log.action.includes('Returned')
                                                                 ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800'
-                                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-600'
+                                                                : log.action.includes('Verified')
+                                                                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                                                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-600'
                                                     }`}>
                                                         {log.action}
                                                     </span>
