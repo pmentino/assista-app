@@ -22,7 +22,7 @@ class UserSeeder extends Seeder
             'role' => 'admin',
         ]);
 
-        
+
         User::factory()->create([
             'name' => 'John Doe',
             'email' => 'johndoe@email.com',
@@ -30,7 +30,5 @@ class UserSeeder extends Seeder
             'role' => 'user',
         ]);
 
-
-        User::factory()->count(10)->create();
     }
 }
