@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -14,16 +13,15 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-
-        User::factory()->create([
+        // Ginamit natin ang User::create imbes na User::factory()->create
+        User::create([
             'name' => 'assista admin',
             'email' => 'assista@admin.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
         ]);
 
-
-        User::factory()->create([
+        User::create([
             'name' => 'John Doe',
             'email' => 'johndoe@email.com',
             'password' => Hash::make('password'),
