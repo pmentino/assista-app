@@ -46,11 +46,22 @@
 </head>
 <body>
 
+@php
+    $cswdoLogo = '';
+    $roxasSeal = '';
+
+    if (file_exists(public_path('images/cswdo-logo.png'))) {
+        $cswdoLogo = base64_encode(file_get_contents(public_path('images/cswdo-logo.png')));
+    }
+    if (file_exists(public_path('images/roxas-seal.png'))) {
+        $roxasSeal = base64_encode(file_get_contents(public_path('images/roxas-seal.png')));
+    }
+@endphp
+
     <table class="header-table">
         <tr>
             <td class="logo-col text-right">
-                {{-- Ensure these images exist in public/images folder --}}
-                <img src="{{ public_path('images/cswdo-logo.png') }}" class="logo-img" alt="CSWDO Logo">
+                <img src="data:image/png;base64, {{ $cswdoLogo }}" class="logo-img" alt="CSWDO Logo">
             </td>
             <td class="text-col header-text">
                 <h4>Republic of the Philippines</h4>
@@ -60,7 +71,7 @@
                 <div class="report-title">REPORT OF ASSISTANCE RELEASED (AICS)</div>
             </td>
             <td class="logo-col text-left">
-                <img src="{{ public_path('images/roxas-seal.png') }}" class="logo-img" alt="Roxas Seal">
+                <img src="data:image/png;base64, {{ $roxasSeal }}" class="logo-img" alt="Roxas Seal">
             </td>
         </tr>
     </table>

@@ -349,6 +349,9 @@ class ApplicationController extends Controller
 
     public function generateClaimStub(Application $application)
     {
+        // ILAGAY ITO DITO MISMO: Bigyan ng extra RAM ang server para sa PDF
+        ini_set('memory_limit', '512M');
+        
         if ($application->status !== 'Approved') {
             abort(403, 'This application is not approved yet.');
         }

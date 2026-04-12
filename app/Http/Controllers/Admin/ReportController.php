@@ -70,6 +70,8 @@ class ReportController extends Controller
 
     public function exportPdf(Request $request)
     {
+        ini_set('memory_limit', '512M');
+        
         $query = Application::query();
 
         if ($request->filled('status')) {

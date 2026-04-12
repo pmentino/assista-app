@@ -81,9 +81,21 @@
 </head>
 <body>
 
+@php
+    $cswdoLogo = '';
+    $roxasSeal = '';
+
+    if (file_exists(public_path('images/cswdo-logo.png'))) {
+        $cswdoLogo = base64_encode(file_get_contents(public_path('images/cswdo-logo.png')));
+    }
+    if (file_exists(public_path('images/roxas-seal.png'))) {
+        $roxasSeal = base64_encode(file_get_contents(public_path('images/roxas-seal.png')));
+    }
+@endphp
+
     <table class="header-table">
         <tr>
-            <td class="logo-left"><img src="{{ public_path('images/cswdo-logo.png') }}" class="logo-img" alt="CSWDO Logo"></td>
+            <td class="logo-left"><img src="data:image/png;base64, {{ $cswdoLogo }}" class="logo-img" alt="CSWDO Logo"></td>
             <td class="header-text">
                 <h4>Republic of the Philippines</h4>
                 <h3>CITY OF ROXAS</h3>
@@ -91,7 +103,7 @@
                 <h2>Office of the City Social Welfare and Development Officer</h2>
                 <p>{{ $signatories['office_address'] ?? 'Inzo Arnaldo Village, Roxas City' }} | Tel: {{ $signatories['office_hotline'] ?? '(036) 52026-83' }}</p>
             </td>
-            <td class="logo-right"><img src="{{ public_path('images/roxas-seal.png') }}" class="logo-img" alt="Roxas Seal"></td>
+            <td class="logo-right"><img src="data:image/png;base64, {{ $roxasSeal }}" class="logo-img" alt="Roxas Seal"></td>
         </tr>
     </table>
 
