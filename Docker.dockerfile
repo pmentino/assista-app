@@ -25,4 +25,4 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 RUN npm install && npm run build
 
 EXPOSE 8000
-CMD sh -c "php artisan optimize:clear && php artisan serve --host=0.0.0.0 --port=8000"
+CMD sh -c "php artisan db:seed --class=AssistanceProgramSeeder --force && php artisan optimize:clear && php artisan serve --host=0.0.0.0 --port=8000"
