@@ -162,12 +162,15 @@ export default function Track({ result }) {
                                 <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${
                                     result.status === 'Approved' ? 'bg-green-100 text-green-600' :
                                     result.status === 'Rejected' ? 'bg-red-100 text-red-600' :
+                                    result.status === 'Verified' ? 'bg-purple-100 text-purple-600' :
                                     'bg-yellow-100 text-yellow-600'
                                 }`}>
                                     {result.status === 'Approved' ? (
                                         <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
                                     ) : result.status === 'Rejected' ? (
                                         <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    ) : result.status === 'Verified' ? (
+                                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     ) : (
                                         <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     )}
@@ -184,6 +187,7 @@ export default function Track({ result }) {
                                     <span className={`font-bold ${
                                         result.status === 'Approved' ? 'text-green-600' :
                                         result.status === 'Rejected' ? 'text-red-600' :
+                                        result.status === 'Verified' ? 'text-purple-600' :
                                         'text-yellow-600'
                                     }`}>{result.status.toUpperCase()}</span>
                                 </div>

@@ -11,12 +11,12 @@ export default defineConfig({
         react(),
     ],
     // We removed the 'server' block to go back to default localhost behavior
-    server: {
-        host: '0.0.0.0',
-        port: 5173,
-        strictPort: true,
-        hmr: {
-            host: '192.168.1.61',
-        },
-    },
+    // server: {
+    //     host: '0.0.0.0',
+    //     port: 5173,
+    //     strictPort: true,
+    //     hmr: {
+    //         host: '192.168.1.61',
+    //     },
+    // },
 });
