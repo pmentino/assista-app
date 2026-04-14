@@ -82,8 +82,11 @@ class ApplicationController extends Controller
             'birth_date' => 'required|date',
             'barangay' => 'required|string',
             'house_no' => 'required|string',
-            'valid_id' => 'required|file|max:10240',
-            'indigency_cert' => 'required|file|max:10240',
+            // Pinalitan ang 10240 ng 5120 para maging 5MB limit
+            'valid_id' => 'required|file|max:5120',
+            'indigency_cert' => 'required|file|max:5120',
+            // Idagdag ito para ma-validate rin ang dynamic requirement files na hanggang 5MB
+            'attachments.*' => 'nullable|file|max:5120',
         ]);
 
         // Save files
@@ -351,7 +354,7 @@ class ApplicationController extends Controller
     {
         // ILAGAY ITO DITO MISMO: Bigyan ng extra RAM ang server para sa PDF
         ini_set('memory_limit', '512M');
-        
+
         if ($application->status !== 'Approved') {
             abort(403, 'This application is not approved yet.');
         }

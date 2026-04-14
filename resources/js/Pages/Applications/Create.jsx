@@ -271,7 +271,7 @@ export default function Create({ auth, programs = [] }) {
                                     <div className="flex-shrink-0 bg-red-600 dark:bg-red-500 text-white rounded-full h-8 w-8 flex items-center justify-center font-bold shadow-sm mr-3">4</div>
                                     <div>
                                         <h3 className="text-xl font-bold text-gray-800 dark:text-white uppercase tracking-wide">Required Documents</h3>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Allowed formats: JPG, PNG, PDF. Max size: 2MB per file.</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Allowed formats: JPG, PNG, PDF. Max size: 5MB per file.</p>
                                     </div>
                                 </div>
                                 <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
